@@ -1,0 +1,7 @@
+{
+  "*.ts": "eslint --cache",
+  "*.tsx": "eslint --cache",
+  "*.css": "stylelint",
+  "*.scss": "stylelint",
+  "*": "prettier --list-different"
+}

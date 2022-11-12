@@ -1,0 +1,69 @@
+{
+  "env": {
+    "browser": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json",
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "plugins": ["@typescript-eslint", "prettier", "html"],
+  "extends": [
+    "plugin:import/recommended",
+    "plugin:import/typescript",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "airbnb",
+    "airbnb-typescript",
+    "plugin:react/jsx-runtime", // after airbnb
+    "prettier" // must be the last entry
+  ],
+  "rules": {
+    "prettier/prettier": "warn",
+    //
+    //
+    // imports
+    // --------------------------------------------------------------------
+    // see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-import-module-exports.md
+    // In conflict with entry point. src/index.tsx is not declared in package.json, because of parcel 2 restrictions
+    "import/no-import-module-exports": [
+      "error",
+      {
+        "exceptions": ["**/src/main.tsx"]
+      }
+    ],
+    // see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/prefer-default-export.md
+    // Prefer named exports to have fix import statements, if more exports will be provided.
+    // Default export (maybe additional) to use React.lazy with dynamic imports.
+    "import/prefer-default-export": "off",
+    //
+    //
+    // react
+    // --------------------------------------------------------------------
+    // see https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/function-component-definition.md
+    // preferred style: array-functions: const name: React.FC<...> = ({...props}) => <>...</>
+    "react/function-component-definition": [
+      "error",
+      {
+        "namedComponents": "arrow-function",
+        "unnamedComponents": "arrow-function"
+      }
+    ],
+    // see https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-props-no-spreading.md
+    // Complicates delegating properties to inner components, e.g. wrapping an existing (complex) component
+    // Helps to extract the own props and the remaining inner props: const { myProp1, myProp2, ...innerProps } = props
+    "react/jsx-props-no-spreading": "off"
+  },
+  "overrides": [
+    {
+      "files": "**/*.test.{js,jsx,ts,tsx}",
+      "env": {
+        "jest": true
+      }
+    }
+  ]
+}

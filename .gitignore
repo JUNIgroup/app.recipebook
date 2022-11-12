@@ -1,0 +1,27 @@
+# secrets
+/.env*
+!/.env.example
+
+# volatile npm artefacts
+/node_modules
+
+# volatile build artefacts
+/dist
+/coverage
+.eslintcache
+
+# volatile test artefacts
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# more

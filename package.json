@@ -1,0 +1,80 @@
+{
+  "name": "react-vite-scaffold",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Configuration of react project with typescript and tests.",
+  "author": "JUNIgroup",
+  "license": "The Unlicense",
+  "keywords": [
+    "react",
+    "typescript",
+    "vite",
+    "vitest",
+    "eslint",
+    "prettier"
+  ],
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest --run --coverage",
+    "test:watch": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "lint": "npm run eslint && npm run prettier && npm run stylelint",
+    "eslint": "eslint . --cache",
+    "eslint:fix": "eslint . --cache --fix --ext .ts,.tsx",
+    "prettier": "prettier . --check",
+    "prettier:fix": "prettier . --write",
+    "stylelint": "stylelint ./src/**/*.scss ./src/**/*.css",
+    "stylelint:fix": "stylelint --fix ./src/**/*.scss ./src/**/*.css",
+    "clean": "shx rm -rf coverage dist .eslintcache",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/junigroup-web/react-vite-scaffold.git"
+  },
+  "bugs": {
+    "url": "https://bitbucket.org/junigroup-web/react-vite-scaffold/issues"
+  },
+  "homepage": "https://bitbucket.org/junigroup-web/react-vite-scaffold#readme",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^13.3.0",
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "@typescript-eslint/eslint-plugin": "^5.35.1",
+    "@typescript-eslint/parser": "^5.35.1",
+    "@vitejs/plugin-react": "^2.0.1",
+    "@vitest/coverage-c8": "^0.22.1",
+    "@vitest/ui": "^0.22.1",
+    "c8": "^7.12.0",
+    "eslint": "^8.23.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-html": "^7.1.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.6.1",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.31.1",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "happy-dom": "^6.0.4",
+    "htmlhint": "^1.1.4",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "prettier": "^2.7.1",
+    "sass": "^1.54.5",
+    "shx": "^0.3.4",
+    "stylelint": "^14.11.0",
+    "stylelint-config-prettier": "^9.0.3",
+    "stylelint-config-standard-scss": "^5.0.0",
+    "typescript": "^4.6.4",
+    "vite": "^3.0.7",
+    "vitest": "^0.22.1"
+  }
+}
