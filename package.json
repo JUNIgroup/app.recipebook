@@ -1,10 +1,10 @@
 {
-  "name": "react-vite-scaffold",
+  "name": "de.junigroup.app.recipebook",
   "private": true,
   "version": "0.1.0",
-  "description": "Configuration of react project with typescript and tests.",
+  "description": "Private collection of recipes.",
   "author": "JUNIgroup",
-  "license": "The Unlicense",
+  "license": "MIT",
   "keywords": [
     "react",
     "typescript",
@@ -33,12 +33,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/junigroup-web/react-vite-scaffold.git"
+    "url": "https://github.com/JUNIgroup/app.recipebook.git"
   },
   "bugs": {
-    "url": "https://bitbucket.org/junigroup-web/react-vite-scaffold/issues"
+    "url": "https://github.com/JUNIgroup/app.recipebook/issues"
   },
-  "homepage": "https://bitbucket.org/junigroup-web/react-vite-scaffold#readme",
+  "homepage": "https://github.com/JUNIgroup/app.recipebook#readme",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
