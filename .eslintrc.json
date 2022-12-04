@@ -56,7 +56,10 @@
     // see https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-props-no-spreading.md
     // Complicates delegating properties to inner components, e.g. wrapping an existing (complex) component
     // Helps to extract the own props and the remaining inner props: const { myProp1, myProp2, ...innerProps } = props
-    "react/jsx-props-no-spreading": "off"
+    "react/jsx-props-no-spreading": "off",
+    // see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/require-default-props.md
+    // Not required because strict undefined check is enabled.
+    "react/require-default-props": "off"
   },
   "overrides": [
     {
