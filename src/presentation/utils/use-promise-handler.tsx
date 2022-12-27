@@ -9,8 +9,17 @@ export type PromiseResult<R> = {
   failed: boolean
 }
 
+export type PromiseResultActions<R> = {
+  onStart?: () => void
+  onSuccess?: (value: R) => void
+  onFailure?: (error: unknown) => void
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const usePromiseHandler = <ARGS extends any[], R>(fn: (...args: ARGS) => Promise<R>) => {
+export const usePromiseHandler = <ARGS extends any[], R>(
+  fn: (...args: ARGS) => Promise<R>,
+  actions: PromiseResultActions<R> = {},
+) => {
   const [result, setResult] = useState<PromiseResult<R>>({
     state: 'initial',
     inProgress: false,
@@ -19,22 +28,25 @@ export const usePromiseHandler = <ARGS extends any[], R>(fn: (...args: ARGS) => 
   })
   const handler = useCallback(
     (...args: ARGS) => {
+      const promise = fn(...args)
       setResult({
         state: 'inProgress',
         inProgress: true,
         succeeded: false,
         failed: false,
       })
-      fn(...args)
-        .then((value) =>
+      actions.onStart?.()
+      promise
+        .then((value) => {
           setResult({
             value,
             state: 'succeeded',
             inProgress: false,
             succeeded: true,
             failed: false,
-          }),
-        )
+          })
+          actions.onSuccess?.(value)
+        })
         .catch((error) => {
           setResult({
             error,
@@ -43,6 +55,7 @@ export const usePromiseHandler = <ARGS extends any[], R>(fn: (...args: ARGS) => 
             succeeded: false,
             failed: true,
           })
+          actions.onFailure?.(error)
         })
     },
     [fn],

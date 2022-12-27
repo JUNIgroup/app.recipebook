@@ -1,7 +1,7 @@
 import { atom, useAtomValue } from 'jotai'
 import { useCallback } from 'react'
 import { AuthService, UserData } from '../../business/auth/auth-service'
-import { usePromiseHandler } from '../utils/use-promise-handler'
+import { usePromiseHandler, PromiseResultActions } from '../utils/use-promise-handler'
 import { atomWithSubscription } from './atom-with-subscription'
 import { serviceAtom } from './service-atom'
 
@@ -38,10 +38,11 @@ type AuthPromiseHandlers = {
 
 const useAuthHandler =
   <N extends keyof AuthPromiseHandlers, FN extends AnyPromiseHandler = AuthPromiseHandlers[N]>(fn: N) =>
-  () => {
+  (actions?: PromiseResultActions<ReturnType<FN>>) => {
     const service = useAtomValue(AuthServiceAtom)
     return usePromiseHandler<Parameters<FN>, Awaited<ReturnType<FN>>>(
       useCallback<FN>(service[fn].bind(service) as FN, [service]),
+      actions,
     )
   }
 

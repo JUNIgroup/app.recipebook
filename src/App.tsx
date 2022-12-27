@@ -1,14 +1,18 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
-import { AuthPanel } from './presentation/auth/auth-panel'
+import { Link, Outlet, Route, Routes } from 'react-router-dom'
+import { AuthStatus } from './presentation/auth/auth-status'
+import { LoginDialog } from './presentation/auth/login-dialog'
+import { RequireAuth } from './presentation/route/require-auth'
 
-const App = () => {
+import './App.css'
+import reactLogo from './assets/react.svg'
+
+const Demo = () => {
   const [count, setCount] = useState(0)
 
   return (
-    <div className="App">
-      <AuthPanel />
+    <>
       <div>
         <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
           <img src="/vite.svg" className="logo" alt="Vite logo" />
@@ -27,8 +31,51 @@ const App = () => {
         </p>
       </div>
       <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-    </div>
+    </>
   )
 }
+
+const App = () => (
+  <Routes>
+    <Route element={<Outlet />}>
+      <Route
+        index
+        element={
+          <Layout>
+            <PublicPage />
+          </Layout>
+        }
+      />
+      <Route path="login/*" element={<LoginDialog />} />
+      <Route
+        path="/protected"
+        element={
+          <RequireAuth>
+            <Layout>
+              <Demo />
+            </Layout>
+          </RequireAuth>
+        }
+      />
+    </Route>
+  </Routes>
+)
+
+const Layout = ({ children }: { children: React.ReactNode }) => (
+  <div>
+    <AuthStatus />
+    <ul>
+      <li>
+        <Link to="/">Public Page</Link>
+      </li>
+      <li>
+        <Link to="/protected">Protected Page</Link>
+      </li>
+    </ul>
+    {children}
+  </div>
+)
+
+const PublicPage = () => <h3>Public</h3>
 
 export default App

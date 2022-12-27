@@ -59,7 +59,13 @@
     "react/jsx-props-no-spreading": "off",
     // see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/require-default-props.md
     // Not required because strict undefined check is enabled.
-    "react/require-default-props": "off"
+    "react/require-default-props": "off",
+    // see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/label-has-associated-control.md
+    // Don't work correct for valid <label><input></label> constructs.
+    "jsx-a11y/label-has-associated-control": "off",
+    // see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/prop-types.md
+    // Don't work correct for props declared as "React.FC".
+    "react/prop-types": "off"
   },
   "overrides": [
     {
