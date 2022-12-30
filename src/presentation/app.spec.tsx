@@ -3,9 +3,9 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { Provider as StoreProvider } from 'react-redux'
 import { MemoryRouter } from 'react-router-dom'
-import App from './App'
-import { createStore } from './business/app.store'
-import { MockAuthService } from './business/auth/service/mock-auth-service'
+import { createStore } from '../business/app.store'
+import { MockAuthService } from '../business/auth/service/mock-auth-service'
+import { App } from './app'
 
 describe('button', () => {
   let button: HTMLButtonElement

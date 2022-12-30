@@ -3,21 +3,22 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
 import type { ServiceErrorDto } from '../error/service-error'
+import { UNLOADED } from '../redux-helper'
 import type { AuthError, UserData } from './service/auth-service'
 
 export type AuthErrorDto = ServiceErrorDto<AuthError>
 
 export type AuthState = {
-  rememberedEmail: string | null
+  rememberedEmail?: string | null
   authInProgress: boolean
-  user: UserData | null
+  user?: UserData | null
   authError: AuthErrorDto | null
 }
 
 const initialState: AuthState = {
-  rememberedEmail: '',
+  rememberedEmail: UNLOADED,
   authInProgress: false,
-  user: null,
+  user: UNLOADED,
   authError: null,
 }
 
