@@ -1,13 +1,29 @@
 // @vitest-environment happy-dom
 
 import { fireEvent, render, screen } from '@testing-library/react'
+import { Provider as StoreProvider } from 'react-redux'
+import { MemoryRouter } from 'react-router-dom'
 import App from './App'
+import { createStore } from './business/app.store'
+import { MockAuthService } from './business/auth/service/mock-auth-service'
 
 describe('button', () => {
   let button: HTMLButtonElement
 
   beforeEach(() => {
-    render(<App />)
+    const authService = new MockAuthService()
+    authService.setMockUser({ id: 'foo', name: 'bar' })
+    const store = createStore({
+      storage: localStorage,
+      authService,
+    })
+    render(
+      <MemoryRouter initialEntries={['/protected']}>
+        <StoreProvider store={store}>
+          <App />
+        </StoreProvider>
+      </MemoryRouter>,
+    )
     button = screen.getByTestId('counter')
   })
 

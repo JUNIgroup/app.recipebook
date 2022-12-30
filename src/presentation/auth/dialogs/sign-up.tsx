@@ -1,5 +1,7 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import { useSignUpHandler } from '../../atoms/auth'
+import { getAuthError } from '../../../business/auth/auth.selectors'
+import * as fromAuth from '../../../business/auth/auth.thunks'
+import { useAppDispatch, useAppSelector } from '../../store.hooks'
 import {
   ContinueSubmit,
   EmailInput,
@@ -9,11 +11,10 @@ import {
   RememberMeInput,
   SignInLink,
 } from './elements'
-import { useNavigateContinue } from './utilities'
 
 export const SignUpDialog = () => {
-  const navigateContinue = useNavigateContinue()
-  const signUp = useSignUpHandler({ onSuccess: navigateContinue })
+  const dispatch = useAppDispatch()
+  const authError = useAppSelector(getAuthError)
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -24,7 +25,7 @@ export const SignUpDialog = () => {
     const password = formData.get('password') as string
     const rememberLogin = true
 
-    signUp.handler(name, email, password, { rememberLogin })
+    dispatch(fromAuth.signUp(name, email, password, { rememberLogin }))
   }
 
   return (
@@ -35,7 +36,7 @@ export const SignUpDialog = () => {
         <EmailInput />
         <PasswordInput />
         <RememberMeInput />
-        <ErrorMessage error={signUp.result.error} />
+        <ErrorMessage error={authError} />
         <ContinueSubmit />
       </form>
       <SignInLink />

@@ -1,5 +1,9 @@
+import { ChangeEventHandler } from 'react'
 import { Link } from 'react-router-dom'
-import { AuthError } from '../../../business/auth/auth-service'
+import { isAuthInProgress } from '../../../business/auth/auth.selectors'
+import { AuthErrorDto } from '../../../business/auth/auth.slice'
+import { useAppSelector } from '../../store.hooks'
+import { useLoginData } from './form-data'
 
 const rootPath = '/login'
 
@@ -21,19 +25,33 @@ export const SignUpButton = () => (
   </Link>
 )
 
-export const EmailInput = () => (
-  <>
-    <label htmlFor="email">Email:</label>
-    <input type="text" id="email" name="email" />
-  </>
-)
+export const EmailInput = () => {
+  const [loginData, update] = useLoginData()
+  const changeHandler: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const email = event.target.value
+    update((data) => ({ ...data, email }))
+  }
+  return (
+    <>
+      <label htmlFor="email">Email:</label>
+      <input type="text" id="email" name="email" value={loginData.email} onChange={changeHandler} />
+    </>
+  )
+}
 
-export const NameInput = () => (
-  <>
-    <label htmlFor="name">Nickname:</label>
-    <input type="text" id="name" name="name" />
-  </>
-)
+export const NameInput = () => {
+  const [loginData, update] = useLoginData()
+  const changeHandler: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const name = event.target.value
+    update((data) => ({ ...data, name }))
+  }
+  return (
+    <>
+      <label htmlFor="name">Nickname:</label>
+      <input type="text" id="name" name="name" value={loginData.name} onChange={changeHandler} />
+    </>
+  )
+}
 
 export const PasswordInput = () => (
   <>
@@ -42,14 +60,34 @@ export const PasswordInput = () => (
   </>
 )
 
-export const RememberMeInput = () => (
-  <div className="checkbox">
-    <input id="remember-me" name="remember-me" type="checkbox" />
-    <label htmlFor="remember-me">Remember Me</label>
-  </div>
-)
+export const RememberMeInput = () => {
+  const [loginData, update] = useLoginData()
+  const changeHandler: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const rememberMe = event.target.checked
+    update((data) => ({ ...data, rememberMe }))
+  }
+  return (
+    <div className="checkbox">
+      <input
+        id="remember-me"
+        name="remember-me"
+        type="checkbox"
+        checked={loginData.rememberMe}
+        onChange={changeHandler}
+      />
+      <label htmlFor="remember-me">Remember Me</label>
+    </div>
+  )
+}
 
-export const ContinueSubmit = () => <button type="submit">Continue</button>
+export const ContinueSubmit = () => {
+  const inProgress = useAppSelector(isAuthInProgress)
+  return (
+    <button type="submit" disabled={inProgress}>
+      Continue
+    </button>
+  )
+}
 
 export const ResetPasswordLink = () => (
   <div>
@@ -86,12 +124,12 @@ export const SignInLink = () => (
 )
 
 type ErrorProps = {
-  error?: unknown
+  error?: AuthErrorDto | null
 }
 
 export const ErrorMessage: React.FC<ErrorProps> = ({ error }) => {
   if (!error) return null
 
-  const msg = error instanceof AuthError ? error.plainMessage : 'internal error'
+  const msg = error.plainMessage
   return <div className="error">{msg}</div>
 }

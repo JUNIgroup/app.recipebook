@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Outlet, Route, Routes } from 'react-router-dom'
+import * as fromAuth from './business/auth/auth.thunks'
 import { AuthStatus } from './presentation/auth/auth-status'
 import { LoginDialog } from './presentation/auth/login-dialog'
 import { RequireAuth } from './presentation/route/require-auth'
+import { useAppDispatch } from './presentation/store.hooks'
 
 import './App.css'
 import reactLogo from './assets/react.svg'
@@ -35,31 +37,37 @@ const Demo = () => {
   )
 }
 
-const App = () => (
-  <Routes>
-    <Route element={<Outlet />}>
-      <Route
-        index
-        element={
-          <Layout>
-            <PublicPage />
-          </Layout>
-        }
-      />
-      <Route path="login/*" element={<LoginDialog />} />
-      <Route
-        path="/protected"
-        element={
-          <RequireAuth>
+const App = () => {
+  const dispatch = useAppDispatch()
+  useEffect(() => dispatch(fromAuth.fetchRememberedEmail()), [])
+  useEffect(() => dispatch(fromAuth.observeUser()), [])
+
+  return (
+    <Routes>
+      <Route element={<Outlet />}>
+        <Route
+          index
+          element={
             <Layout>
-              <Demo />
+              <PublicPage />
             </Layout>
-          </RequireAuth>
-        }
-      />
-    </Route>
-  </Routes>
-)
+          }
+        />
+        <Route path="login/*" element={<LoginDialog />} />
+        <Route
+          path="/protected"
+          element={
+            <RequireAuth>
+              <Layout>
+                <Demo />
+              </Layout>
+            </RequireAuth>
+          }
+        />
+      </Route>
+    </Routes>
+  )
+}
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <div>

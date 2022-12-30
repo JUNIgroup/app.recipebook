@@ -1,11 +1,14 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import { useResetPasswordHandler } from '../../atoms/auth'
-import { ContinueSubmit, EmailInput, ErrorMessage, RememberPasswordLink } from './elements'
-import { useNavigateContinue } from './utilities'
+import { useNavigate } from 'react-router-dom'
+import { getAuthError } from '../../../business/auth/auth.selectors'
+import * as fromAuth from '../../../business/auth/auth.thunks'
+import { useAppDispatch, useAppSelector } from '../../store.hooks'
+import { ContinueSubmit, EmailInput, ErrorMessage, Message, RememberPasswordLink } from './elements'
 
 export const ResetPasswordDialog = () => {
-  const navigateContinue = useNavigateContinue()
-  const reset = useResetPasswordHandler({ onSuccess: navigateContinue })
+  const dispatch = useAppDispatch()
+  const authError = useAppSelector(getAuthError)
+  const navigate = useNavigate()
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -13,15 +16,16 @@ export const ResetPasswordDialog = () => {
     const formData = new FormData(event.currentTarget)
     const email = formData.get('email') as string
 
-    reset.handler(email)
+    dispatch(fromAuth.resetPassword(email)).then(() => navigate('/login/welcome'))
   }
 
   return (
     <div className="dialog">
       <form onSubmit={handleSubmit}>
         <h2>Reset password</h2>
+        <Message>We will send you an email with a link to set a new password.</Message>
         <EmailInput />
-        <ErrorMessage error={reset.result.error} />
+        <ErrorMessage error={authError} />
         <ContinueSubmit />
       </form>
       <RememberPasswordLink />

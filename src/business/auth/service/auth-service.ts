@@ -1,4 +1,4 @@
-import { ServiceError } from '../error/service-error'
+import { ServiceError } from '../../error/service-error'
 
 export type LoginOptions = {
   /** if set to `true`, persist login state (some time) and email */

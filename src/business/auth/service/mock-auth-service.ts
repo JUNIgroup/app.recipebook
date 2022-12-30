@@ -38,6 +38,7 @@ export class MockAuthService implements AuthService {
 
   observeUser(subscription: Subscription<UserData | null>) {
     this.subscriptions.push(subscription)
+    subscription(this.user)
     return () => this.subscriptions.splice(this.subscriptions.indexOf(subscription))
   }
 

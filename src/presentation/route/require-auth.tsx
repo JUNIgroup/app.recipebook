@@ -1,8 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { useLoginStatus } from '../atoms/auth'
+import { isAuthorized } from '../../business/auth/auth.selectors'
+import { useAppSelector } from '../store.hooks'
 
 export const RequireAuth = ({ children }: { children: JSX.Element }) => {
-  const isLoggedIn = useLoginStatus()
+  const isLoggedIn = useAppSelector(isAuthorized)
   const location = useLocation()
 
   if (!isLoggedIn) {
