@@ -1,6 +1,5 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import { getAuthError } from '../../../business/auth/auth.selectors'
-import * as fromAuth from '../../../business/auth/auth.thunks'
+import * as fromAuth from '../../../business/auth'
 import { useAppDispatch, useAppSelector } from '../../store.hooks'
 import {
   ContinueSubmit,
@@ -14,7 +13,7 @@ import {
 
 export const SignInDialog = () => {
   const dispatch = useAppDispatch()
-  const authError = useAppSelector(getAuthError)
+  const authError = useAppSelector(fromAuth.selectAuthError)
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

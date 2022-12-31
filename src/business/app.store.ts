@@ -1,6 +1,6 @@
 import { AnyAction, configureStore, ThunkAction } from '@reduxjs/toolkit'
-import { AuthService } from './auth/service/auth-service'
-import { authReducer } from './auth/auth.slice'
+import type { AuthService } from './auth/service/auth-service'
+import { authReducer } from './auth/store/auth.slice'
 
 export type Services = {
   storage: Storage

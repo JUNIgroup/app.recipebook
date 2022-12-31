@@ -2,9 +2,9 @@
 
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
-import type { ServiceErrorDto } from '../error/service-error'
-import { UNLOADED } from '../redux-helper'
-import type { AuthError, UserData } from './service/auth-service'
+import type { ServiceErrorDto } from '../../error/service-error'
+import { UNLOADED } from '../../redux-helper'
+import type { AuthError, UserData } from '../service/auth-service'
 
 export type AuthErrorDto = ServiceErrorDto<AuthError>
 

@@ -6,10 +6,11 @@ import { SignInDialog } from './dialogs/sign-in'
 import { SignUpDialog } from './dialogs/sign-up'
 import { WelcomeDialog } from './dialogs/welcome'
 
-import './dialogs/styles.scss'
-import { LoginDataProvider } from './dialogs/form-data'
+import * as fromAuth from '../../business/auth'
 import { useAppSelector } from '../store.hooks'
-import { isAuthorized } from '../../business/auth/auth.selectors'
+import { LoginDataProvider } from './dialogs/form-data'
+
+import './dialogs/styles.scss'
 
 export const LoginDialog = () => (
   <Routes>
@@ -24,7 +25,7 @@ export const LoginDialog = () => (
 )
 
 const Layout = () => {
-  const isLoggedIn = useAppSelector(isAuthorized)
+  const isLoggedIn = useAppSelector(fromAuth.selectAuthorized)
   const location = useLocation()
   const from = location.state?.from?.pathname ?? '/'
 

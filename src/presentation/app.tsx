@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 
 import { RootState } from '../business/app.store'
-import * as fromAuth from '../business/auth/auth.thunks'
+import * as fromAuth from '../business/auth'
 
 import { UNLOADED } from '../business/redux-helper'
 import { AppRoutes } from './app-routes'

@@ -1,13 +1,12 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import { useNavigate } from 'react-router-dom'
-import { getAuthError } from '../../../business/auth/auth.selectors'
-import * as fromAuth from '../../../business/auth/auth.thunks'
+import * as fromAuth from '../../../business/auth'
 import { useAppDispatch, useAppSelector } from '../../store.hooks'
 import { ContinueSubmit, EmailInput, ErrorMessage, Message, RememberPasswordLink } from './elements'
 
 export const ResetPasswordDialog = () => {
   const dispatch = useAppDispatch()
-  const authError = useAppSelector(getAuthError)
+  const authError = useAppSelector(fromAuth.selectAuthError)
   const navigate = useNavigate()
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {

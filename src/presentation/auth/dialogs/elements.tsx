@@ -1,7 +1,7 @@
 import { ChangeEventHandler } from 'react'
 import { Link } from 'react-router-dom'
-import { isAuthInProgress } from '../../../business/auth/auth.selectors'
-import { AuthErrorDto } from '../../../business/auth/auth.slice'
+import type { AuthErrorDto } from '../../../business/auth'
+import * as fromAuth from '../../../business/auth'
 import { useAppSelector } from '../../store.hooks'
 import { useLoginData } from './form-data'
 
@@ -81,7 +81,7 @@ export const RememberMeInput = () => {
 }
 
 export const ContinueSubmit = () => {
-  const inProgress = useAppSelector(isAuthInProgress)
+  const inProgress = useAppSelector(fromAuth.selectAuthInProgress)
   return (
     <button type="submit" disabled={inProgress}>
       Continue

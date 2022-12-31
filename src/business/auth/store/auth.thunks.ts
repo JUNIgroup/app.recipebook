@@ -1,7 +1,7 @@
-import type { AppThunk, Services } from '../app.store'
-import { RememberedEmailStorageKey } from '../constants'
-import { toServiceErrorDto } from '../error/service-error'
-import type { AuthError, LoginOptions, Unsubscribe } from './service/auth-service'
+import type { AppThunk, Services } from '../../app.store'
+import { RememberedEmailStorageKey } from '../../constants'
+import { toServiceErrorDto } from '../../error/service-error'
+import type { AuthError, LoginOptions, Unsubscribe } from '../service/auth-service'
 import { actions } from './auth.slice'
 
 export function fetchRememberedEmail(): AppThunk {

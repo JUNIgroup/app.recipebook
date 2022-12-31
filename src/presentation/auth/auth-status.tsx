@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { getAuthorizedUser } from '../../business/auth/auth.selectors'
-import * as fromAuth from '../../business/auth/auth.thunks'
+import * as fromAuth from '../../business/auth'
 import { useAppDispatch, useAppSelector } from '../store.hooks'
 
 export const AuthStatus = () => {
-  const user = useAppSelector(getAuthorizedUser)
+  const user = useAppSelector(fromAuth.selectAuthorizedUser)
   const dispatch = useAppDispatch()
 
   const navigate = useNavigate()

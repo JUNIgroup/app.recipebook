@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from 'react'
 import { createContext, useContext, useState } from 'react'
-import { getRememberedEmail } from '../../../business/auth/auth.selectors'
+import * as fromAuth from '../../../business/auth'
 import { useAppSelector } from '../../store.hooks'
 
 export type LoginData = {
@@ -14,7 +14,7 @@ export type LoginDataState = [LoginData, React.Dispatch<React.SetStateAction<Log
 const LoginDataContext = createContext<LoginDataState | undefined>(undefined)
 
 export const LoginDataProvider: React.FC<PropsWithChildren> = ({ children }) => {
-  const rememberedEmail = useAppSelector(getRememberedEmail)
+  const rememberedEmail = useAppSelector(fromAuth.selectRememberedEmail)
   const loginDataState = useState<LoginData>({
     name: '',
     email: rememberedEmail ?? '',
