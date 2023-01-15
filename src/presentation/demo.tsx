@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
 
-const App = () => {
+import './demo.scss'
+import reactLogo from '../assets/react.svg'
+
+export const Demo = () => {
   const [count, setCount] = useState(0)
 
   return (
-    <div className="App">
+    <div className="demo">
       <div>
         <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
           <img src="/vite.svg" className="logo" alt="Vite logo" />
@@ -28,5 +29,3 @@ const App = () => {
     </div>
   )
 }
-
-export default App
