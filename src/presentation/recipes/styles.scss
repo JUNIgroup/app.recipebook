@@ -1,0 +1,55 @@
+button.icon {
+  margin: auto 8px;
+  padding: 0;
+  border: 1px solid darkgray;
+  border-radius: 100px;
+  width: 20px;
+  height: 20px;
+  font-size: 16px;
+  line-height: 16px;
+  text-align: center;
+  vertical-align: middle;
+
+  &.symbol {
+    border: 0;
+  }
+}
+
+img.icon {
+  height: 1rem;
+}
+
+.columns {
+  width: 100%;
+  display: flex;
+  flex-flow: row nowrap;
+  align-content: stretch;
+  justify-content: start;
+
+  & > .column {
+    flex: 1 1 100px;
+
+    & > h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+  }
+}
+
+ul {
+  display: flex;
+  flex-flow: column;
+  align-content: stretch;
+  justify-content: flex-end;
+  align-items: stretch;
+}
+
+li {
+  marker: none;
+  display: block;
+  text-align: left;
+
+  & > button.icon:first-of-type {
+    float: right;
+  }
+}

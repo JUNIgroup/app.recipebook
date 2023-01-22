@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { Provider as StoreProvider } from 'react-redux'
 import { MemoryRouter } from 'react-router-dom'
 import { createStore } from '../business/app.store'
@@ -24,19 +24,10 @@ describe('button', () => {
         </StoreProvider>
       </MemoryRouter>,
     )
-    button = screen.getByTestId('counter')
+    button = screen.getByTestId('random')
   })
 
   it('should exist', () => {
     expect(button).toBeTruthy()
-  })
-
-  it('should have initial count 0', () => {
-    expect(button.textContent).toBe('Count is 0')
-  })
-
-  it('should have count 1 after click', () => {
-    fireEvent.click(button)
-    expect(button.textContent).toBe('Count is 1')
   })
 })
