@@ -1,6 +1,7 @@
 import { AnyAction, configureStore, ThunkAction } from '@reduxjs/toolkit'
 import type { AuthService } from './auth/service/auth-service'
 import { authReducer } from './auth/store/auth.slice'
+import { recipesReducer } from './recipes/store/recipe.slice'
 
 export type Services = {
   storage: Storage
@@ -11,6 +12,7 @@ export const createStore = (services: Services) =>
   configureStore({
     reducer: {
       auth: authReducer,
+      recipes: recipesReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
