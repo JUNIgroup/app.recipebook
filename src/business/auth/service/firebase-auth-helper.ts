@@ -2,7 +2,7 @@ import { FirebaseError } from 'firebase/app'
 import { AuthErrorCodes as FirebaseAuthErrorCodes, User } from 'firebase/auth'
 import { AuthError, AuthErrorCode, UserData } from './auth-service'
 
-type FirebaseErrorCode = typeof FirebaseAuthErrorCodes[keyof typeof FirebaseAuthErrorCodes] | 'auth/missing-email'
+type FirebaseErrorCode = (typeof FirebaseAuthErrorCodes)[keyof typeof FirebaseAuthErrorCodes] | 'auth/missing-email'
 
 const errorCodeMap: Partial<Record<FirebaseErrorCode, AuthErrorCode>> = {
   'auth/credential-already-in-use': 'auth/user-already-exist',
