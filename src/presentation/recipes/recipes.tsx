@@ -16,6 +16,7 @@ export const RecipesPage = () => {
   if (!user) return null
 
   const [randomRecipes, setRandomRecipes] = useState<null | RecipeBody[]>(null)
+  const [error, setError] = useState<string | null>()
 
   const dispatch = useAppDispatch()
   const allRecipes = useAppSelector(selectAllRecipesSortedByName)
@@ -38,7 +39,8 @@ export const RecipesPage = () => {
     console.log('Document added with ID: ', recipe.id)
   }
   const refreshRecipes = () => {
-    dispatch(fromRecipes.fetchRecipes())
+    setError(null)
+    dispatch(fromRecipes.fetchRecipes()).catch((err) => setError(err.message))
     // eslint-disable-next-line no-console
     console.log('Recipes fetched')
   }
@@ -65,6 +67,7 @@ export const RecipesPage = () => {
   return (
     <div>
       <h1>Recipes of {user.name}</h1>
+      <div className="error">{error ?? ''}</div>
       <div className="columns">
         <div className="column">
           <h2>

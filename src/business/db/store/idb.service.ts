@@ -1,7 +1,7 @@
 import { IDB_ID } from '../../../app.constants'
 import { ServiceLogger } from '../../logger/logger'
 
-const serviceName = 'FirebaseAuthService'
+const serviceName = 'IdbService'
 
 const createLogger = ServiceLogger(serviceName)
 
@@ -26,7 +26,7 @@ interface IdbDeleteCallbacks {
   onDelete: () => void
 }
 
-type StoreNames = 'recipes'
+export type StoreNames = 'recipes'
 
 export type IdbUpdateCallback<T> = (tx: IDBTransaction) => Promise<T>
 export type IdbReadCallback<T> = (tx: IDBTransaction) => Promise<T>
@@ -117,55 +117,43 @@ export class IdbService {
   }
 
   startUpdateTransaction<T>(storeNames: StoreNames | StoreNames[], callback: IdbUpdateCallback<T>): Promise<T> {
-    if (!this.db) {
-      throw new Error('DB not open')
-    }
-    const tx = this.db.transaction(storeNames, 'readwrite')
-    return new Promise<T>((resolve, reject) => {
-      let result: T
-      let abortError: unknown
-
-      tx.onerror = () => {
-        const error = tx.error ?? new DOMException('unknown error')
-        reject(error)
-      }
-      tx.onabort = () => {
-        const error = abortError ?? new Error('transaction aborted')
-        reject(error)
-      }
-      tx.oncomplete = () => {
-        resolve(result)
-      }
-      callback(tx)
-        .then((value) => {
-          result = value
-          tx.commit()
-        })
-        .catch((error) => {
-          abortError = error
-          tx.abort()
-        })
-    })
+    return this.transaction(storeNames, 'readwrite', callback)
   }
 
   startReadTransaction<T>(storeNames: StoreNames | StoreNames[], callback: IdbReadCallback<T>): Promise<T> {
+    return this.transaction(storeNames, 'readonly', callback)
+  }
+
+  private transaction<T>(
+    storeNames: StoreNames | StoreNames[],
+    mode: IDBTransactionMode,
+    callback: IdbUpdateCallback<T>,
+  ): Promise<T> {
     if (!this.db) {
       throw new Error('DB not open')
     }
-    const tx = this.db.transaction(storeNames, 'readonly')
+    const logger = createLogger('transaction', mode)
+    logger.log('store names: %o', storeNames)
+    const tx = this.db.transaction(storeNames, mode)
     return new Promise<T>((resolve, reject) => {
       let result: T
       let abortError: unknown
 
       tx.onerror = () => {
         const error = tx.error ?? new DOMException('unknown error')
+        logger.error('transaction failed: %o', error)
+        logger.end()
         reject(error)
       }
       tx.onabort = () => {
         const error = abortError ?? new Error('transaction aborted')
+        logger.error('transaction aborted: %o', error)
+        logger.end()
         reject(error)
       }
       tx.oncomplete = () => {
+        logger.log('transaction succeed: %o', result)
+        logger.end()
         resolve(result)
       }
       callback(tx)

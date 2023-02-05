@@ -19,6 +19,16 @@ img.icon {
   height: 1rem;
 }
 
+h1 {
+  margin-bottom: 0;
+}
+
+h1 + .error {
+  margin-bottom: 2rem;
+  min-height: 24px;
+  color: red;
+}
+
 .columns {
   width: 100%;
   display: flex;
