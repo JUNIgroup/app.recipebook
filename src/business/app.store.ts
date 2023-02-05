@@ -2,10 +2,12 @@ import { AnyAction, configureStore, ThunkAction } from '@reduxjs/toolkit'
 import type { AuthService } from './auth/service/auth-service'
 import { authReducer } from './auth/store/auth.slice'
 import { recipesReducer } from './recipes/store/recipe.slice'
+import { IdbService } from './db/store/idb.service'
 
 export type Services = {
   storage: Storage
   authService: AuthService
+  dbService: IdbService
 }
 
 export const createStore = (services: Services) =>

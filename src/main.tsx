@@ -8,15 +8,18 @@ import { FirebaseAuthService } from './business/auth/service/firebase-auth-servi
 import { FirebaseService } from './infrastructure/firebase/firebase-service'
 import { App } from './presentation/app'
 
+import { IdbService } from './business/db/store/idb.service'
 import './index.scss'
 
+const storage = localStorage
 const firebaseService = new FirebaseService()
 const authService = new FirebaseAuthService(firebaseService)
-const storage = localStorage
+const dbService = new IdbService(indexedDB)
 
 const store = createStore({
   storage,
   authService,
+  dbService,
 })
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
