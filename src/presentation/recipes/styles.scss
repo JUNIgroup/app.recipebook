@@ -49,6 +49,15 @@ li {
   display: block;
   text-align: left;
 
+  & > .subtitle {
+    font-size: 0.8rem;
+    font-weight: normal;
+
+    &:not(:empty)::before {
+      content: ' - ';
+    }
+  }
+
   & > button.icon:first-of-type {
     float: right;
   }

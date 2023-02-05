@@ -26,11 +26,24 @@ interface IdbDeleteCallbacks {
   onDelete: () => void
 }
 
+type StoreNames = 'recipes'
+
+export type IdbUpdateCallback<T> = (tx: IDBTransaction) => Promise<T>
+export type IdbReadCallback<T> = (tx: IDBTransaction) => Promise<T>
+
 export class IdbService {
   private db: IDBDatabase | null = null
 
   constructor(private idb: IDBFactory) {}
 
+  /**
+   * Open the DB.
+   * Call the callbacks when the DB is opened, blocked or an error occurs.
+   *
+   * Handle the upgrade of the DB if needed.
+   *
+   * @param callbacks callbacks to call when the DB is opened, blocked or an error occurs.
+   */
   openDB(callbacks: IdbOpenCallbacks) {
     const logger = createLogger('openDB')
     const request: IDBOpenDBRequest = this.idb.open(IDB_ID, dbUpgrades.length)
@@ -68,6 +81,12 @@ export class IdbService {
     }
   }
 
+  /**
+   * Close the DB and delete it.
+   * Call the callbacks when the DB is deleted, blocked or an error occurs.
+   *
+   * @param callbacks callbacks to call when the DB is deleted, blocked or an error occurs.
+   */
   closeAndDeleteDB(callbacks: IdbDeleteCallbacks) {
     const logger = createLogger('closeAndDeleteDB')
     if (this.db) {
@@ -95,5 +114,69 @@ export class IdbService {
       callbacks.onDelete()
       logger.end()
     }
+  }
+
+  startUpdateTransaction<T>(storeNames: StoreNames | StoreNames[], callback: IdbUpdateCallback<T>): Promise<T> {
+    if (!this.db) {
+      throw new Error('DB not open')
+    }
+    const tx = this.db.transaction(storeNames, 'readwrite')
+    return new Promise<T>((resolve, reject) => {
+      let result: T
+      let abortError: unknown
+
+      tx.onerror = () => {
+        const error = tx.error ?? new DOMException('unknown error')
+        reject(error)
+      }
+      tx.onabort = () => {
+        const error = abortError ?? new Error('transaction aborted')
+        reject(error)
+      }
+      tx.oncomplete = () => {
+        resolve(result)
+      }
+      callback(tx)
+        .then((value) => {
+          result = value
+          tx.commit()
+        })
+        .catch((error) => {
+          abortError = error
+          tx.abort()
+        })
+    })
+  }
+
+  startReadTransaction<T>(storeNames: StoreNames | StoreNames[], callback: IdbReadCallback<T>): Promise<T> {
+    if (!this.db) {
+      throw new Error('DB not open')
+    }
+    const tx = this.db.transaction(storeNames, 'readonly')
+    return new Promise<T>((resolve, reject) => {
+      let result: T
+      let abortError: unknown
+
+      tx.onerror = () => {
+        const error = tx.error ?? new DOMException('unknown error')
+        reject(error)
+      }
+      tx.onabort = () => {
+        const error = abortError ?? new Error('transaction aborted')
+        reject(error)
+      }
+      tx.oncomplete = () => {
+        resolve(result)
+      }
+      callback(tx)
+        .then((value) => {
+          result = value
+          tx.commit()
+        })
+        .catch((error) => {
+          abortError = error
+          tx.abort()
+        })
+    })
   }
 }

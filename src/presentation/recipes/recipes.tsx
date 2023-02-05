@@ -1,11 +1,13 @@
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 import { useEffect, useState } from 'react'
 import { ulid } from 'ulid'
 import * as fromAuth from '../../business/auth'
+import * as fromRecipes from '../../business/recipes'
 import { Recipe } from '../../business/recipes/model/recipe.model'
+import { selectAllRecipesSortedByName } from '../../business/recipes/store/recipe.selectors'
 import { useAppDispatch, useAppSelector } from '../store.hooks'
 import { getRandomRecipes, RecipeBody } from './random'
-import { selectAllRecipesSortedByName } from '../../business/recipes/store/recipe.selectors'
-import { actions as recipesActions } from '../../business/recipes/store/recipe.slice'
 
 import './styles.scss'
 
@@ -31,17 +33,33 @@ export const RecipesPage = () => {
       id: ulid(),
       creator: user.id,
     }
-    dispatch(recipesActions.addRecipe({ recipe }))
+    await dispatch(fromRecipes.addRecipe(recipe))
     // eslint-disable-next-line no-console
     console.log('Document added with ID: ', recipe.id)
   }
   const refreshRecipes = () => {
-    // not supported because we use sync store
+    dispatch(fromRecipes.fetchRecipes())
+    // eslint-disable-next-line no-console
+    console.log('Recipes fetched')
   }
   const removeRecipe = async (id: string) => {
-    dispatch(recipesActions.removeRecipe({ id }))
+    dispatch(fromRecipes.removeRecipe(id))
     // eslint-disable-next-line no-console
     console.log('Document deleted with ID: ', id)
+  }
+
+  const updateRecipe = (recipe: Recipe) => {
+    const inc = (string: string) => {
+      const match = string.match(/(.*) 👍(\d+)$/)
+      return match ? `${match[1]} 👍${parseInt(match[2], 10) + 1}` : `${string} 👍1`
+    }
+    const update = {
+      ...recipe,
+      subtitle: inc(recipe.subtitle ?? ''),
+    }
+    dispatch(fromRecipes.updateRecipe(update))
+    // eslint-disable-next-line no-console
+    console.log('Document updated with ID: ', recipe.id)
   }
 
   return (
@@ -73,6 +91,7 @@ export const RecipesPage = () => {
                       {recipe.title}
                     </a>
                   )}
+                  <span className="subtitle">{recipe.subtitle}</span>
                   <button type="button" className="icon" onClick={() => addRandomRecipe(recipe)}>
                     +
                   </button>
@@ -98,6 +117,9 @@ export const RecipesPage = () => {
                 ) : (
                   <span>{recipe.title}</span>
                 )}
+                <span className="subtitle" onClick={() => updateRecipe(recipe)}>
+                  {recipe.subtitle}
+                </span>
                 <button type="button" className="icon" onClick={() => removeRecipe(recipe.id)}>
                   -
                 </button>
