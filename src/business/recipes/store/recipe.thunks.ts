@@ -26,6 +26,17 @@ export function updateRecipe(recipe: Recipe): AppThunk<Promise<void>> {
   }
 }
 
+export function refreshRecipe(id: string): AppThunk<Promise<void>> {
+  return async (dispatch) => {
+    const recipe = await dispatch(fromDB.readFromDB(['recipes'], (tx) => tx.get('recipes', id)))
+    if (isRecipe(recipe)) {
+      dispatch(actions.updateRecipe({ recipe }))
+    } else {
+      dispatch(actions.removeRecipe({ id }))
+    }
+  }
+}
+
 export function removeRecipe(id: string): AppThunk<Promise<void>> {
   return async (dispatch) => {
     await dispatch(

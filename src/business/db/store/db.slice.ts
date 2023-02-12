@@ -3,36 +3,16 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
 import { UNLOADED } from '../../helper/redux/redux-helper'
-
-export enum DBOpenState {
-  /** Upgrade of the DB is blocked. Please refresh all windows with this app */
-  UPGRADE_BLOCKED = 'UPGRADE_BLOCKED',
-
-  /** Delete of the DB is blocked. Please refresh all windows with this app */
-  DELETE_BLOCKED = 'DELETE_BLOCKED',
-
-  /** DB could not be open and is not available */
-  OPEN_FAILED = 'OPEN_FAILED',
-
-  /** DB is open and available */
-  OPEN = 'OPEN',
-
-  /** DB could not be open and is not available */
-  DELETE_FAILED = 'OPEN_FAILED',
-
-  /** DB is closed  */
-  CLOSED = 'CLOSED',
-
-  /** DB is closed and deleted */
-  DELETED = 'DELETED',
-}
+import { DBObjectMetaData, DBOpenState, DBObjectState } from './db.types'
 
 export type DatabaseState = {
   open?: DBOpenState
+  objectMetaData: Record<string, DBObjectMetaData>
 }
 
 const initialState: DatabaseState = {
   open: UNLOADED,
+  objectMetaData: {},
 }
 
 const dbSlice = createSlice({
@@ -43,6 +23,24 @@ const dbSlice = createSlice({
     setOpenState(state, action: PayloadAction<{ open: DBOpenState }>) {
       const { open } = action.payload
       state.open = open
+    },
+
+    /** Update the meta data for the given objects. */
+    updateObjectMetaData(state, action: PayloadAction<{ metaData: DBObjectMetaData[] }>) {
+      const { metaData } = action.payload
+      metaData.forEach((md) => {
+        state.objectMetaData[md.id] = md
+      })
+    },
+
+    /** Update the meta data for the given objects to be outdated. */
+    outdateObjects(state, action: PayloadAction<{ objectIds: string[] }>) {
+      const { objectIds } = action.payload
+      objectIds.forEach((id) => {
+        if (id in state.objectMetaData) {
+          state.objectMetaData[id].state = DBObjectState.OUTDATED
+        }
+      })
     },
   },
 })
