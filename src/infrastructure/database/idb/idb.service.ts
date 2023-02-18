@@ -23,7 +23,12 @@ export type IdbUpgrades = (args: { db: IDBDatabase; oldVersion: number; newVersi
 export class IdbService<SupportedStoreName extends string> implements RdbService<SupportedStoreName> {
   private db: IDBDatabase | null = null
 
-  constructor(private idb: IDBFactory, private dbVersion: number, private dbUpgrades: IdbUpgrades) {}
+  constructor(
+    private idb: IDBFactory,
+    private dbId: string,
+    private dbVersion: number,
+    private dbUpgrades: IdbUpgrades,
+  ) {}
 
   /**
    * Open the DB.
@@ -35,7 +40,7 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
    */
   openDB(callbacks: RdbOpenCallbacks) {
     const logger = createLogger('openDB')
-    const request: IDBOpenDBRequest = this.idb.open(IDB_ID, this.dbVersion)
+    const request: IDBOpenDBRequest = this.idb.open(this.dbId, this.dbVersion)
 
     request.onupgradeneeded = ({ oldVersion, newVersion }: IDBVersionChangeEvent) => {
       if (newVersion && oldVersion < newVersion) {
