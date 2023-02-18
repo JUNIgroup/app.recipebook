@@ -7,7 +7,7 @@ import {
   ReadCallbacks,
   UpdateCallbacks,
 } from '../rdb.service'
-import { ServiceLogger } from '../../logger/logger'
+import { Logger, ServiceLogger } from '../../logger/logger'
 import { IdbReadTransaction, IdbUpdateTransaction } from './idb.transactions'
 
 const serviceName = 'IdbService'
@@ -16,22 +16,14 @@ const createLogger = ServiceLogger(serviceName)
 
 const DELETE_VERSION = -1
 
-const dbUpgrades: ((db: IDBDatabase) => void)[] = [
-  // version 0 ==> 1
-  (db) => {
-    db.createObjectStore('recipes', { keyPath: 'data.id' })
-  },
-]
+type IdbTransactionCallback<T> = (tx: IDBTransaction) => Promise<T>
 
-export type SupportedStoreName = 'recipes'
+export type IdbUpgrades = (args: { db: IDBDatabase; oldVersion: number; newVersion: number; logger: Logger }) => void
 
-export type IdbUpdateCallback<T> = (tx: IDBTransaction) => Promise<T>
-export type IdbReadCallback<T> = (tx: IDBTransaction) => Promise<T>
-
-export class IdbService implements RdbService<SupportedStoreName> {
+export class IdbService<SupportedStoreName extends string> implements RdbService<SupportedStoreName> {
   private db: IDBDatabase | null = null
 
-  constructor(private idb: IDBFactory) {}
+  constructor(private idb: IDBFactory, private dbVersion: number, private dbUpgrades: IdbUpgrades) {}
 
   /**
    * Open the DB.
@@ -43,15 +35,13 @@ export class IdbService implements RdbService<SupportedStoreName> {
    */
   openDB(callbacks: RdbOpenCallbacks) {
     const logger = createLogger('openDB')
-    const request: IDBOpenDBRequest = this.idb.open(IDB_ID, dbUpgrades.length)
+    const request: IDBOpenDBRequest = this.idb.open(IDB_ID, this.dbVersion)
 
     request.onupgradeneeded = ({ oldVersion, newVersion }: IDBVersionChangeEvent) => {
       if (newVersion && oldVersion < newVersion) {
         logger.log('upgrade from version %d to %d', oldVersion, newVersion)
         const db = request.result
-        for (let version = oldVersion; version < newVersion; version += 1) {
-          dbUpgrades[version](db)
-        }
+        this.dbUpgrades({ db, oldVersion, newVersion, logger })
       }
     }
 
@@ -139,7 +129,7 @@ export class IdbService implements RdbService<SupportedStoreName> {
   private transaction<T>(
     storeNames: SupportedStoreName | SupportedStoreName[],
     mode: IDBTransactionMode,
-    callback: IdbUpdateCallback<T>,
+    callback: IdbTransactionCallback<T>,
   ): Promise<T> {
     if (!this.db) {
       throw new Error('DB not open')
