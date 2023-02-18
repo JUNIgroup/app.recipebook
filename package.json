@@ -17,6 +17,7 @@
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
+    "build:only": "vite build",
     "preview": "vite preview",
     "test": "vitest --run --coverage",
     "test:watch": "vitest --coverage",
@@ -48,6 +49,8 @@
     "react-dom": "^18.2.0",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.8.0",
+    "rollup-plugin-analyzer": "^4.0.0",
+    "rollup-plugin-visualizer": "^5.9.0",
     "ulid": "^2.3.0"
   },
   "devDependencies": {
