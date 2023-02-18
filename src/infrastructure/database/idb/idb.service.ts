@@ -1,13 +1,7 @@
+import { Observable, Subject } from 'rxjs'
 import { IDB_ID } from '../../../app.constants'
-import {
-  MetaRecord,
-  RdbDeleteCallbacks,
-  RdbOpenCallbacks,
-  RdbService,
-  ReadCallbacks,
-  UpdateCallbacks,
-} from '../rdb.service'
 import { Logger, ServiceLogger } from '../../logger/logger'
+import { MetaRecord, RdbService, ReadCallbacks, UpdateCallbacks } from '../rdb.service'
 import { IdbReadTransaction, IdbUpdateTransaction } from './idb.transactions'
 
 const serviceName = 'IdbService'
@@ -32,13 +26,14 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
 
   /**
    * Open the DB.
-   * Call the callbacks when the DB is opened, blocked or an error occurs.
+   *
+   * Emit 'blocked' if the DB is blocked by another tab.
+   * Emit 'open' if the DB is opened.
    *
    * Handle the upgrade of the DB if needed.
-   *
-   * @param callbacks callbacks to call when the DB is opened, blocked or an error occurs.
    */
-  openDB(callbacks: RdbOpenCallbacks) {
+  openDB(): Observable<'blocked' | 'open'> {
+    const state$ = new Subject<'blocked' | 'open'>()
     const logger = createLogger('openDB')
     const request: IDBOpenDBRequest = this.idb.open(this.dbId, this.dbVersion)
 
@@ -52,13 +47,13 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
 
     request.onblocked = (event: IDBVersionChangeEvent) => {
       logger.log('upgrade blocked from version %d to %d', event.oldVersion, event.newVersion ?? DELETE_VERSION)
-      callbacks.onBlocked()
+      state$.next('blocked')
     }
 
     request.onerror = () => {
       const error = request.error ?? new DOMException('unknown error')
       logger.error('open DB failed: %o', error)
-      callbacks.onError(error)
+      state$.error(error)
       logger.end()
     }
 
@@ -68,18 +63,22 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
         localStorage.setItem('dbClosed', Date.now().toString())
       }
       logger.log('open DB succeed')
-      callbacks.onOpen()
+      state$.next('open')
+      state$.complete()
       logger.end()
     }
+
+    return state$
   }
 
   /**
    * Close the DB and delete it.
-   * Call the callbacks when the DB is deleted, blocked or an error occurs.
    *
-   * @param callbacks callbacks to call when the DB is deleted, blocked or an error occurs.
+   * Emit 'blocked' if the delete the DB is blocked by another tab.
+   * Emit 'deleted' if the DB is closed and deleted.
    */
-  closeAndDeleteDB(callbacks: RdbDeleteCallbacks) {
+  closeAndDeleteDB(): Observable<'blocked' | 'deleted'> {
+    const state$ = new Subject<'blocked' | 'deleted'>()
     const logger = createLogger('closeAndDeleteDB')
     if (this.db) {
       logger.log('close DB')
@@ -90,22 +89,24 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
     const request: IDBOpenDBRequest = this.idb.deleteDatabase(IDB_ID)
     request.onblocked = () => {
       logger.log('upgrade blocked to delete DB')
-      callbacks.onBlocked()
+      state$.next('blocked')
     }
 
     request.onerror = () => {
       const error = request.error ?? new DOMException('unknown error')
       logger.error('delete DB failed: %o', error)
-      callbacks.onError(error)
+      state$.error(error)
       logger.end()
     }
 
     request.onsuccess = () => {
       this.db = request.result
       logger.log('delete DB succeed')
-      callbacks.onDelete()
+      state$.next('deleted')
+      state$.complete()
       logger.end()
     }
+    return state$
   }
 
   executeReadTransaction<T, StoreName extends SupportedStoreName>(

@@ -1,10 +1,9 @@
 import { IDBFactory } from 'fake-indexeddb'
-import { subject } from '../helpers/subject'
+import { lastValueFrom, tap } from 'rxjs'
+import { collectFrom } from '../helpers/collect-from'
 import { IdbService } from './idb.service'
 
 // more generic tests in ../rdb.service.spec.ts
-
-const onBlocked = vi.fn()
 
 async function openDB(indexedDB: IDBFactory, dbId: string, dbVersion: number) {
   const db = await new Promise<IDBDatabase>((resolved) => {
@@ -20,15 +19,7 @@ describe(IdbService.name, () => {
       const indexedDB = new IDBFactory()
       const idbService = new IdbService(indexedDB, 'test.db', 1, () => {})
 
-      const opened = new Promise<void>((resolve, reject) => {
-        idbService.openDB({
-          onBlocked: () => {},
-          onError: reject,
-          onOpen: resolve,
-        })
-      })
-
-      await opened
+      await lastValueFrom(idbService.openDB())
 
       const databases = await indexedDB.databases()
       expect(databases).toEqual([{ name: 'test.db', version: 1 }])
@@ -41,11 +32,7 @@ describe(IdbService.name, () => {
       const indexedDB = new IDBFactory()
       const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades)
 
-      const opened = new Promise<void>((onOpen, onError) => {
-        idbService.openDB({ onBlocked, onOpen, onError })
-      })
-
-      await opened
+      await lastValueFrom(idbService.openDB())
 
       expect(upgrades).toBeCalledTimes(1)
       expect(upgrades.mock.calls[0][0]).toMatchObject({
@@ -62,11 +49,7 @@ describe(IdbService.name, () => {
       await openDB(indexedDB, 'test.db', version).then((db) => db.close())
       const idbService = new IdbService(indexedDB, 'test.db', version, upgrades)
 
-      const opened = new Promise<void>((onOpen, onError) => {
-        idbService.openDB({ onBlocked, onOpen, onError })
-      })
-
-      await opened
+      await lastValueFrom(idbService.openDB())
 
       expect(upgrades).not.toBeCalled()
     })
@@ -79,34 +62,37 @@ describe(IdbService.name, () => {
       await openDB(indexedDB, 'test.db', oldVersion).then((db) => db.close())
       const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades)
 
-      const opened = new Promise<void>((onOpen, onError) => {
-        idbService.openDB({ onBlocked, onOpen, onError })
-      })
-
-      await opened
+      await lastValueFrom(idbService.openDB())
 
       expect(upgrades.mock.calls[0][0]).toMatchObject({ oldVersion, newVersion })
     })
 
     it('should block upgrade until other DB with lower version was closed', async () => {
       const [oldVersion, newVersion] = [2, 8]
-      const blocked = subject<boolean>()
       const upgrades = vi.fn()
 
       const indexedDB = new IDBFactory()
       const otherDB = await openDB(indexedDB, 'test.db', oldVersion)
       const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades)
 
-      const opened = new Promise<void>((onOpen, onError) => {
-        idbService.openDB({ onBlocked: () => blocked.resolve(true), onOpen, onError })
-      })
+      const state$ = idbService.openDB().pipe(
+        tap((state) => {
+          switch (state) {
+            case 'blocked':
+              expect(upgrades).not.toBeCalled()
+              otherDB.close()
+              break
+            case 'open':
+              expect(upgrades).toBeCalledTimes(1)
+              break
+            default:
+              break
+          }
+        }),
+      )
 
-      await blocked
-      expect(upgrades).not.toBeCalled()
-      otherDB.close()
-
-      await opened
-      expect(upgrades).toBeCalledTimes(1)
+      const states = await collectFrom(state$)
+      expect(states).toEqual(['blocked', 'open'])
     })
 
     it('should not call upgrade function for existing DB with lower version', async () => {
@@ -117,9 +103,7 @@ describe(IdbService.name, () => {
       await openDB(indexedDB, 'test.db', oldVersion).then((db) => db.close())
       const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades)
 
-      const opened = new Promise<void>((onOpen, onError) => {
-        idbService.openDB({ onBlocked, onOpen, onError })
-      })
+      const opened = lastValueFrom(idbService.openDB())
 
       expect(opened).rejects.toThrowError()
     })
@@ -133,11 +117,7 @@ describe(IdbService.name, () => {
         db.createObjectStore('bar')
       })
 
-      const opened = new Promise<void>((onOpen, onError) => {
-        idbService.openDB({ onBlocked, onOpen, onError })
-      })
-
-      await opened
+      await lastValueFrom(idbService.openDB())
 
       const db = await openDB(indexedDB, 'test.db', version)
       const tx = db.transaction(['foo', 'bar'], 'readonly')
