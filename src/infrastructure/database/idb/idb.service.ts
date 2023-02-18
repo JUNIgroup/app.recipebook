@@ -1,5 +1,14 @@
 import { IDB_ID } from '../../../app.constants'
+import {
+  MetaRecord,
+  RdbDeleteCallbacks,
+  RdbOpenCallbacks,
+  RdbService,
+  ReadCallbacks,
+  UpdateCallbacks,
+} from '../rdb.service'
 import { ServiceLogger } from '../../logger/logger'
+import { IdbReadTransaction, IdbUpdateTransaction } from './idb.transactions'
 
 const serviceName = 'IdbService'
 
@@ -14,24 +23,12 @@ const dbUpgrades: ((db: IDBDatabase) => void)[] = [
   },
 ]
 
-interface IdbOpenCallbacks {
-  onBlocked: (event: IDBVersionChangeEvent) => void
-  onError: (error: DOMException) => void
-  onOpen: () => void
-}
-
-interface IdbDeleteCallbacks {
-  onBlocked: (event: IDBVersionChangeEvent) => void
-  onError: (error: DOMException) => void
-  onDelete: () => void
-}
-
-export type StoreNames = 'recipes'
+export type SupportedStoreName = 'recipes'
 
 export type IdbUpdateCallback<T> = (tx: IDBTransaction) => Promise<T>
 export type IdbReadCallback<T> = (tx: IDBTransaction) => Promise<T>
 
-export class IdbService {
+export class IdbService implements RdbService<SupportedStoreName> {
   private db: IDBDatabase | null = null
 
   constructor(private idb: IDBFactory) {}
@@ -44,7 +41,7 @@ export class IdbService {
    *
    * @param callbacks callbacks to call when the DB is opened, blocked or an error occurs.
    */
-  openDB(callbacks: IdbOpenCallbacks) {
+  openDB(callbacks: RdbOpenCallbacks) {
     const logger = createLogger('openDB')
     const request: IDBOpenDBRequest = this.idb.open(IDB_ID, dbUpgrades.length)
 
@@ -60,7 +57,7 @@ export class IdbService {
 
     request.onblocked = (event: IDBVersionChangeEvent) => {
       logger.log('upgrade blocked from version %d to %d', event.oldVersion, event.newVersion ?? DELETE_VERSION)
-      callbacks.onBlocked(event)
+      callbacks.onBlocked()
     }
 
     request.onerror = () => {
@@ -87,7 +84,7 @@ export class IdbService {
    *
    * @param callbacks callbacks to call when the DB is deleted, blocked or an error occurs.
    */
-  closeAndDeleteDB(callbacks: IdbDeleteCallbacks) {
+  closeAndDeleteDB(callbacks: RdbDeleteCallbacks) {
     const logger = createLogger('closeAndDeleteDB')
     if (this.db) {
       logger.log('close DB')
@@ -96,9 +93,9 @@ export class IdbService {
     }
 
     const request: IDBOpenDBRequest = this.idb.deleteDatabase(IDB_ID)
-    request.onblocked = (event: IDBVersionChangeEvent) => {
+    request.onblocked = () => {
       logger.log('upgrade blocked to delete DB')
-      callbacks.onBlocked(event)
+      callbacks.onBlocked()
     }
 
     request.onerror = () => {
@@ -116,16 +113,31 @@ export class IdbService {
     }
   }
 
-  startUpdateTransaction<T>(storeNames: StoreNames | StoreNames[], callback: IdbUpdateCallback<T>): Promise<T> {
-    return this.transaction(storeNames, 'readwrite', callback)
+  executeReadTransaction<T, StoreName extends SupportedStoreName>(
+    storeNames: StoreName | StoreName[],
+    callbacks: ReadCallbacks<T, StoreName>,
+  ): Promise<[MetaRecord, T]> {
+    return this.transaction(storeNames, 'readonly', async (tx) => {
+      const rtx = new IdbReadTransaction<StoreName>(tx)
+      const result = await callbacks.onTransaction(rtx)
+      return [rtx.metaRecord, result]
+    })
   }
 
-  startReadTransaction<T>(storeNames: StoreNames | StoreNames[], callback: IdbReadCallback<T>): Promise<T> {
-    return this.transaction(storeNames, 'readonly', callback)
+  executeUpdateTransaction<StoreName extends SupportedStoreName>(
+    storeNames: StoreName | StoreName[],
+    callbacks: UpdateCallbacks<StoreName>,
+  ): Promise<[MetaRecord]> {
+    return this.transaction(storeNames, 'readwrite', async (tx) => {
+      const utx = new IdbUpdateTransaction<StoreName>(tx)
+      await callbacks.onTransaction(utx)
+      callbacks.validatePreviousMeta(utx.beforeMetaRecord)
+      return [utx.afterMetaRecord]
+    })
   }
 
   private transaction<T>(
-    storeNames: StoreNames | StoreNames[],
+    storeNames: SupportedStoreName | SupportedStoreName[],
     mode: IDBTransactionMode,
     callback: IdbUpdateCallback<T>,
   ): Promise<T> {

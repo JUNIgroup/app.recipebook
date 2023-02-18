@@ -11,15 +11,6 @@ export class DBError extends Error {
   }
 }
 
-/**
- * Thrown when a transaction is aborted.
- */
-export class AbortError extends DBError {
-  constructor(message = 'Transaction aborted') {
-    super(message)
-  }
-}
-
 export class OutdatedError extends DBError {
   constructor(
     public readonly outdatedObjects: Record<string, OutdatedCause>,

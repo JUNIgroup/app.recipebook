@@ -8,7 +8,7 @@ import { FirebaseAuthService } from './business/auth/service/firebase-auth-servi
 import { FirebaseService } from './infrastructure/firebase/firebase-service'
 import { App } from './presentation/app'
 
-import { IdbService } from './business/db/store/idb.service'
+import { IdbService } from './infrastructure/database/idb/idb.service'
 import './index.scss'
 
 const storage = localStorage

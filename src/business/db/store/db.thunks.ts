@@ -1,22 +1,12 @@
 /* eslint-disable max-classes-per-file */
+import { ReadTransaction, UpdateTransaction } from '../../../infrastructure/database/rdb.service'
 import { AppThunk, Services } from '../../app.store'
+import { convertMetaRecordToMetaData, validateUpdateMetaRecord } from './db.metadata'
 import { actions } from './db.slice'
 import { DBOpenState } from './db.types'
-import { StoreNames } from './idb.service'
 import { OutdatedError } from './db.errors'
-import {
-  convertReadMetaRecordToMetaData,
-  convertUpdateMetaRecordToMetaData,
-  IdbReadTransaction,
-  IdbUpdateTransaction,
-  ReadMetaRecord,
-  ReadTransaction,
-  UpdateMetaRecord,
-  UpdateTransaction,
-  validateUpdateMetaRecord,
-} from './idb.transactions'
 
-export type { StoreNames } from './idb.service'
+type SupportedStoreName = 'recipes'
 
 export function openDB(): AppThunk<void> {
   return async (dispatch, _getState, services: Services) => {
@@ -40,7 +30,7 @@ export function closeAndDeleteDB(): AppThunk<void> {
     const { dbService } = services
     dbService.closeAndDeleteDB({
       onBlocked: () => {
-        dispatch(actions.setOpenState({ open: DBOpenState.UPGRADE_BLOCKED }))
+        dispatch(actions.setOpenState({ open: DBOpenState.DELETE_BLOCKED }))
       },
       onError: () => {
         dispatch(actions.setOpenState({ open: DBOpenState.OPEN_FAILED }))
@@ -52,41 +42,39 @@ export function closeAndDeleteDB(): AppThunk<void> {
   }
 }
 
-export function readFromDB<T>(
-  storeNames: StoreNames | StoreNames[],
-  callback: (tx: ReadTransaction) => Promise<T>,
+export function readFromDB<T, StoreName extends SupportedStoreName>(
+  storeNames: StoreName | StoreName[],
+  onTransaction: (tx: ReadTransaction<StoreName>) => Promise<T>,
 ): AppThunk<Promise<T>> {
   return async (dispatch, _getState, services: Services) => {
     const { dbService } = services
-    const metaRecord: ReadMetaRecord = {}
-    const result = await dbService.startReadTransaction(storeNames, (tx) => {
-      const rtx: ReadTransaction = new IdbReadTransaction(tx, metaRecord)
-      return callback(rtx)
+    const [metaRecord, result] = await dbService.executeReadTransaction(storeNames, {
+      onTransaction,
     })
-    const metaData = convertReadMetaRecordToMetaData(metaRecord)
+    const metaData = convertMetaRecordToMetaData(metaRecord)
     dispatch(actions.updateObjectMetaData({ metaData }))
     return result
   }
 }
 
-export function updateInDB(
-  storeNames: StoreNames | StoreNames[],
-  callback: (tx: UpdateTransaction) => Promise<void>,
+export function updateInDB<StoreName extends SupportedStoreName>(
+  storeNames: StoreName | StoreName[],
+  onTransaction: (tx: UpdateTransaction<StoreName>) => Promise<void>,
 ): AppThunk<Promise<void>> {
   return async (dispatch, getState, services: Services) => {
     const initialMetaData = getState().db.objectMetaData
     const { dbService } = services
-    const metaRecord: UpdateMetaRecord = {}
-    await dbService.startUpdateTransaction(storeNames, async (tx) => {
-      const utx: IdbUpdateTransaction = new IdbUpdateTransaction(tx, metaRecord)
-      await callback(utx)
-      const outdated = validateUpdateMetaRecord(metaRecord, initialMetaData)
-      if (outdated) {
-        dispatch(actions.outdateObjects({ objectIds: Object.keys(outdated) }))
-        throw new OutdatedError(outdated)
-      }
+    const [metaRecord] = await dbService.executeUpdateTransaction(storeNames, {
+      onTransaction,
+      validatePreviousMeta: (beforeMetaRecord) => {
+        const outdated = validateUpdateMetaRecord(beforeMetaRecord, initialMetaData)
+        if (outdated) {
+          dispatch(actions.outdateObjects({ objectIds: Object.keys(outdated) }))
+          throw new OutdatedError(outdated)
+        }
+      },
     })
-    const metaData = convertUpdateMetaRecordToMetaData(metaRecord)
+    const metaData = convertMetaRecordToMetaData(metaRecord)
     dispatch(actions.updateObjectMetaData({ metaData }))
   }
 }
