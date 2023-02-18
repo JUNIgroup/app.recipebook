@@ -1,3 +1,4 @@
+import Ajv from 'ajv'
 import {
   Change,
   ChangeDesc,
@@ -8,6 +9,8 @@ import {
 } from '../../helper/validation/validation.test-helper'
 import { isRecipe } from './recipe.schema'
 import { fullRecipeV1 } from './recipes.samples'
+
+import recipeSchemaRaw from './recipe.json-schema?raw'
 
 const fullRecipe = fullRecipeV1
 
@@ -32,6 +35,14 @@ const forbiddenChanges: Change[] = [
   { path: 'origin.uri', values: [...NON_STRING_SAMPLES] },
   { path: 'origin.description', values: [...NON_STRING_SAMPLES] },
 ]
+
+describe('schema', async () => {
+  it('should be valid', () => {
+    const ajv = new Ajv({ allErrors: true })
+    const validate = ajv.compile(JSON.parse(recipeSchemaRaw))
+    expect(validate).toEqual(expect.any(Function))
+  })
+})
 
 describe('isRecipe', () => {
   it('should accept full recipe', () => {

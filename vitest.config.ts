@@ -1,8 +1,10 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
+import ajv from './vite.plugin.ajv'
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), ajv()],
   test: {
     globals: true,
     reporters: ['verbose'],
