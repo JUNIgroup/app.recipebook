@@ -8,6 +8,7 @@
 # volatile build artefacts
 /dist
 /coverage
+/analyze
 .eslintcache
 
 # volatile test artefacts

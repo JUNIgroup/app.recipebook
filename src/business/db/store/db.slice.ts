@@ -20,9 +20,9 @@ const dbSlice = createSlice({
   initialState,
   reducers: {
     /** set/reset the value for the email to remember for next login */
-    setOpenState(state, action: PayloadAction<{ open: DBOpenState }>) {
-      const { open } = action.payload
-      state.open = open
+    setOpenState(state, action: PayloadAction<{ state: DBOpenState }>) {
+      const { state: openState } = action.payload
+      state.open = openState
     },
 
     /** Update the meta data for the given objects. */

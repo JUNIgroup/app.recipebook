@@ -1,8 +1,9 @@
 import { IDBFactory } from 'fake-indexeddb'
+import { lastValueFrom } from 'rxjs'
 import { IdbService } from './idb/idb.service'
+import { wrapRequest } from './idb/idb.transactions'
 import { MockRdbService } from './mock-rdb/mock-rdb.service'
 import { RdbData, RdbMeta, RdbService } from './rdb.service'
-import { wrapRequest } from './idb/idb.transactions'
 
 type TestStoreName = 'foo' | 'bar'
 
@@ -98,27 +99,15 @@ describe.each([
 
   describe('.openDB', () => {
     it('should open a database', async () => {
-      const opened = new Promise<string>((onOpen, reject) => {
-        context.rdbService.openDB({
-          onBlocked: () => {},
-          onError: (error) => reject(error),
-          onOpen: () => onOpen('opened'),
-        })
-      })
+      const state = await lastValueFrom(context.rdbService.openDB())
 
-      expect(opened).resolves.toEqual('opened')
+      expect(state).toEqual('open')
     })
   })
 
   describe('DB is open', () => {
     beforeEach(async () => {
-      await new Promise<string>((onOpen, reject) => {
-        context.rdbService.openDB({
-          onBlocked: () => {},
-          onError: (error) => reject(error),
-          onOpen: () => onOpen('opened'),
-        })
-      })
+      await lastValueFrom(context.rdbService.openDB())
       await context.setDoc('foo', { id: 'foo-1' }, { changeIndex: 2 })
       await context.setDoc('foo', { id: 'foo-2' }, { changeIndex: 8 })
       await context.setDoc('bar', { id: 'bar-1' }, { changeIndex: 1 })

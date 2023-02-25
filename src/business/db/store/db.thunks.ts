@@ -1,44 +1,37 @@
 /* eslint-disable max-classes-per-file */
+import { catchError, map, of } from 'rxjs'
 import { ReadTransaction, UpdateTransaction } from '../../../infrastructure/database/rdb.service'
 import { AppThunk, Services } from '../../app.store'
+import { OutdatedError } from './db.errors'
 import { convertMetaRecordToMetaData, validateUpdateMetaRecord } from './db.metadata'
 import { actions } from './db.slice'
 import { DBOpenState } from './db.types'
-import { OutdatedError } from './db.errors'
 
 type SupportedStoreName = 'recipes'
 
 export function openDB(): AppThunk<void> {
   return async (dispatch, _getState, services: Services) => {
     const { dbService } = services
-    dbService.openDB({
-      onBlocked: () => {
-        dispatch(actions.setOpenState({ open: DBOpenState.UPGRADE_BLOCKED }))
-      },
-      onError: () => {
-        dispatch(actions.setOpenState({ open: DBOpenState.OPEN_FAILED }))
-      },
-      onOpen: () => {
-        dispatch(actions.setOpenState({ open: DBOpenState.OPEN }))
-      },
-    })
+    dbService
+      .openDB()
+      .pipe(
+        map((state) => (state === 'open' ? DBOpenState.OPEN : DBOpenState.UPGRADE_BLOCKED)),
+        catchError(() => of(DBOpenState.OPEN_FAILED)),
+      )
+      .subscribe((state) => dispatch(actions.setOpenState({ state })))
   }
 }
 
 export function closeAndDeleteDB(): AppThunk<void> {
   return async (dispatch, _getState, services: Services) => {
     const { dbService } = services
-    dbService.closeAndDeleteDB({
-      onBlocked: () => {
-        dispatch(actions.setOpenState({ open: DBOpenState.DELETE_BLOCKED }))
-      },
-      onError: () => {
-        dispatch(actions.setOpenState({ open: DBOpenState.OPEN_FAILED }))
-      },
-      onDelete: () => {
-        dispatch(actions.setOpenState({ open: DBOpenState.DELETED }))
-      },
-    })
+    dbService
+      .closeAndDeleteDB()
+      .pipe(
+        map((state) => (state === 'deleted' ? DBOpenState.DELETED : DBOpenState.DELETE_BLOCKED)),
+        catchError(() => of(DBOpenState.DELETE_FAILED)),
+      )
+      .subscribe((state) => dispatch(actions.setOpenState({ state })))
   }
 }
 

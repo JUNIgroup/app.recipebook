@@ -1,20 +1,4 @@
-/**
- * Callback for the openDB request of the remote DB.
- */
-export interface RdbOpenCallbacks {
-  onBlocked: () => void
-  onError: (error: Error) => void
-  onOpen: () => void
-}
-
-/**
- * Callback for the closeAndDeleteDB request of the remote DB.
- */
-export interface RdbDeleteCallbacks {
-  onBlocked: () => void
-  onError: (error: Error) => void
-  onDelete: () => void
-}
+import { Observable } from 'rxjs'
 
 /**
  * ID of a data object stored in the remote DB.
@@ -92,21 +76,25 @@ export interface UpdateCallbacks<StoreName extends string> {
 export interface RdbService<SupportedStoreName extends string> {
   /**
    * Open the remote DB.
-   * Call the callbacks when the DB is opened, blocked or an error occurs.
+   *
+   * Emits 'blocked' when the DB upgrade is blocked.
+   * Emits 'open' when the upgrade is no longer blocked and the DB is open.
    *
    * Handle the upgrade of the DB if needed.
    *
-   * @param callbacks callbacks to call when the DB is opened, blocked or an error occurs.
+   * @returns an observable which emits 'blocked' when the DB upgrade is blocked and 'open' when the DB is open.
    */
-  openDB(callbacks: RdbOpenCallbacks): void
+  openDB(): Observable<'blocked' | 'open'>
 
   /**
    * Close the remote DB and delete it.
-   * Call the callbacks when the DB is deleted, blocked or an error occurs.
    *
-   * @param callbacks callbacks to call when the DB is deleted, blocked or an error occurs.
+   * Emits 'blocked' when deleting the DB is blocked.
+   * Emits 'deleted' when the DB was closed and deleted.
+   *
+   * @returns an observable which emits 'blocked' when deleting the DB is blocked and 'deleted' when the DB was closed and deleted.
    */
-  closeAndDeleteDB(callbacks: RdbDeleteCallbacks): void
+  closeAndDeleteDB(): Observable<'blocked' | 'deleted'>
 
   /**
    * Execute a read (only) transaction on the remote DB.

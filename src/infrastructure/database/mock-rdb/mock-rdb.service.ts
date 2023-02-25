@@ -1,19 +1,11 @@
-import {
-  MetaRecord,
-  RdbData,
-  RdbDeleteCallbacks,
-  RdbMeta,
-  RdbOpenCallbacks,
-  RdbService,
-  ReadCallbacks,
-  UpdateCallbacks,
-} from '../rdb.service'
+import { concat, EMPTY, from, ignoreElements, Observable, of, tap, throwError } from 'rxjs'
+import { MetaRecord, RdbData, RdbMeta, RdbService, ReadCallbacks, UpdateCallbacks } from '../rdb.service'
 import { MockReadTransaction, MockUpdateTransaction, nonNull, Store } from './mock-rdb.transitions'
 
 export class MockRdbService<SupportedStoreName extends string = string> implements RdbService<SupportedStoreName> {
-  public openDelay?: () => Promise<void>
+  public openDelay?: () => Observable<unknown>
 
-  public deleteDelay?: () => Promise<void>
+  public deleteDelay?: () => Observable<unknown>
 
   private $db: Record<string, Store> | undefined = undefined
 
@@ -31,40 +23,48 @@ export class MockRdbService<SupportedStoreName extends string = string> implemen
     return this.db[storeName] ?? {}
   }
 
-  openDB(callbacks: RdbOpenCallbacks): void {
+  /**
+   * Open the remote DB.
+   *
+   * Emits 'blocked' if the DB is blocked by an open transaction.
+   * Emits 'open' when the DB is open.
+   */
+  openDB(): Observable<'blocked' | 'open'> {
     if (this.$db) {
-      callbacks.onError(new Error('DB already opened'))
-      return
+      return throwError(() => new Error('DB already opened'))
     }
-    const delay = this.openDelay ?? (() => Promise.resolve())
 
-    callbacks.onBlocked()
-    delay()
-      .then(() => {
+    const delay$: Observable<'blocked'> = this.openDelay
+      ? concat(this.openDelay().pipe(ignoreElements()), of<'blocked'>('blocked')) // blocking
+      : EMPTY // non-blocking
+
+    const open$ = of<'open'>('open').pipe(
+      tap(() => {
         this.$db = {}
-        callbacks.onOpen()
-      })
-      .catch(callbacks.onError)
+      }),
+    )
+
+    return concat(delay$, open$)
   }
 
   /**
    * Close the remote DB and delete it.
-   * Call the callbacks when the DB is deleted, blocked or an error occurs.
    *
-   * @param callbacks callbacks to call when the DB is deleted, blocked or an error occurs.
+   * Emits 'blocked' if the DB is blocked by an open transaction.
+   * Emits 'deleted' when the DB was closed and deleted.
    */
-  closeAndDeleteDB(callbacks: RdbDeleteCallbacks): void {
-    const delay = this.deleteDelay ?? Promise.resolve
+  closeAndDeleteDB(): Observable<'blocked' | 'deleted'> {
+    const unlocked$ = from(this.lock).pipe(ignoreElements())
+    this.$db = undefined
+    this.lock = Promise.resolve()
 
-    callbacks.onBlocked()
-    this.lock
-      .then(delay)
-      .then(() => {
-        this.$db = undefined
-        this.lock = Promise.resolve()
-        callbacks.onDelete()
-      })
-      .catch(callbacks.onError)
+    const delay$: Observable<'blocked'> = this.deleteDelay
+      ? concat(this.deleteDelay().pipe(ignoreElements()), of<'blocked'>('blocked')) // blocking
+      : EMPTY // non-blocking
+
+    const delete$ = of<'deleted'>('deleted')
+
+    return concat(unlocked$, delay$, delete$)
   }
 
   /**
