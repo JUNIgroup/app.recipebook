@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { Link, Outlet, Route, Routes } from 'react-router-dom'
-import { Demo } from './demo'
 import { AuthStatus } from './auth/auth-status'
 import { LoginDialog } from './auth/login-dialog'
+import { RecipesPage } from './recipes/recipes'
 import { RequireAuth } from './route/require-auth'
 
 export const AppRoutes = () => (
@@ -22,7 +22,7 @@ export const AppRoutes = () => (
         element={
           <RequireAuth>
             <Layout>
-              <Demo />
+              <RecipesPage />
             </Layout>
           </RequireAuth>
         }

@@ -1,16 +1,22 @@
 import { AnyAction, configureStore, ThunkAction } from '@reduxjs/toolkit'
+import { RdbService } from '../infrastructure/database/rdb.service'
 import type { AuthService } from './auth/service/auth-service'
 import { authReducer } from './auth/store/auth.slice'
+import { dbReducer } from './db/store/db.slice'
+import { recipesReducer } from './recipes/store/recipe.slice'
 
 export type Services = {
   storage: Storage
   authService: AuthService
+  dbService: RdbService<'recipes'>
 }
 
 export const createStore = (services: Services) =>
   configureStore({
     reducer: {
       auth: authReducer,
+      db: dbReducer,
+      recipes: recipesReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({

@@ -17,7 +17,7 @@ import {
   UserCredential,
 } from 'firebase/auth'
 import { FirebaseService } from '../../../infrastructure/firebase/firebase-service'
-import { ServiceLogger } from '../../logger/logger'
+import { ServiceLogger } from '../../../infrastructure/logger/logger'
 import { AuthService, LoginOptions, Subscription, UserData } from './auth-service'
 import { toAuthError, toUserData } from './firebase-auth-helper'
 

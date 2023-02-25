@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { Provider as StoreProvider } from 'react-redux'
 import { MemoryRouter } from 'react-router-dom'
 import { createStore } from '../business/app.store'
 import { MockAuthService } from '../business/auth/service/mock-auth-service'
 import { App } from './app'
+import { MockRdbService } from '../infrastructure/database/mock-rdb/mock-rdb.service'
 
 describe('button', () => {
   let button: HTMLButtonElement
@@ -13,9 +14,11 @@ describe('button', () => {
   beforeEach(() => {
     const authService = new MockAuthService()
     authService.setMockUser({ id: 'foo', name: 'bar' })
+    const dbService = new MockRdbService()
     const store = createStore({
       storage: localStorage,
       authService,
+      dbService,
     })
     render(
       <MemoryRouter initialEntries={['/protected']}>
@@ -24,19 +27,10 @@ describe('button', () => {
         </StoreProvider>
       </MemoryRouter>,
     )
-    button = screen.getByTestId('counter')
+    button = screen.getByTestId('random')
   })
 
   it('should exist', () => {
     expect(button).toBeTruthy()
-  })
-
-  it('should have initial count 0', () => {
-    expect(button.textContent).toBe('Count is 0')
-  })
-
-  it('should have count 1 after click', () => {
-    fireEvent.click(button)
-    expect(button.textContent).toBe('Count is 1')
   })
 })

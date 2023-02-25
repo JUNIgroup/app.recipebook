@@ -20,8 +20,11 @@ export function ServiceLogger(serviceName: string) {
       end: () => {
         console.groupEnd()
         const duration = Date.now() - timer
-        if (succeed) console.log(`[${serviceName}] ${groupName}: ✔️ ${duration}ms`)
-        else console.log(`[${serviceName}] ${groupName}: ❌ ${duration}ms`)
+        if (succeed) {
+          console.log(`[${serviceName}] ${groupName}: ✔️ ${duration}ms`)
+        } else {
+          console.log(`[${serviceName}] ${groupName}: ❌ ${duration}ms`)
+        }
       },
     }
   }
