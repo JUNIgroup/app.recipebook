@@ -1,5 +1,8 @@
 {
   "emulators": {
+    "hub": {
+      "port": 4000
+    },
     "auth": {
       "port": 9099
     },

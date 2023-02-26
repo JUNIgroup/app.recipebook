@@ -20,7 +20,11 @@ export default function VitePluginAjv() {
         if (!schema.$id) {
           throw new Error(`Schema ${id} must have an $id property.`)
         }
-        const ajv = new Ajv({ schemas: [schema], code: { source: true, esm: true, lines: true, optimize: true } })
+        const ajv = new Ajv({
+          schemas: [schema],
+          allErrors: true,
+          code: { source: true, esm: true, lines: true, optimize: true },
+        })
         const moduleCode = standaloneCode(ajv, {
           validate: schema.$id,
         })

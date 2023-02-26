@@ -38,7 +38,9 @@ export class FirebaseService {
     })
     if (import.meta.env.VITE_FIREBASE__USE_EMULATOR) {
       trace('connect app with emulator')
-      connectAuthEmulator(this.auth, import.meta.env.VITE_FIREBASE__USE_EMULATOR)
+      const emulatorHost = import.meta.env.VITE_FIREBASE__USE_EMULATOR
+      const emulatorPort = 9099
+      connectAuthEmulator(this.auth, `http://${emulatorHost}:${emulatorPort}`)
     }
   }
 
