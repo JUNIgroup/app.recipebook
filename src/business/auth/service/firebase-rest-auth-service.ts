@@ -51,7 +51,7 @@ export class FirebaseRestAuthService implements AuthService {
     try {
       const persistence = options.rememberLogin ? this.persistence.permanent : this.persistence.temporary
       await this.auth.setPersistence(persistence)
-      let user = await this.auth.createUserWithEmailAndPassword(email, password)
+      let user = await this.auth.signUpWithEmailAndPassword({ email, password })
       user = await this.updateProfileSilently(user, { displayName: name })
       this.updateUser(user)
       logger.log('logged in as user: %o', user)
@@ -77,8 +77,22 @@ export class FirebaseRestAuthService implements AuthService {
   }
 
   // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
-  signInWithEmailAndPassword(email: string, password: string, options?: LoginOptions | undefined): Promise<void> {
-    throw new Error('Method not implemented.')
+  async signInWithEmailAndPassword(email: string, password: string, options: LoginOptions = {}): Promise<void> {
+    const logger = createLogger('signInWithEmailAndPassword', email)
+    logger.log('options: %o', options)
+    try {
+      const persistence = options.rememberLogin ? this.persistence.permanent : this.persistence.temporary
+      await this.auth.setPersistence(persistence)
+      const user = await this.auth.signInWithEmailAndPassword({ email, password })
+      this.updateUser(user)
+      logger.log('logged in as user: %o', user)
+    } catch (error) {
+      logger.error('login failed: %o', error)
+      // throw toAuthError(serviceName, error)
+      throw error
+    } finally {
+      logger.end()
+    }
   }
 
   isLogin(): boolean {

@@ -1,10 +1,10 @@
 import {
-  isSignInResponse,
-  isSignUpResponse,
-  SignInResponse,
-  SignUpResponse,
-  ProfileUpdateResponse,
-  isProfileUpdateResponse,
+  isVerifyPasswordResponse,
+  isSignupNewUserResponse,
+  VerifyPasswordResponse,
+  SignupNewUserResponse,
+  SetAccountInfoResponse,
+  isSetAccountInfoResponse,
   isAuthData,
   AuthData,
   AuthToken,
@@ -40,7 +40,7 @@ describe('isAuthData', () => {
 
 describe('isSignUpResponse', () => {
   it('should return true for a valid response', () => {
-    const response: SignUpResponse = {
+    const response: SignupNewUserResponse = {
       kind: 'identitytoolkit#SignupNewUserResponse',
       localId: 'localId',
       email: 'email',
@@ -48,20 +48,20 @@ describe('isSignUpResponse', () => {
       refreshToken: 'refreshToken',
       expiresIn: '3600',
     }
-    const result = isSignUpResponse(response)
+    const result = isSignupNewUserResponse(response)
     expect(result).toBe(true)
   })
 
   it('should return false for an invalid response', () => {
     const response = { kind: 'something else' }
-    const result = isSignUpResponse(response)
+    const result = isSignupNewUserResponse(response)
     expect(result).toBe(false)
   })
 })
 
 describe('isSignInResponse', () => {
   it('should return true for a valid response', () => {
-    const response: SignInResponse = {
+    const response: VerifyPasswordResponse = {
       kind: 'identitytoolkit#VerifyPasswordResponse',
       localId: 'localId',
       email: 'email',
@@ -70,33 +70,33 @@ describe('isSignInResponse', () => {
       expiresIn: '3600',
       registered: true,
     }
-    const result = isSignInResponse(response)
+    const result = isVerifyPasswordResponse(response)
     expect(result).toBe(true)
   })
 
   it('should return false for an invalid response', () => {
     const response = { kind: 'something else' }
-    const result = isSignInResponse(response)
+    const result = isVerifyPasswordResponse(response)
     expect(result).toBe(false)
   })
 })
 
 describe('isProfileUpdateResponse', () => {
   it('should return true for a valid response', () => {
-    const response: ProfileUpdateResponse = {
+    const response: SetAccountInfoResponse = {
       kind: 'identitytoolkit#SetAccountInfoResponse',
       localId: 'localId',
       email: 'email',
       displayName: 'displayName',
       photoUrl: 'photoUrl',
     }
-    const result = isProfileUpdateResponse(response)
+    const result = isSetAccountInfoResponse(response)
     expect(result).toBe(true)
   })
 
   it('should return false for an invalid response', () => {
     const response = { kind: 'something else' }
-    const result = isProfileUpdateResponse(response)
+    const result = isSetAccountInfoResponse(response)
     expect(result).toBe(false)
   })
 })

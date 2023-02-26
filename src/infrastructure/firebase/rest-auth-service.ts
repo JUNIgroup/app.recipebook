@@ -8,16 +8,25 @@ import {
   AuthToken,
   AuthUser,
   isAuthData,
-  isProfileUpdateResponse,
-  isSignUpResponse,
+  isSetAccountInfoResponse,
+  isVerifyPasswordResponse,
+  isSignupNewUserResponse,
   ProfileUpdateParams,
-  ProfileUpdateResponse,
-  SignUpResponse,
+  SetAccountInfoResponse,
+  VerifyPasswordResponse,
+  SignupNewUserResponse,
+  GetAccountInfoResponse,
+  isGetAccountInfoResponse,
 } from './helpers/rest-types'
 import { deepEqual, expiresAt } from './helpers/utilities'
 import { AuthPersistence, nonePersistence } from './persistence'
 
 export type { AuthUser } from './helpers/rest-types'
+
+interface EmailAndPassword {
+  email: string
+  password: string
+}
 
 export type OnUserChanged = (user: AuthUser | null) => void
 export type Unsubscribe = () => void
@@ -129,6 +138,8 @@ export class RestAuthService {
 
   /**
    * Tries to login the user with the persisted user.
+   *
+   * @returns the user that was logged in or null if no user was persisted.
    */
   async autoSignIn(): Promise<AuthUser | null> {
     const logger = createLogger('autoSignIn')
@@ -154,10 +165,18 @@ export class RestAuthService {
     }
   }
 
+  /**
+   * Get the logged in user or null if no user is logged in.
+   *
+   * @returns the logged in user or null if no user is logged in.
+   */
   get currentUser(): AuthUser | null {
     return this.authData ? Object.freeze(this.authData.user) : null
   }
 
+  /**
+   * Log out the current user.
+   */
   async signOut(): Promise<null> {
     const logger = createLogger('signOut', this.authData ? this.authData.user.email : '-')
     try {
@@ -173,21 +192,20 @@ export class RestAuthService {
    *
    * @param email the email address of the new user
    * @param password the password of the new user
-   * @param persistence the persistence to use to persist the user
    * @returns the user that was created and logged in
    */
-  async createUserWithEmailAndPassword(email: string, password: string): Promise<AuthUser> {
+  async signUpWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
     const logger = createLogger('signUp', email)
     const { signUp: signUpUrl } = await this.endpoints
-    const payload = { email, password, returnSecureToken: true }
 
     try {
+      const payload = { email, password, returnSecureToken: true }
       const response = await axios
-        .post<SignUpResponse>(signUpUrl, payload)
-        .then(extractResponseData(logger, isSignUpResponse))
+        .post<SignupNewUserResponse>(signUpUrl, payload)
+        .then(extractResponseData(logger, isSignupNewUserResponse))
         .catch(requestErrorHandler(logger))
 
-      const authData = RestAuthService.convertSignUpResponse(response)
+      const authData = RestAuthService.convertSignupNewUserResponse(response)
       await this.setAuthData(authData)
       return authData.user
     } finally {
@@ -195,7 +213,7 @@ export class RestAuthService {
     }
   }
 
-  private static convertSignUpResponse(response: SignUpResponse): AuthData {
+  private static convertSignupNewUserResponse(response: SignupNewUserResponse): AuthData {
     const { localId: id, email, idToken, refreshToken, expiresIn } = response
     const now = Date.now()
     const user: AuthUser = { id, email, displayName: undefined, verified: false, createdAt: now, lastLoginAt: now }
@@ -207,12 +225,12 @@ export class RestAuthService {
     const authData = this.enforceAuthorized()
     const logger = createLogger('updateProfile', authData.user.email)
     const { updateProfile: updateProfileUrl } = await this.endpoints
-    const payload = { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true }
 
     try {
+      const payload = { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true }
       const response = await axios
-        .post<ProfileUpdateResponse>(updateProfileUrl, payload)
-        .then(extractResponseData(logger, isProfileUpdateResponse))
+        .post<SetAccountInfoResponse>(updateProfileUrl, payload)
+        .then(extractResponseData(logger, isSetAccountInfoResponse))
         .catch(requestErrorHandler(logger))
 
       const newAuthData = RestAuthService.convertProfileUpdateResponse(authData, response)
@@ -223,9 +241,53 @@ export class RestAuthService {
     }
   }
 
-  private static convertProfileUpdateResponse(authData: AuthData, response: ProfileUpdateResponse): AuthData {
+  private static convertProfileUpdateResponse(authData: AuthData, response: SetAccountInfoResponse): AuthData {
     const { email, displayName } = response
     const user: AuthUser = { ...authData.user, email, displayName }
     return { ...authData, user }
+  }
+
+  /**
+   * Login an existing user with the given email and password.
+   *
+   * @param email the email address of the user
+   * @param password the password of the user
+   * @returns
+   */
+  async signInWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
+    const logger = createLogger('signUp', email)
+    const { signInWithPassword: signInUrl, lookupProfile: profileUrl } = await this.endpoints
+
+    try {
+      const signInPayload = { email, password, returnSecureToken: true }
+      const signInResponse = await axios
+        .post<VerifyPasswordResponse>(signInUrl, signInPayload)
+        .then(extractResponseData(logger, isVerifyPasswordResponse))
+        .catch(requestErrorHandler(logger))
+
+      const profilePayload = { idToken: signInResponse.idToken }
+      const profileResponse = await axios
+        .post<GetAccountInfoResponse>(profileUrl, profilePayload)
+        .then(extractResponseData(logger, isGetAccountInfoResponse))
+        .catch(requestErrorHandler(logger))
+
+      const authData = RestAuthService.convertVerifyPasswordResponse(signInResponse, profileResponse)
+      await this.setAuthData(authData)
+      return authData.user
+    } finally {
+      logger.end()
+    }
+  }
+
+  private static convertVerifyPasswordResponse(
+    verifyResponse: VerifyPasswordResponse,
+    accountInfoResponse: GetAccountInfoResponse,
+  ): AuthData {
+    const { localId: id, email, idToken, refreshToken, expiresIn } = verifyResponse
+    const { displayName, emailVerified: verified, createdAt, lastLoginAt } = accountInfoResponse.users[0]
+    const now = Date.now()
+    const user: AuthUser = { id, email, displayName, verified, createdAt: +createdAt, lastLoginAt: +lastLoginAt }
+    const token: AuthToken = { secureToken: idToken, refreshToken, expiresAt: expiresAt(now, expiresIn) }
+    return { user, token }
   }
 }

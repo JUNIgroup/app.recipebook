@@ -52,7 +52,7 @@ describe('RestAuthService', () => {
       service = RestAuthService.forEmulator()
     })
 
-    describe('.createUserWithEmailAndPassword', () => {
+    describe('.signUpWithEmailAndPassword', () => {
       it('should sign up a new user', async () => {
         // arrange
         const id = uid()
@@ -60,7 +60,7 @@ describe('RestAuthService', () => {
         const password = `secret-${id}`
 
         // act
-        const user = await service.createUserWithEmailAndPassword(email, password)
+        const user = await service.signUpWithEmailAndPassword({ email, password })
 
         // assert
         expect(user).toMatchObject({
@@ -80,7 +80,7 @@ describe('RestAuthService', () => {
         const password = `secret-${id}`
 
         // act
-        const user = await service.createUserWithEmailAndPassword(email, password)
+        const user = await service.signUpWithEmailAndPassword({ email, password })
 
         // assert
         expect(service.currentUser).toEqual(user)
@@ -95,7 +95,7 @@ describe('RestAuthService', () => {
         const password = `secret-${id}`
 
         // act
-        const user = await service.createUserWithEmailAndPassword(email, password)
+        const user = await service.signUpWithEmailAndPassword({ email, password })
 
         // assert
         expect(onUserChanged).toHaveBeenCalledTimes(1)
@@ -111,7 +111,7 @@ describe('RestAuthService', () => {
         const password = `secret-${id}`
 
         // act
-        const user = await service.createUserWithEmailAndPassword(email, password)
+        const user = await service.signUpWithEmailAndPassword({ email, password })
 
         // assert
         expect(persistence.memory).toMatchObject({ user })
@@ -123,11 +123,114 @@ describe('RestAuthService', () => {
         const password = `short`
 
         // act
-        const action = service.createUserWithEmailAndPassword(email, password)
+        const action = service.signUpWithEmailAndPassword({ email, password })
 
         // assert
         await expect(action).rejects.toBeInstanceOf(FirebaseError)
         await expect(action).rejects.toThrowError('INVALID_EMAIL')
+      })
+    })
+
+    describe('.signInWithEmailAndPassword', () => {
+      let userCreatedAt: number
+      let existingUser: AuthUser
+      let usedPassword: string
+
+      beforeEach(async () => {
+        const anotherService = RestAuthService.forEmulator()
+        userCreatedAt = Date.now()
+        const id = uid()
+        const email = `test.signin.${id}@example.com`
+        const displayName = `John Doe (signin ${id})`
+        usedPassword = `secret-${id}`
+        await anotherService.signUpWithEmailAndPassword({ email, password: usedPassword })
+        existingUser = await anotherService.updateProfile({ displayName })
+      })
+
+      it('should sign in an existing user', async () => {
+        // arrange
+        const { email } = existingUser
+        const password = usedPassword
+
+        // act
+        const user = await service.signInWithEmailAndPassword({ email, password })
+
+        // assert
+        expect(user).toMatchObject({
+          ...existingUser,
+          createdAt: expect.any(Number),
+          lastLoginAt: expect.any(Number),
+        })
+        expect(user.createdAt).toBeGreaterThanOrEqual(userCreatedAt)
+        expect(user.createdAt).toBeLessThanOrEqual(existingUser.createdAt)
+        expect(user.lastLoginAt).toBeGreaterThan(existingUser.lastLoginAt)
+      })
+
+      it('should update current user', async () => {
+        // arrange
+        const { email } = existingUser
+        const password = usedPassword
+
+        // act
+        const user = await service.signInWithEmailAndPassword({ email, password })
+
+        // assert
+        expect(service.currentUser).toEqual(user)
+      })
+
+      it('should inform subscription onUserChanged', async () => {
+        // arrange
+        const onUserChanged = vi.fn()
+        service.onUserChanged(onUserChanged)
+        const { email } = existingUser
+        const password = usedPassword
+
+        // act
+        const user = await service.signInWithEmailAndPassword({ email, password })
+
+        // assert
+        expect(onUserChanged).toHaveBeenCalledTimes(1)
+        expect(onUserChanged).toHaveBeenCalledWith(user)
+      })
+
+      it('should persist current user', async () => {
+        // arrange
+        const persistence = memoryPersistence()
+        service.setPersistence(persistence)
+        const { email } = existingUser
+        const password = usedPassword
+
+        // act
+        const user = await service.signInWithEmailAndPassword({ email, password })
+
+        // assert
+        expect(persistence.memory).toMatchObject({ user })
+      })
+
+      it('should throw FirebaseError if try to sign in an not-existing user', async () => {
+        // arrange
+        const email = 'unknown-email@example.com'
+        const password = 'any-password'
+
+        // act
+        const action = service.signInWithEmailAndPassword({ email, password })
+
+        // assert
+        expect(action).rejects.toBeInstanceOf(FirebaseError)
+        expect(action).rejects.toThrowError('EMAIL_NOT_FOUND')
+      })
+
+      it('should throw FirebaseError if try to sign in with invalid password', async () => {
+        // arrange
+        const { email } = existingUser
+        const password = 'invalid-password'
+
+        // act
+        const action = service.signInWithEmailAndPassword({ email, password })
+
+        // assert
+        expect(action).rejects.toBeInstanceOf(FirebaseError)
+        expect(action).rejects.toThrowError('INVALID_PASSWORD')
       })
     })
 
@@ -137,7 +240,7 @@ describe('RestAuthService', () => {
         const id = uid()
         const email = `test.signup.${id}@example.com`
         const password = `secret-${id}`
-        await service.createUserWithEmailAndPassword(email, password)
+        await service.signUpWithEmailAndPassword({ email, password })
 
         // act
         await service.signOut()
@@ -153,7 +256,7 @@ describe('RestAuthService', () => {
         const id = uid()
         const email = `test.signup.${id}@example.com`
         const password = `secret-${id}`
-        await service.createUserWithEmailAndPassword(email, password)
+        await service.signUpWithEmailAndPassword({ email, password })
         onUserChanged.mockClear()
 
         // act
@@ -171,7 +274,7 @@ describe('RestAuthService', () => {
         const id = uid()
         const email = `test.signup.${id}@example.com`
         const password = `secret-${id}`
-        await service.createUserWithEmailAndPassword(email, password)
+        await service.signUpWithEmailAndPassword({ email, password })
 
         // act
         await service.signOut()
@@ -191,23 +294,25 @@ describe('RestAuthService', () => {
 
     describe('.updateProfile', () => {
       let user: AuthUser
+      let displayName: string
 
       beforeEach(async () => {
         const id = uid()
         const email = `test.signup.${id}@example.com`
         const password = `secret-${id}`
-        user = await service.createUserWithEmailAndPassword(email, password)
+        displayName = `John Doe (profile ${id})`
+        user = await service.signUpWithEmailAndPassword({ email, password })
       })
 
       it('should update the profile', async () => {
         // act
-        const updated = await service.updateProfile({ displayName: 'John Doe' })
+        const updated = await service.updateProfile({ displayName })
 
         // assert
         expect(updated).toMatchObject({
           id: user.id,
           email: user.email,
-          displayName: 'John Doe',
+          displayName,
           verified: false,
           createdAt: user.createdAt,
           lastLoginAt: user.lastLoginAt,
@@ -216,7 +321,7 @@ describe('RestAuthService', () => {
 
       it('should update current user', async () => {
         // act
-        const updated = await service.updateProfile({ displayName: 'John Doe' })
+        const updated = await service.updateProfile({ displayName })
 
         // assert
         expect(service.currentUser).toEqual(updated)
@@ -229,7 +334,7 @@ describe('RestAuthService', () => {
         onUserChanged.mockClear()
 
         // act
-        const updated = await service.updateProfile({ displayName: 'John Doe' })
+        const updated = await service.updateProfile({ displayName })
 
         // assert
         expect(onUserChanged).toHaveBeenCalledTimes(1)
@@ -242,7 +347,7 @@ describe('RestAuthService', () => {
         service.setPersistence(persistence)
 
         // act
-        const updated = await service.updateProfile({ displayName: 'John Doe' })
+        const updated = await service.updateProfile({ displayName })
 
         // assert
         expect(persistence.memory).toMatchObject({ user: updated })
@@ -253,7 +358,7 @@ describe('RestAuthService', () => {
         service.signOut()
 
         // act
-        const action = service.updateProfile({ displayName: 'John Doe' })
+        const action = service.updateProfile({ displayName })
 
         // assert
         await expect(action).rejects.toBeInstanceOf(FirebaseError)
@@ -424,7 +529,7 @@ describe('RestAuthService', () => {
         const password = `secret-${id}`
 
         // act
-        const user = await service.createUserWithEmailAndPassword(email, password)
+        const user = await service.signUpWithEmailAndPassword({ email, password })
 
         // assert
         expect(onUserChanged).toHaveBeenCalledTimes(1)
@@ -436,10 +541,10 @@ describe('RestAuthService', () => {
         const id = uid()
         const email = `test.signup.${id}@example.com`
         const password = `secret-${id}`
-        const displayName = 'John Doe'
+        const displayName = `John Doe (subscribe ${id})`
 
         // act
-        const user1 = await service.createUserWithEmailAndPassword(email, password)
+        const user1 = await service.signUpWithEmailAndPassword({ email, password })
         const user2 = await service.updateProfile({ displayName })
 
         // assert
@@ -453,7 +558,7 @@ describe('RestAuthService', () => {
         const id = uid()
         const email = `test.signup.${id}@example.com`
         const password = `secret-${id}`
-        const user = await service.createUserWithEmailAndPassword(email, password)
+        const user = await service.signUpWithEmailAndPassword({ email, password })
         const newOnUserChanged = vi.fn()
 
         // act
@@ -472,7 +577,7 @@ describe('RestAuthService', () => {
         unsubscribe()
 
         // act
-        await service.createUserWithEmailAndPassword(email, password)
+        await service.signUpWithEmailAndPassword({ email, password })
 
         // assert
         expect(onUserChanged).not.toHaveBeenCalled()
