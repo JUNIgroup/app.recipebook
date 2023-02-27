@@ -51,7 +51,9 @@ export interface VerifyPasswordResponse {
 export const isVerifyPasswordResponse = validateVerifyPasswordResponse as ValidateFunction<VerifyPasswordResponse>
 
 export interface ProfileUpdateParams {
+  email?: string
   displayName?: string
+  password?: string
 }
 
 export interface SetAccountInfoResponse {
@@ -78,15 +80,3 @@ export interface GetAccountInfoResponse {
 }
 
 export const isGetAccountInfoResponse = validateGetAccountInfoResponse as ValidateFunction<GetAccountInfoResponse>
-
-export interface ChangePasswordParams {
-  email: string
-  password: string
-  newPassword: string
-}
-
-export interface ChangeEmailParams {
-  email: string
-  newEmail: string
-  password: string
-}

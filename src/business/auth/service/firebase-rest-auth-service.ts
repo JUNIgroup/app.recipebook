@@ -53,7 +53,6 @@ export class FirebaseRestAuthService implements AuthService {
       await this.auth.setPersistence(persistence)
       let user = await this.auth.signUpWithEmailAndPassword({ email, password })
       user = await this.updateProfileSilently(user, { displayName: name })
-      this.updateUser(user)
       logger.log('logged in as user: %o', user)
     } catch (error) {
       logger.error('login failed: %o', error)
@@ -84,7 +83,6 @@ export class FirebaseRestAuthService implements AuthService {
       const persistence = options.rememberLogin ? this.persistence.permanent : this.persistence.temporary
       await this.auth.setPersistence(persistence)
       const user = await this.auth.signInWithEmailAndPassword({ email, password })
-      this.updateUser(user)
       logger.log('logged in as user: %o', user)
     } catch (error) {
       logger.error('login failed: %o', error)
@@ -125,19 +123,53 @@ export class FirebaseRestAuthService implements AuthService {
     throw new Error('Method not implemented.')
   }
 
-  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
-  changeName(newName: string): Promise<void> {
+  async changeName(newName: string): Promise<void> {
+    const user = this.auth.currentUser
+    if (!user) return
+
+    const logger = createLogger('changeName', newName)
+    try {
+      await this.auth.updateProfile({ displayName: newName })
+    } catch (error) {
+      logger.error('update failed: %o', error)
+      // throw toAuthError(serviceName, error)
+      throw error
+    } finally {
+      logger.end()
+    }
+  }
+
+  async changeEmail(newEmail: string): Promise<void> {
+    const user = this.auth.currentUser
+    if (!user) return
+
+    const logger = createLogger('changeEmail', newEmail)
+    try {
+      await this.auth.updateProfile({ email: newEmail })
+    } catch (error) {
+      logger.error('update failed: %o', error)
+      // throw toAuthError(serviceName, error)
+      throw error
+    } finally {
+      logger.end()
+    }
     throw new Error('Method not implemented.')
   }
 
-  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
-  changeEmail(newEmail: string): Promise<void> {
-    throw new Error('Method not implemented.')
-  }
+  async changePassword(newPassword: string): Promise<void> {
+    const user = this.auth.currentUser
+    if (!user) return
 
-  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
-  changePassword(newPassword: string): Promise<void> {
-    throw new Error('Method not implemented.')
+    const logger = createLogger('changePassword', '...')
+    try {
+      await this.auth.updateProfile({ password: newPassword })
+    } catch (error) {
+      logger.error('update failed: %o', error)
+      // throw toAuthError(serviceName, error)
+      throw error
+    } finally {
+      logger.end()
+    }
   }
 
   // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars

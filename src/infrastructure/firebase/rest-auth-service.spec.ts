@@ -294,34 +294,84 @@ describe('RestAuthService', () => {
 
     describe('.updateProfile', () => {
       let user: AuthUser
-      let displayName: string
+      let newDisplayName: string
+      let newEmail: string
+      let newPassword: string
 
       beforeEach(async () => {
         const id = uid()
-        const email = `test.signup.${id}@example.com`
+        const email = `test.profile.${id}@example.com`
         const password = `secret-${id}`
-        displayName = `John Doe (profile ${id})`
+        newDisplayName = `John Doe (profile ${id})`
+        newEmail = `test.profile.${id}@example.org`
+        newPassword = `top-secret-${id}`
         user = await service.signUpWithEmailAndPassword({ email, password })
       })
 
-      it('should update the profile', async () => {
+      it('should update the profile (display name)', async () => {
         // act
-        const updated = await service.updateProfile({ displayName })
+        const updated = await service.updateProfile({ displayName: newDisplayName })
 
         // assert
         expect(updated).toMatchObject({
           id: user.id,
           email: user.email,
-          displayName,
+          displayName: newDisplayName,
           verified: false,
           createdAt: user.createdAt,
           lastLoginAt: user.lastLoginAt,
         })
       })
 
+      it('should update the profile (email)', async () => {
+        // act
+        const updated = await service.updateProfile({ email: newEmail })
+
+        // assert
+        expect(updated).toMatchObject({
+          id: user.id,
+          email: newEmail.toLowerCase(),
+          displayName: undefined,
+          verified: false,
+          createdAt: user.createdAt,
+          lastLoginAt: user.lastLoginAt,
+        })
+      })
+
+      it('should update the profile (password)', async () => {
+        // act
+        const updated = await service.updateProfile({ password: newPassword })
+
+        // assert
+        expect(updated).toMatchObject({
+          id: user.id,
+          email: user.email,
+          displayName: undefined,
+          verified: false,
+          createdAt: user.createdAt,
+          lastLoginAt: user.lastLoginAt,
+        })
+      })
+
+      it('should sign in with new password after update password', async () => {
+        // act
+        await service.updateProfile({ password: newPassword })
+        const updated = await service.signInWithEmailAndPassword({ email: user.email, password: newPassword })
+
+        // assert
+        expect(updated).toMatchObject({
+          id: user.id,
+          email: user.email,
+          displayName: undefined,
+          verified: false,
+          createdAt: expect.any(Number),
+          lastLoginAt: expect.any(Number),
+        })
+      })
+
       it('should update current user', async () => {
         // act
-        const updated = await service.updateProfile({ displayName })
+        const updated = await service.updateProfile({ displayName: newDisplayName })
 
         // assert
         expect(service.currentUser).toEqual(updated)
@@ -334,7 +384,7 @@ describe('RestAuthService', () => {
         onUserChanged.mockClear()
 
         // act
-        const updated = await service.updateProfile({ displayName })
+        const updated = await service.updateProfile({ displayName: newDisplayName })
 
         // assert
         expect(onUserChanged).toHaveBeenCalledTimes(1)
@@ -347,7 +397,7 @@ describe('RestAuthService', () => {
         service.setPersistence(persistence)
 
         // act
-        const updated = await service.updateProfile({ displayName })
+        const updated = await service.updateProfile({ displayName: newDisplayName })
 
         // assert
         expect(persistence.memory).toMatchObject({ user: updated })
@@ -358,7 +408,7 @@ describe('RestAuthService', () => {
         service.signOut()
 
         // act
-        const action = service.updateProfile({ displayName })
+        const action = service.updateProfile({ displayName: newDisplayName })
 
         // assert
         await expect(action).rejects.toBeInstanceOf(FirebaseError)
