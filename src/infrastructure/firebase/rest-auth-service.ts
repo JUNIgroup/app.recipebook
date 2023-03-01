@@ -290,4 +290,22 @@ export class RestAuthService {
     const token: AuthToken = { secureToken: idToken, refreshToken, expiresAt: expiresAt(now, expiresIn) }
     return { user, token }
   }
+
+  async deleteAccountPermanently(): Promise<void> {
+    const authData = this.enforceAuthorized()
+    const logger = createLogger('deleteAccount', authData.user.email)
+    const { deleteAccount: deleteAccountUrl } = await this.endpoints
+
+    try {
+      const payload = { idToken: authData.token.secureToken }
+      await axios
+        .post<GetAccountInfoResponse>(deleteAccountUrl, payload)
+        // .then(extractResponseData(logger, isDeleteAccountResponse))
+        .catch(requestErrorHandler(logger))
+
+      await this.setAuthData(null)
+    } finally {
+      logger.end()
+    }
+  }
 }

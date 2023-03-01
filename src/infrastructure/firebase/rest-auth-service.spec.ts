@@ -105,7 +105,7 @@ describe('RestAuthService', () => {
       it('should persist current user', async () => {
         // arrange
         const persistence = memoryPersistence()
-        service.setPersistence(persistence)
+        await service.setPersistence(persistence)
         const id = uid()
         const email = `test.signup.${id}@example.com`
         const password = `secret-${id}`
@@ -196,7 +196,7 @@ describe('RestAuthService', () => {
       it('should persist current user', async () => {
         // arrange
         const persistence = memoryPersistence()
-        service.setPersistence(persistence)
+        await service.setPersistence(persistence)
         const { email } = existingUser
         const password = usedPassword
 
@@ -270,7 +270,7 @@ describe('RestAuthService', () => {
       it('should delete persisted user', async () => {
         // arrange
         const persistence = memoryPersistence()
-        service.setPersistence(persistence)
+        await service.setPersistence(persistence)
         const id = uid()
         const email = `test.signup.${id}@example.com`
         const password = `secret-${id}`
@@ -394,7 +394,7 @@ describe('RestAuthService', () => {
       it('should update persistence', async () => {
         // arrange
         const persistence = memoryPersistence()
-        service.setPersistence(persistence)
+        await service.setPersistence(persistence)
 
         // act
         const updated = await service.updateProfile({ displayName: newDisplayName })
@@ -428,6 +428,76 @@ describe('RestAuthService', () => {
       })
     })
 
+    describe('.deleteAccountPermanently', () => {
+      let user: AuthUser
+
+      beforeEach(async () => {
+        const id = uid()
+        const email = `test.delete.${id}@example.com`
+        const password = `secret-${id}`
+        user = await service.signUpWithEmailAndPassword({ email, password })
+      })
+
+      it('should delete account of user', async () => {
+        // arrange
+        const { email } = user
+        const password = 'any password'
+
+        // act
+        await service.deleteAccountPermanently()
+
+        // assert
+        const login = service.signInWithEmailAndPassword({ email, password })
+        expect(login).rejects.toThrowError('EMAIL_NOT_FOUND')
+      })
+
+      it('should sign out current user', async () => {
+        // act
+        await service.deleteAccountPermanently()
+
+        // assert
+        expect(service.currentUser).toBe(null)
+      })
+
+      it('should inform subscription onUserChanged', async () => {
+        // arrange
+        const onUserChanged = vi.fn()
+        service.onUserChanged(onUserChanged)
+        onUserChanged.mockClear()
+
+        // act
+        await service.deleteAccountPermanently()
+
+        // assert
+        expect(onUserChanged).toHaveBeenCalledTimes(1)
+        expect(onUserChanged).toHaveBeenCalledWith(null)
+      })
+
+      it('should delete persisted user', async () => {
+        // arrange
+        const persistence = memoryPersistence()
+        await service.setPersistence(persistence)
+        expect(persistence.memory, 'precondition').toMatchObject({ user })
+
+        // act
+        await service.deleteAccountPermanently()
+
+        // assert
+        expect(persistence.memory).toBe(null)
+      })
+
+      it('should throw NOT_AUTHORIZED if not logged in', async () => {
+        // arrange
+        service.signOut()
+
+        // act
+        const action = service.deleteAccountPermanently()
+
+        // assert
+        expect(action).rejects.toThrowError('NOT_AUTHORIZED')
+      })
+    })
+
     describe('.autoSignIn', () => {
       let persistence: ReturnType<typeof memoryPersistence>
       let onUserChanged: OnUserChanged
@@ -435,7 +505,7 @@ describe('RestAuthService', () => {
       beforeEach(async () => {
         service = RestAuthService.forEmulator()
         persistence = memoryPersistence()
-        service.setPersistence(persistence)
+        await service.setPersistence(persistence)
         onUserChanged = vi.fn()
         service.onUserChanged(onUserChanged)
       })

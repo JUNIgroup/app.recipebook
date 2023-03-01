@@ -119,8 +119,17 @@ export class FirebaseRestAuthService implements AuthService {
   }
 
   // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
-  deleteAccount(): Promise<void> {
-    throw new Error('Method not implemented.')
+  async deleteAccount(): Promise<void> {
+    const logger = createLogger('deleteAccount')
+    try {
+      await this.auth.deleteAccountPermanently()
+    } catch (error) {
+      logger.error('delete account failed: %o', error)
+      // throw toAuthError(serviceName, error)
+      throw error
+    } finally {
+      logger.end()
+    }
   }
 
   async changeName(newName: string): Promise<void> {
@@ -153,7 +162,6 @@ export class FirebaseRestAuthService implements AuthService {
     } finally {
       logger.end()
     }
-    throw new Error('Method not implemented.')
   }
 
   async changePassword(newPassword: string): Promise<void> {

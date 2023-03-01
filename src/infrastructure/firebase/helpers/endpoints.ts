@@ -5,6 +5,7 @@ export interface AccountEndpoints {
   signInWithPassword: string
   updateProfile: string
   lookupProfile: string
+  deleteAccount: string
 }
 
 function createEndpoints(accountEndpoint: string, apiKey: string): AccountEndpoints {
@@ -13,6 +14,7 @@ function createEndpoints(accountEndpoint: string, apiKey: string): AccountEndpoi
     signInWithPassword: `${accountEndpoint}:signInWithPassword?key=${apiKey}`,
     updateProfile: `${accountEndpoint}:update?key=${apiKey}`,
     lookupProfile: `${accountEndpoint}:lookup?key=${apiKey}`,
+    deleteAccount: `${accountEndpoint}:delete?key=${apiKey}`,
   }
   return endpoints
 }
