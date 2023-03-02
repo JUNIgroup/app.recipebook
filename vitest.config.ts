@@ -8,6 +8,7 @@ export default defineConfig({
   test: {
     globals: true,
     reporters: ['verbose'],
+    setupFiles: ['jest-extended/all'],
     coverage: {
       all: true,
       reporter: ['text', 'html', 'lcov'],
