@@ -12,4 +12,12 @@ export default defineConfig({
     splitVendorChunkPlugin(),
     visualizer({ filename: 'analyze/bundle-tree.html', template: 'treemap' }),
   ],
+  build: {
+    target: 'es2021',
+  },
+  server: {
+    watch: {
+      ignored: ['analyze/', 'coverage/', 'dist/'],
+    },
+  },
 })

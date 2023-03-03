@@ -58,7 +58,7 @@ export class FirebaseAuthService implements AuthService {
     try {
       const auth = this.firebase.getAuth()
 
-      await setPersistence(auth, options.rememberLogin ? browserLocalPersistence : inMemoryPersistence)
+      await setPersistence(auth, options.rememberMe ? browserLocalPersistence : inMemoryPersistence)
       const userCredential: UserCredential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(userCredential.user, { displayName: name })
       this.updateUser(userCredential.user)
@@ -77,7 +77,7 @@ export class FirebaseAuthService implements AuthService {
     try {
       const auth = this.firebase.getAuth()
 
-      await setPersistence(auth, options.rememberLogin ? indexedDBLocalPersistence : inMemoryPersistence)
+      await setPersistence(auth, options.rememberMe ? indexedDBLocalPersistence : inMemoryPersistence)
       const userCredential: UserCredential = await signInWithEmailAndPassword(auth, email, password)
       logger.log('logged in as user: %o', userCredential.user)
     } catch (error) {

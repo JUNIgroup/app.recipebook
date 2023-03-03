@@ -23,7 +23,7 @@ export const SignInDialog = () => {
     const password = formData.get('password') as string
     const rememberLogin = !!formData.get('remember-me')
 
-    dispatch(fromAuth.signIn(email, password, { rememberLogin }))
+    dispatch(fromAuth.signIn(email, password, { rememberMe: rememberLogin }))
   }
 
   return (

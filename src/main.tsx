@@ -4,17 +4,25 @@ import { Provider as StoreProvider } from 'react-redux'
 import { BrowserRouter } from 'react-router-dom'
 import { IDB_ID } from './app.constants'
 import { createStore } from './business/app.store'
-import { FirebaseAuthService } from './business/auth/service/firebase-auth-service'
+import { FirebaseRestAuthService } from './business/auth/service/firebase-rest-auth-service'
 import { IdbService } from './infrastructure/database/idb/idb.service'
 import { dbUpgrades, dbVersion } from './infrastructure/database/idb/idb.upgrades'
-import { FirebaseService } from './infrastructure/firebase/firebase-service'
+import { storagePersistence, memoryPersistence } from './infrastructure/firebase/persistence'
+import { RestAuthService } from './infrastructure/firebase/rest-auth-service'
 import { App } from './presentation/app'
 
 import './index.scss'
 
 const storage = localStorage
-const firebaseService = new FirebaseService()
-const authService = new FirebaseAuthService(firebaseService)
+// const firebaseService = new FirebaseService()
+// const authServiceOld = new FirebaseAuthService(firebaseService)
+const restAuthService = import.meta.env.VITE_FIREBASE__USE_EMULATOR
+  ? RestAuthService.forEmulator()
+  : RestAuthService.forRemote(import.meta.env.VITE_FIREBASE__API_KEY)
+const authService = new FirebaseRestAuthService(restAuthService, {
+  permanent: storagePersistence(IDB_ID, storage),
+  temporary: memoryPersistence(),
+})
 const dbService = new IdbService(indexedDB, IDB_ID, dbVersion, dbUpgrades)
 
 const store = createStore({

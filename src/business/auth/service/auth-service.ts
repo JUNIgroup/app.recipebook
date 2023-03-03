@@ -2,16 +2,16 @@ import { ServiceError } from '../../error/service-error'
 
 export type LoginOptions = {
   /** if set to `true`, persist login state (some time) and email */
-  rememberLogin?: boolean
+  rememberMe?: boolean
 }
 
 export type UserData = {
   id: string
   name: string
-  email?: string
+  email: string
   verified?: boolean
-  createdAt?: number
-  lastLoginAt?: number
+  createdAt: number
+  lastLoginAt: number
 }
 
 export type AuthErrorCode =
