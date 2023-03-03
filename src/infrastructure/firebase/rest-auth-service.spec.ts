@@ -60,7 +60,9 @@ describe('RestAuthService', () => {
         const password = `secret-${id}`
 
         // act
+        const before = Date.now()
         const user = await service.signUpWithEmailAndPassword({ email, password })
+        const after = Date.now()
 
         // assert
         expect(user).toMatchObject({
@@ -68,7 +70,7 @@ describe('RestAuthService', () => {
           email: email.toLowerCase(),
           displayName: undefined,
           verified: false,
-          createdAt: expect.any(Number),
+          createdAt: expect.toBeWithin(before, after + 1),
           lastLoginAt: user.createdAt,
         })
       })
@@ -132,13 +134,11 @@ describe('RestAuthService', () => {
     })
 
     describe('.signInWithEmailAndPassword', () => {
-      let userCreatedAt: number
       let existingUser: AuthUser
       let usedPassword: string
 
       beforeEach(async () => {
         const anotherService = RestAuthService.forEmulator()
-        userCreatedAt = Date.now()
         const id = uid()
         const email = `test.signin.${id}@example.com`
         const displayName = `John Doe (signin ${id})`
@@ -153,17 +153,16 @@ describe('RestAuthService', () => {
         const password = usedPassword
 
         // act
+        const before = Date.now()
         const user = await service.signInWithEmailAndPassword({ email, password })
+        const after = Date.now()
 
         // assert
         expect(user).toMatchObject({
           ...existingUser,
-          createdAt: expect.any(Number),
-          lastLoginAt: expect.any(Number),
+          createdAt: existingUser.createdAt,
+          lastLoginAt: expect.toBeWithin(before, after + 1),
         })
-        expect(user.createdAt).toBeGreaterThanOrEqual(userCreatedAt)
-        expect(user.createdAt).toBeLessThanOrEqual(existingUser.createdAt)
-        expect(user.lastLoginAt).toBeGreaterThan(existingUser.lastLoginAt)
       })
 
       it('should update current user', async () => {
@@ -356,7 +355,9 @@ describe('RestAuthService', () => {
       it('should sign in with new password after update password', async () => {
         // act
         await service.updateProfile({ password: newPassword })
+        const before = Date.now()
         const updated = await service.signInWithEmailAndPassword({ email: user.email, password: newPassword })
+        const after = Date.now()
 
         // assert
         expect(updated).toMatchObject({
@@ -364,8 +365,8 @@ describe('RestAuthService', () => {
           email: user.email,
           displayName: undefined,
           verified: false,
-          createdAt: expect.any(Number),
-          lastLoginAt: expect.any(Number),
+          createdAt: user.createdAt,
+          lastLoginAt: expect.toBeWithin(before, after + 1),
         })
       })
 

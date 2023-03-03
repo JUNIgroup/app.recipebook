@@ -16,7 +16,8 @@
   },
   "additionalProperties": true,
   "required": [
-    "kind"
+    "kind",
+    "users"
   ],
   "definitions": {
     "UserInfo": {

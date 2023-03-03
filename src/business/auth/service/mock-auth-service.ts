@@ -1,6 +1,8 @@
 import { AuthService, Subscription, UserData } from './auth-service'
 
 export class MockAuthService implements AuthService {
+  private emailToUser: Record<string, UserData> = {}
+
   private user: UserData | null = null
 
   private subscriptions: Subscription<UserData | null>[] = []
@@ -11,20 +13,29 @@ export class MockAuthService implements AuthService {
   }
 
   async signUpWithEmailAndPassword(name: string, email: string): Promise<void> {
+    const now = Date.now()
     const user: UserData = {
       id: email,
       name,
       email,
+      createdAt: now,
+      lastLoginAt: now,
     }
+    this.emailToUser[email] = user
     this.setMockUser(user)
   }
 
   async signInWithEmailAndPassword(email: string): Promise<void> {
-    const user: UserData = {
+    const now = Date.now()
+    const user: UserData = this.emailToUser[email] ?? {
       id: email,
       name: email,
       email,
+      createdAt: now,
+      lastLoginAt: now,
     }
+    user.lastLoginAt = now
+    this.emailToUser[email] = user
     this.setMockUser(user)
   }
 
@@ -71,10 +82,12 @@ export class MockAuthService implements AuthService {
 
   private async change(key: keyof UserData, value: string) {
     if (this.user) {
+      delete this.emailToUser[this.user.email]
       const user: UserData = {
         ...this.user,
         [key]: value,
       }
+      this.emailToUser[this.user.email] = user
       this.setMockUser(user)
       // return user
     }

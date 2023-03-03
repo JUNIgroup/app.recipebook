@@ -7,16 +7,18 @@ import {
   AuthData,
   AuthToken,
   AuthUser,
+  DeleteAccountResponse,
+  GetAccountInfoResponse,
   isAuthData,
+  isDeleteAccountResponse,
+  isGetAccountInfoResponse,
   isSetAccountInfoResponse,
-  isVerifyPasswordResponse,
   isSignupNewUserResponse,
+  isVerifyPasswordResponse,
   ProfileUpdateParams,
   SetAccountInfoResponse,
-  VerifyPasswordResponse,
   SignupNewUserResponse,
-  GetAccountInfoResponse,
-  isGetAccountInfoResponse,
+  VerifyPasswordResponse,
 } from './helpers/rest-types'
 import { deepEqual, expiresAt } from './helpers/utilities'
 import { AuthPersistence, nonePersistence } from './persistence'
@@ -196,16 +198,23 @@ export class RestAuthService {
    */
   async signUpWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
     const logger = createLogger('signUp', email)
-    const { signUp: signUpUrl } = await this.endpoints
+    const { signUpWithPassword: signUpUrl, lookupProfile: profileUrl } = await this.endpoints
 
     try {
-      const payload = { email, password, returnSecureToken: true }
-      const response = await axios
-        .post<SignupNewUserResponse>(signUpUrl, payload)
+      const signUpPayload = { email, password, returnSecureToken: true }
+      const signUpResponse = await axios
+        .post<SignupNewUserResponse>(signUpUrl, signUpPayload)
         .then(extractResponseData(logger, isSignupNewUserResponse))
         .catch(requestErrorHandler(logger))
 
-      const authData = RestAuthService.convertSignupNewUserResponse(response)
+      const profilePayload = { idToken: signUpResponse.idToken }
+      const profileResponse = await axios
+        .post<GetAccountInfoResponse>(profileUrl, profilePayload)
+        .then(extractResponseData(logger, isGetAccountInfoResponse))
+        .catch(requestErrorHandler(logger))
+        .catch(() => null) // ignore errors
+
+      const authData = RestAuthService.convertSignupNewUserResponse(signUpResponse, profileResponse)
       await this.setAuthData(authData)
       return authData.user
     } finally {
@@ -213,11 +222,26 @@ export class RestAuthService {
     }
   }
 
-  private static convertSignupNewUserResponse(response: SignupNewUserResponse): AuthData {
-    const { localId: id, email, idToken, refreshToken, expiresIn } = response
+  private static convertSignupNewUserResponse(
+    response: SignupNewUserResponse,
+    accountInfoResponse: GetAccountInfoResponse | null,
+  ): AuthData {
     const now = Date.now()
-    const user: AuthUser = { id, email, displayName: undefined, verified: false, createdAt: now, lastLoginAt: now }
-    const token: AuthToken = { secureToken: idToken, refreshToken, expiresAt: expiresAt(now, expiresIn) }
+    const { localId: id, email, idToken, refreshToken, expiresIn } = response
+    const { createdAt = now, lastLoginAt = now } = accountInfoResponse?.users[0] ?? {}
+    const user: AuthUser = {
+      id,
+      email,
+      displayName: undefined,
+      verified: false,
+      createdAt: +createdAt,
+      lastLoginAt: +lastLoginAt,
+    }
+    const token: AuthToken = {
+      secureToken: idToken,
+      refreshToken,
+      expiresAt: expiresAt(+lastLoginAt, expiresIn),
+    }
     return { user, token }
   }
 
@@ -285,9 +309,19 @@ export class RestAuthService {
   ): AuthData {
     const { localId: id, email, idToken, refreshToken, expiresIn } = verifyResponse
     const { displayName, emailVerified: verified, createdAt, lastLoginAt } = accountInfoResponse.users[0]
-    const now = Date.now()
-    const user: AuthUser = { id, email, displayName, verified, createdAt: +createdAt, lastLoginAt: +lastLoginAt }
-    const token: AuthToken = { secureToken: idToken, refreshToken, expiresAt: expiresAt(now, expiresIn) }
+    const user: AuthUser = {
+      id,
+      email,
+      displayName,
+      verified,
+      createdAt: +createdAt,
+      lastLoginAt: +lastLoginAt,
+    }
+    const token: AuthToken = {
+      secureToken: idToken,
+      refreshToken,
+      expiresAt: expiresAt(+lastLoginAt, expiresIn),
+    }
     return { user, token }
   }
 
@@ -299,8 +333,8 @@ export class RestAuthService {
     try {
       const payload = { idToken: authData.token.secureToken }
       await axios
-        .post<GetAccountInfoResponse>(deleteAccountUrl, payload)
-        // .then(extractResponseData(logger, isDeleteAccountResponse))
+        .post<DeleteAccountResponse>(deleteAccountUrl, payload)
+        .then(extractResponseData(logger, isDeleteAccountResponse))
         .catch(requestErrorHandler(logger))
 
       await this.setAuthData(null)

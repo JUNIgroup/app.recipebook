@@ -24,7 +24,7 @@ export const SignUpDialog = () => {
     const password = formData.get('password') as string
     const rememberLogin = true
 
-    dispatch(fromAuth.signUp(name, email, password, { rememberLogin }))
+    dispatch(fromAuth.signUp(name, email, password, { rememberMe: rememberLogin }))
   }
 
   return (

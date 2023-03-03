@@ -6,6 +6,7 @@ export type FirebaseErrorCode =
   | 'EMAIL_NOT_FOUND'
   | 'USER_DISABLED'
   | 'USER_NOT_FOUND'
+  | 'INVALID_EMAIL'
   | 'INVALID_PASSWORD'
   | 'WEAK_PASSWORD'
   | 'OPERATION_NOT_ALLOWED'

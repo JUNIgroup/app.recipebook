@@ -3,10 +3,11 @@ import { isEmulatorAvailable } from './emulator-utils'
 import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './endpoints'
 
 const accountEndpointNames: (keyof AccountEndpoints)[] = [
-  'signUp',
+  'signUpWithPassword',
   'signInWithPassword',
   'updateProfile',
   'lookupProfile',
+  'deleteAccount',
 ]
 
 describe('createRemoteEndpoints', () => {

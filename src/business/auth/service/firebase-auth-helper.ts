@@ -43,5 +43,5 @@ export function toUserData(user: User, displayName?: string): UserData {
     verified: user.emailVerified,
     createdAt: at(user.metadata, 'createdAt'),
     lastLoginAt: at(user.metadata, 'lastLoginAt'),
-  }
+  } as UserData
 }

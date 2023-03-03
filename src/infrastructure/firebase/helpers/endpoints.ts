@@ -1,7 +1,7 @@
 import { isEmulatorAvailable } from './emulator-utils'
 
 export interface AccountEndpoints {
-  signUp: string
+  signUpWithPassword: string
   signInWithPassword: string
   updateProfile: string
   lookupProfile: string
@@ -10,7 +10,7 @@ export interface AccountEndpoints {
 
 function createEndpoints(accountEndpoint: string, apiKey: string): AccountEndpoints {
   const endpoints: AccountEndpoints = {
-    signUp: `${accountEndpoint}:signUp?key=${apiKey}`,
+    signUpWithPassword: `${accountEndpoint}:signUp?key=${apiKey}`,
     signInWithPassword: `${accountEndpoint}:signInWithPassword?key=${apiKey}`,
     updateProfile: `${accountEndpoint}:update?key=${apiKey}`,
     lookupProfile: `${accountEndpoint}:lookup?key=${apiKey}`,

@@ -2,6 +2,7 @@ import { AuthPersistence } from '../../../infrastructure/firebase/persistence'
 import { AuthUser, RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
 import { ServiceLogger } from '../../../infrastructure/logger/logger'
 import { AuthService, LoginOptions, Subscription, UserData } from './auth-service'
+import { toAuthError } from './firebase-rest-auth-errors'
 
 const createLogger = ServiceLogger('FirebaseRestAuthService')
 
@@ -27,6 +28,9 @@ export class FirebaseRestAuthService implements AuthService {
             id: user.id,
             email: user.email,
             name: user.displayName ?? user.email,
+            verified: user.verified,
+            createdAt: user.createdAt,
+            lastLoginAt: user.lastLoginAt,
           }
     logger.log('user: %o', userData)
     this.userData = userData
@@ -49,15 +53,14 @@ export class FirebaseRestAuthService implements AuthService {
     logger.log('name: %o', name)
     logger.log('options: %o', options)
     try {
-      const persistence = options.rememberLogin ? this.persistence.permanent : this.persistence.temporary
+      const persistence = options.rememberMe ? this.persistence.permanent : this.persistence.temporary
       await this.auth.setPersistence(persistence)
       let user = await this.auth.signUpWithEmailAndPassword({ email, password })
       user = await this.updateProfileSilently(user, { displayName: name })
       logger.log('logged in as user: %o', user)
     } catch (error) {
       logger.error('login failed: %o', error)
-      // throw toAuthError(serviceName, error)
-      throw error
+      throw toAuthError(error)
     } finally {
       logger.end()
     }
@@ -80,14 +83,13 @@ export class FirebaseRestAuthService implements AuthService {
     const logger = createLogger('signInWithEmailAndPassword', email)
     logger.log('options: %o', options)
     try {
-      const persistence = options.rememberLogin ? this.persistence.permanent : this.persistence.temporary
+      const persistence = options.rememberMe ? this.persistence.permanent : this.persistence.temporary
       await this.auth.setPersistence(persistence)
       const user = await this.auth.signInWithEmailAndPassword({ email, password })
       logger.log('logged in as user: %o', user)
     } catch (error) {
       logger.error('login failed: %o', error)
-      // throw toAuthError(serviceName, error)
-      throw error
+      throw toAuthError(error)
     } finally {
       logger.end()
     }
@@ -141,8 +143,7 @@ export class FirebaseRestAuthService implements AuthService {
       await this.auth.updateProfile({ displayName: newName })
     } catch (error) {
       logger.error('update failed: %o', error)
-      // throw toAuthError(serviceName, error)
-      throw error
+      throw toAuthError(error)
     } finally {
       logger.end()
     }
@@ -173,8 +174,7 @@ export class FirebaseRestAuthService implements AuthService {
       await this.auth.updateProfile({ password: newPassword })
     } catch (error) {
       logger.error('update failed: %o', error)
-      // throw toAuthError(serviceName, error)
-      throw error
+      throw toAuthError(error)
     } finally {
       logger.end()
     }

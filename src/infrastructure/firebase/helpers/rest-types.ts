@@ -3,6 +3,7 @@ import { validate as validateSetAccountInfoResponse } from './schemas/set-accoun
 import { validate as validateSignupNewUserResponse } from './schemas/signup-new-user-response.json-schema'
 import { validate as validateVerifyPasswordResponse } from './schemas/verify-password-response.json-schema'
 import { validate as validateGetAccountInfoResponse } from './schemas/get-account-info-response.json-schema'
+import { validate as validateDeleteAccountResponse } from './schemas/delete-account-response.json-schema'
 import { validate as validateAuthData } from './schemas/auth-data.json-schema'
 
 export interface AuthUser {
@@ -80,3 +81,9 @@ export interface GetAccountInfoResponse {
 }
 
 export const isGetAccountInfoResponse = validateGetAccountInfoResponse as ValidateFunction<GetAccountInfoResponse>
+
+export interface DeleteAccountResponse {
+  kind: 'identitytoolkit#DeleteAccountResponse'
+}
+
+export const isDeleteAccountResponse = validateDeleteAccountResponse as ValidateFunction<DeleteAccountResponse>

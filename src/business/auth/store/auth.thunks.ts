@@ -42,7 +42,7 @@ export function signIn(
     const finished = services.authService.signInWithEmailAndPassword(email, password, options)
     finished.then(
       () => {
-        dispatch(storeRememberedEmail(options?.rememberLogin ? email : null))
+        dispatch(storeRememberedEmail(options?.rememberMe ? email : null))
         dispatch(actions.finishAuth({}))
       },
       (error: AuthError) => {
@@ -64,7 +64,7 @@ export function signUp(
     const finished = services.authService.signUpWithEmailAndPassword(name, email, password, options)
     finished.then(
       () => {
-        dispatch(storeRememberedEmail(options?.rememberLogin ? email : null))
+        dispatch(storeRememberedEmail(options?.rememberMe ? email : null))
         dispatch(actions.finishAuth({}))
       },
       (error: AuthError) => {
