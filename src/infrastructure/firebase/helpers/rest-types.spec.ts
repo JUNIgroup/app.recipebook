@@ -1,18 +1,24 @@
+import { StructError } from 'superstruct'
 import {
-  isVerifyPasswordResponse,
-  isSignupNewUserResponse,
-  VerifyPasswordResponse,
-  SignupNewUserResponse,
-  SetAccountInfoResponse,
-  isSetAccountInfoResponse,
-  isAuthData,
+  assertAuthData,
+  assertDeleteAccountResponse,
+  assertGetAccountInfoResponse,
+  assertSetAccountInfoResponse,
+  assertSignupNewUserResponse,
+  assertVerifyPasswordResponse,
   AuthData,
   AuthToken,
   AuthUser,
+  DeleteAccountResponse,
+  GetAccountInfoResponse,
+  SetAccountInfoResponse,
+  SignupNewUserResponse,
+  VerifyPasswordResponse,
 } from './rest-types'
 
-describe('isAuthData', () => {
-  it('should return true for a valid response', () => {
+describe('assertAuthData', () => {
+  it('should not throw exception for a valid response', () => {
+    // arrange
     const user: AuthUser = {
       id: 'id1234',
       email: 'email',
@@ -27,19 +33,29 @@ describe('isAuthData', () => {
       expiresAt: 1000,
     }
     const data: AuthData = { user, token }
-    const result = isAuthData(data)
-    expect(result).toBe(true)
+
+    // act
+    const act = () => assertAuthData(data)
+
+    // assert
+    expect(act).not.toThrowError()
   })
 
-  it('should return false for an invalid response', () => {
+  it('should throw StructError for an invalid response', () => {
+    // arrange
     const data = { kind: 'something else' }
-    const result = isAuthData(data)
-    expect(result).toBe(false)
+
+    // act
+    const act = () => assertAuthData(data)
+
+    // assert
+    expect(act).toThrowError(StructError)
   })
 })
 
-describe('isSignUpResponse', () => {
-  it('should return true for a valid response', () => {
+describe('assertSignupNewUserResponse', () => {
+  it('should not throw exception for a valid response', () => {
+    // arrange
     const response: SignupNewUserResponse = {
       kind: 'identitytoolkit#SignupNewUserResponse',
       localId: 'localId',
@@ -48,19 +64,29 @@ describe('isSignUpResponse', () => {
       refreshToken: 'refreshToken',
       expiresIn: '3600',
     }
-    const result = isSignupNewUserResponse(response)
-    expect(result).toBe(true)
+
+    // act
+    const act = () => assertSignupNewUserResponse(response)
+
+    // assert
+    expect(act).not.toThrowError()
   })
 
-  it('should return false for an invalid response', () => {
+  it('should throw StructError for an invalid response', () => {
+    // arrange
     const response = { kind: 'something else' }
-    const result = isSignupNewUserResponse(response)
-    expect(result).toBe(false)
+
+    // act
+    const act = () => assertSignupNewUserResponse(response)
+
+    // assert
+    expect(act).toThrowError(StructError)
   })
 })
 
-describe('isSignInResponse', () => {
-  it('should return true for a valid response', () => {
+describe('assertVerifyPasswordResponse', () => {
+  it('should not throw exception for a valid response', () => {
+    // arrange
     const response: VerifyPasswordResponse = {
       kind: 'identitytoolkit#VerifyPasswordResponse',
       localId: 'localId',
@@ -70,19 +96,29 @@ describe('isSignInResponse', () => {
       expiresIn: '3600',
       registered: true,
     }
-    const result = isVerifyPasswordResponse(response)
-    expect(result).toBe(true)
+
+    // act
+    const act = () => assertVerifyPasswordResponse(response)
+
+    // assert
+    expect(act).not.toThrowError()
   })
 
-  it('should return false for an invalid response', () => {
+  it('should throw StructError for an invalid response', () => {
+    // arrange
     const response = { kind: 'something else' }
-    const result = isVerifyPasswordResponse(response)
-    expect(result).toBe(false)
+
+    // act
+    const act = () => assertVerifyPasswordResponse(response)
+
+    // assert
+    expect(act).toThrowError(StructError)
   })
 })
 
-describe('isProfileUpdateResponse', () => {
-  it('should return true for a valid response', () => {
+describe('assertSetAccountInfoResponse', () => {
+  it('should not throw exception for a valid response', () => {
+    // arrange
     const response: SetAccountInfoResponse = {
       kind: 'identitytoolkit#SetAccountInfoResponse',
       localId: 'localId',
@@ -90,13 +126,85 @@ describe('isProfileUpdateResponse', () => {
       displayName: 'displayName',
       photoUrl: 'photoUrl',
     }
-    const result = isSetAccountInfoResponse(response)
-    expect(result).toBe(true)
+
+    // act
+    const act = () => assertSetAccountInfoResponse(response)
+
+    // assert
+    expect(act).not.toThrowError()
   })
 
-  it('should return false for an invalid response', () => {
+  it('should throw StructError for an invalid response', () => {
+    // arrange
     const response = { kind: 'something else' }
-    const result = isSetAccountInfoResponse(response)
-    expect(result).toBe(false)
+
+    // act
+    const act = () => assertSetAccountInfoResponse(response)
+
+    // assert
+    expect(act).toThrowError(StructError)
+  })
+})
+
+describe('assertGetAccountInfoResponse', () => {
+  it('should not throw exception for a valid response', () => {
+    // arrange
+    const response: GetAccountInfoResponse = {
+      kind: 'identitytoolkit#GetAccountInfoResponse',
+      users: [
+        {
+          localId: 'localId',
+          email: 'email',
+          emailVerified: false,
+          displayName: 'displayName',
+          photoUrl: 'photoUrl',
+          createdAt: '1234',
+          lastLoginAt: '1234',
+        },
+      ],
+    }
+
+    // act
+    const act = () => assertGetAccountInfoResponse(response)
+
+    // assert
+    expect(act).not.toThrowError()
+  })
+
+  it('should throw StructError for an invalid response', () => {
+    // arrange
+    const response = { kind: 'something else' }
+
+    // act
+    const act = () => assertGetAccountInfoResponse(response)
+
+    // assert
+    expect(act).toThrowError(StructError)
+  })
+})
+
+describe('assertDeleteAccountResponse', () => {
+  it('should not throw exception for a valid response', () => {
+    // arrange
+    const response: DeleteAccountResponse = {
+      kind: 'identitytoolkit#DeleteAccountResponse',
+    }
+
+    // act
+    const act = () => assertDeleteAccountResponse(response)
+
+    // assert
+    expect(act).not.toThrowError()
+  })
+
+  it('should throw StructError for an invalid response', () => {
+    // arrange
+    const response = { kind: 'something else' }
+
+    // act
+    const act = () => assertDeleteAccountResponse(response)
+
+    // assert
+    expect(act).toThrowError(StructError)
   })
 })

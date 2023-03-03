@@ -15,15 +15,16 @@ export function extractResponseData<T>(
   validate: ValidateFunction<T>,
 ): (response: AxiosResponse<T>) => T {
   return (response: AxiosResponse<T>) => {
-    if (validate(response.data)) return response.data
-
-    const { method = 'GET', url, headers, data: requestData } = response.config
-    logger.error('Validation Error: Invalid response data: %o', response.data)
-    logger.error(`         Request: %s %s, data: %o, headers: %o`, method.toUpperCase(), url, requestData, headers)
-    validate.errors?.forEach((error) => {
-      logger.error(`         Problem: @%s %s`, error.instancePath, error.message)
-    })
-    throw new FirebaseError('SERVER_ERROR')
+    try {
+      validate(response.data)
+      return response.data
+    } catch (error) {
+      const { method = 'GET', url, headers, data: requestData } = response.config
+      logger.error('Validation Error: Invalid response data: %o', response.data)
+      logger.error(`         Request: %s %s, data: %o, headers: %o`, method.toUpperCase(), url, requestData, headers)
+      logger.error(`         Problem: %s`, error instanceof Error ? error.message : error)
+      throw new FirebaseError('SERVER_ERROR')
+    }
   }
 }
 

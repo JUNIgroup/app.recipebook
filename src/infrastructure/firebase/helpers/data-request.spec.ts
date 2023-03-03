@@ -1,9 +1,10 @@
-import Ajv from 'ajv'
 import { AxiosError, AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import { boolean, number, object, optional, string } from 'superstruct'
 import { FakeLogger } from '../../logger/fake-logger.test-helper'
 import { Logger } from '../../logger/logger'
-import { extractResponseData, requestErrorHandler } from './data-request'
+import { createValidationFunction } from '../../validation/superstruct.extend'
 import { FirebaseError } from '../firebase-error'
+import { extractResponseData, requestErrorHandler } from './data-request'
 
 describe('requestErrorHandler', () => {
   const requestHeaders = new AxiosHeaders({ Accept: 'application/json, text/plain, */*' })
@@ -124,15 +125,13 @@ describe('extractResponseData', () => {
     headers: requestHeaders,
   }
 
-  const validate = new Ajv({ allErrors: true }).compile({
-    type: 'object',
-    properties: {
-      foo: { type: 'string' },
-      bar: { type: 'number' },
-      baz: { type: 'boolean' },
-    },
-    required: ['foo', 'bar'],
-  })
+  const validate = createValidationFunction(
+    object({
+      foo: string(),
+      bar: number(),
+      baz: optional(boolean()),
+    }),
+  )
 
   it('should return a handler function', () => {
     const logger = new FakeLogger()
@@ -162,9 +161,7 @@ describe('extractResponseData', () => {
     expect(logger.lines).toEqual([
       '[ERROR] Validation Error: Invalid response data: { foo: 123, baz: string? }',
       `[ERROR]          Request: GET http://localhost:8080, data: { pay: load }, headers: ${headers}`,
-      `[ERROR]          Problem: @ must have required property 'bar'`,
-      `[ERROR]          Problem: @/foo must be string`,
-      `[ERROR]          Problem: @/baz must be boolean`,
+      `[ERROR]          Problem: At path: foo -- Expected a string, but received: 123`,
     ])
   })
 })

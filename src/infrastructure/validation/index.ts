@@ -1,8 +1,6 @@
-import type { ErrorObject } from 'ajv'
-
-export type { ErrorObject }
-
-export type ValidateFunction<T> = {
-  (data: unknown): data is T
-  errors?: null | ErrorObject[]
-}
+/**
+ * Calling this function will throw an error if the data could not be validated.
+ *
+ * @param data the data to validate
+ */
+export type ValidateFunction<T> = (data: unknown) => asserts data is T
