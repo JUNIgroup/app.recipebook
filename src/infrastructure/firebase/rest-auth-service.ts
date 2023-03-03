@@ -4,17 +4,17 @@ import { FirebaseError } from './firebase-error'
 import { extractResponseData, requestErrorHandler } from './helpers/data-request'
 import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './helpers/endpoints'
 import {
+  assertAuthData,
+  assertDeleteAccountResponse,
+  assertGetAccountInfoResponse,
+  assertSetAccountInfoResponse,
+  assertSignupNewUserResponse,
+  assertVerifyPasswordResponse,
   AuthData,
   AuthToken,
   AuthUser,
   DeleteAccountResponse,
   GetAccountInfoResponse,
-  isAuthData,
-  isDeleteAccountResponse,
-  isGetAccountInfoResponse,
-  isSetAccountInfoResponse,
-  isSignupNewUserResponse,
-  isVerifyPasswordResponse,
   ProfileUpdateParams,
   SetAccountInfoResponse,
   SignupNewUserResponse,
@@ -153,15 +153,14 @@ export class RestAuthService {
         return null
       }
 
-      if (!isAuthData(authData)) {
-        logger.log('Persisted user is invalid.')
-        await this.setAuthData(null)
-        return null
-      }
-
+      assertAuthData(authData)
       logger.log('Persisted user found: %o', authData.user)
       await this.setAuthData(authData)
       return authData.user
+    } catch (error) {
+      logger.log('Persisted user is invalid.')
+      await this.setAuthData(null)
+      return null
     } finally {
       logger.end()
     }
@@ -204,13 +203,13 @@ export class RestAuthService {
       const signUpPayload = { email, password, returnSecureToken: true }
       const signUpResponse = await axios
         .post<SignupNewUserResponse>(signUpUrl, signUpPayload)
-        .then(extractResponseData(logger, isSignupNewUserResponse))
+        .then(extractResponseData(logger, assertSignupNewUserResponse))
         .catch(requestErrorHandler(logger))
 
       const profilePayload = { idToken: signUpResponse.idToken }
       const profileResponse = await axios
         .post<GetAccountInfoResponse>(profileUrl, profilePayload)
-        .then(extractResponseData(logger, isGetAccountInfoResponse))
+        .then(extractResponseData(logger, assertGetAccountInfoResponse))
         .catch(requestErrorHandler(logger))
         .catch(() => null) // ignore errors
 
@@ -254,7 +253,7 @@ export class RestAuthService {
       const payload = { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true }
       const response = await axios
         .post<SetAccountInfoResponse>(updateProfileUrl, payload)
-        .then(extractResponseData(logger, isSetAccountInfoResponse))
+        .then(extractResponseData(logger, assertSetAccountInfoResponse))
         .catch(requestErrorHandler(logger))
 
       const newAuthData = RestAuthService.convertProfileUpdateResponse(authData, response)
@@ -286,13 +285,13 @@ export class RestAuthService {
       const signInPayload = { email, password, returnSecureToken: true }
       const signInResponse = await axios
         .post<VerifyPasswordResponse>(signInUrl, signInPayload)
-        .then(extractResponseData(logger, isVerifyPasswordResponse))
+        .then(extractResponseData(logger, assertVerifyPasswordResponse))
         .catch(requestErrorHandler(logger))
 
       const profilePayload = { idToken: signInResponse.idToken }
       const profileResponse = await axios
         .post<GetAccountInfoResponse>(profileUrl, profilePayload)
-        .then(extractResponseData(logger, isGetAccountInfoResponse))
+        .then(extractResponseData(logger, assertGetAccountInfoResponse))
         .catch(requestErrorHandler(logger))
 
       const authData = RestAuthService.convertVerifyPasswordResponse(signInResponse, profileResponse)
@@ -334,7 +333,7 @@ export class RestAuthService {
       const payload = { idToken: authData.token.secureToken }
       await axios
         .post<DeleteAccountResponse>(deleteAccountUrl, payload)
-        .then(extractResponseData(logger, isDeleteAccountResponse))
+        .then(extractResponseData(logger, assertDeleteAccountResponse))
         .catch(requestErrorHandler(logger))
 
       await this.setAuthData(null)

@@ -1,7 +1,6 @@
 import { AppThunk } from '../../app.store'
 import * as fromDB from '../../db'
-import { Recipe } from '../model/recipe.model'
-import { isRecipe } from '../model/recipe.schema'
+import { isRecipe, Recipe } from '../model/recipe.model'
 import { actions } from './recipe.slice'
 
 export function addRecipe(recipe: Recipe): AppThunk<Promise<void>> {

@@ -1,4 +1,5 @@
-import { Recipe, RecipeV1 } from './recipe.model'
+import { Recipe } from './recipe.model'
+import { RecipeV1 } from './recipe.v1.schema'
 
 export const testUserId = 'id-test-0001'
 

@@ -1,89 +1,145 @@
-import type { ValidateFunction } from '../../validation'
-import { validate as validateSetAccountInfoResponse } from './schemas/set-account-info-response.json-schema'
-import { validate as validateSignupNewUserResponse } from './schemas/signup-new-user-response.json-schema'
-import { validate as validateVerifyPasswordResponse } from './schemas/verify-password-response.json-schema'
-import { validate as validateGetAccountInfoResponse } from './schemas/get-account-info-response.json-schema'
-import { validate as validateDeleteAccountResponse } from './schemas/delete-account-response.json-schema'
-import { validate as validateAuthData } from './schemas/auth-data.json-schema'
+import { array, boolean, Infer, literal, nonempty, number, object, optional, string, type } from 'superstruct'
+import { createValidationFunction, positiveIntegerString } from '../../validation/superstruct.extend'
+import { ValidateFunction } from '../../validation/index'
 
-export interface AuthUser {
-  id: string
-  email: string
-  displayName: string | undefined
-  verified: boolean
-  createdAt: number
-  lastLoginAt: number
-}
+/**
+ * Superstruct schema for AuthUser
+ */
+const AuthUserStruct = object({
+  id: nonempty(string()),
+  email: nonempty(string()),
+  displayName: optional(nonempty(string())),
+  verified: boolean(),
+  createdAt: number(),
+  lastLoginAt: number(),
+})
 
-export interface AuthToken {
-  secureToken: string
-  refreshToken: string
-  expiresAt: number
-}
+export type AuthUser = Infer<typeof AuthUserStruct>
 
-export interface AuthData {
-  user: AuthUser
-  token: AuthToken
-}
+/**
+ * Superstruct schema for AuthToken
+ */
+const AuthTokenStruct = object({
+  secureToken: nonempty(string()),
+  refreshToken: nonempty(string()),
+  expiresAt: number(),
+})
 
-export const isAuthData = validateAuthData as ValidateFunction<AuthData>
+export type AuthToken = Infer<typeof AuthTokenStruct>
 
-export interface SignupNewUserResponse {
-  kind: 'identitytoolkit#SignupNewUserResponse'
-  localId: string
-  email: string
-  idToken: string
-  refreshToken: string
-  expiresIn: `${number}`
-}
+const AuthDataStruct = object({
+  user: AuthUserStruct,
+  token: AuthTokenStruct,
+})
 
-export const isSignupNewUserResponse = validateSignupNewUserResponse as ValidateFunction<SignupNewUserResponse>
+/**
+ * Superstruct schema for AuthData
+ */
+export type AuthData = Infer<typeof AuthDataStruct>
 
-export interface VerifyPasswordResponse {
-  kind: 'identitytoolkit#VerifyPasswordResponse'
-  localId: string
-  email: string
-  idToken: string
-  refreshToken: string
-  expiresIn: `${number}`
-  registered: boolean
-}
+export const assertAuthData: ValidateFunction<AuthData> = createValidationFunction(AuthDataStruct)
 
-export const isVerifyPasswordResponse = validateVerifyPasswordResponse as ValidateFunction<VerifyPasswordResponse>
+/**
+ * Superstruct schema for SignupNewUserResponse
+ */
+export const SignupNewUserResponseStruct = type({
+  kind: literal('identitytoolkit#SignupNewUserResponse'),
+  localId: nonempty(string()),
+  email: nonempty(string()),
+  idToken: nonempty(string()),
+  refreshToken: nonempty(string()),
+  expiresIn: positiveIntegerString,
+})
 
+/**
+ * Type for SignupNewUserResponse of googles identity toolkit API.
+ */
+export type SignupNewUserResponse = Infer<typeof SignupNewUserResponseStruct>
+
+export const assertSignupNewUserResponse = createValidationFunction(SignupNewUserResponseStruct)
+
+/**
+ * Superstruct schema for VerifyPasswordResponse
+ */
+const VerifyPasswordResponseStruct = type({
+  kind: literal('identitytoolkit#VerifyPasswordResponse'),
+  localId: nonempty(string()),
+  email: nonempty(string()),
+  idToken: nonempty(string()),
+  refreshToken: nonempty(string()),
+  expiresIn: positiveIntegerString,
+  registered: optional(boolean()),
+})
+
+/**
+ * Type for VerifyPasswordResponse of googles identity toolkit API.
+ */
+export type VerifyPasswordResponse = Infer<typeof VerifyPasswordResponseStruct>
+
+export const assertVerifyPasswordResponse = createValidationFunction(VerifyPasswordResponseStruct)
+
+/**
+ * Optional values of the user profile to update.
+ */
 export interface ProfileUpdateParams {
   email?: string
   displayName?: string
   password?: string
 }
 
-export interface SetAccountInfoResponse {
-  kind: 'identitytoolkit#SetAccountInfoResponse'
-  localId: string
-  email: string
-  displayName?: string
-  photoUrl?: string
-}
+/**
+ * Superstruct schema for SetAccountInfoResponse
+ */
+const SetAccountInfoResponseStruct = type({
+  kind: literal('identitytoolkit#SetAccountInfoResponse'),
+  localId: nonempty(string()),
+  email: nonempty(string()),
+  displayName: optional(nonempty(string())),
+  photoUrl: optional(nonempty(string())),
+})
 
-export const isSetAccountInfoResponse = validateSetAccountInfoResponse as ValidateFunction<SetAccountInfoResponse>
+/**
+ * Type for SetAccountInfoResponse of googles identity toolkit API.
+ */
+export type SetAccountInfoResponse = Infer<typeof SetAccountInfoResponseStruct>
 
-export interface GetAccountInfoResponse {
-  kind: 'identitytoolkit#GetAccountInfoResponse'
-  users: {
-    localId: string
-    email: string
-    emailVerified: boolean
-    displayName: string
-    photoUrl: string
-    createdAt: string
-    lastLoginAt: string
-  }[]
-}
+export const assertSetAccountInfoResponse = createValidationFunction(SetAccountInfoResponseStruct)
 
-export const isGetAccountInfoResponse = validateGetAccountInfoResponse as ValidateFunction<GetAccountInfoResponse>
+/**
+ * Superstruct schema for GetAccountInfoResponse
+ */
+const GetAccountInfoResponseStruct = type({
+  kind: literal('identitytoolkit#GetAccountInfoResponse'),
+  users: array(
+    type({
+      localId: nonempty(string()),
+      email: nonempty(string()),
+      emailVerified: boolean(),
+      displayName: optional(nonempty(string())),
+      photoUrl: optional(nonempty(string())),
+      createdAt: positiveIntegerString,
+      lastLoginAt: positiveIntegerString,
+    }),
+  ),
+})
 
-export interface DeleteAccountResponse {
-  kind: 'identitytoolkit#DeleteAccountResponse'
-}
+/**
+ * Type for GetAccountInfoResponse of googles identity toolkit API.
+ */
+export type GetAccountInfoResponse = Infer<typeof GetAccountInfoResponseStruct>
 
-export const isDeleteAccountResponse = validateDeleteAccountResponse as ValidateFunction<DeleteAccountResponse>
+export const assertGetAccountInfoResponse = createValidationFunction(GetAccountInfoResponseStruct)
+
+/**
+ * Superstruct schema for DeleteAccountResponse
+ */
+const DeleteAccountResponseStruct = type({
+  kind: literal('identitytoolkit#DeleteAccountResponse'),
+})
+
+/**
+ * Type for DeleteAccountResponse of googles identity toolkit API.
+ */
+export type DeleteAccountResponse = Infer<typeof DeleteAccountResponseStruct>
+
+export const assertDeleteAccountResponse = createValidationFunction(DeleteAccountResponseStruct)

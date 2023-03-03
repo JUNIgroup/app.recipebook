@@ -1,4 +1,3 @@
-import Ajv from 'ajv'
 import {
   Change,
   ChangeDesc,
@@ -7,10 +6,8 @@ import {
   NON_OBJECT_SAMPLES,
   NON_STRING_SAMPLES,
 } from '../../helper/validation/validation.test-helper'
-import { isRecipe } from './recipe.schema'
+import { isRecipeV1 } from './recipe.v1.schema'
 import { fullRecipeV1 } from './recipes.samples'
-
-import recipeSchemaRaw from './recipe.json-schema?raw'
 
 const fullRecipe = fullRecipeV1
 
@@ -36,35 +33,27 @@ const forbiddenChanges: Change[] = [
   { path: 'origin.description', values: [...NON_STRING_SAMPLES] },
 ]
 
-describe('schema', async () => {
-  it('should be valid', () => {
-    const ajv = new Ajv({ allErrors: true })
-    const validate = ajv.compile(JSON.parse(recipeSchemaRaw))
-    expect(validate).toEqual(expect.any(Function))
-  })
-})
-
 describe('isRecipe', () => {
   it('should accept full recipe', () => {
-    expect(isRecipe(fullRecipe)).toBe(true)
+    expect(isRecipeV1(fullRecipe)).toBe(true)
   })
 
   describe('valid data', () => {
     it.each(ChangeDesc.fromChanges(allowedChanges))('should accept change %s', (change) => {
       const recipe = change.apply(fullRecipe)
-      expect(isRecipe(recipe)).toBe(true)
+      expect(isRecipeV1(recipe)).toBe(true)
     })
 
     const minimalRecipe = minimalOf(fullRecipe, allowedChanges)
     it(`should accept minimal recipe ${JSON.stringify(minimalRecipe)}`, () => {
-      expect(isRecipe(minimalRecipe)).toBe(true)
+      expect(isRecipeV1(minimalRecipe)).toBe(true)
     })
   })
 
   describe('invalid data', () => {
     it.each(ChangeDesc.fromChanges(forbiddenChanges))('should not accept change %s', (change) => {
       const recipe = change.apply(fullRecipe)
-      expect(isRecipe(recipe)).toBe(false)
+      expect(isRecipeV1(recipe)).toBe(false)
     })
   })
 })
