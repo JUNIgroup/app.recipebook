@@ -1,6 +1,8 @@
-import axios, { AxiosResponse } from 'axios'
+import { defineGlobalFetchForTesting } from '../../query/fetch.test-helper'
 import { isEmulatorAvailable } from './emulator-utils'
 import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './endpoints'
+
+defineGlobalFetchForTesting()
 
 const accountEndpointNames: (keyof AccountEndpoints)[] = [
   'signUpWithPassword',
@@ -28,7 +30,7 @@ describe('createEmulatorEndpoints', () => {
       const endpoints = await createEmulatorEndpoints()
       const endpoint = endpoints[endpointName]
       const email = 'invalid-email'
-      const ping = await axios.post(endpoint, { email }).catch((error) => error.response as AxiosResponse)
+      const ping = await fetch(endpoint, { method: 'POST', body: JSON.stringify({ email }) })
       expect(ping.status).toBe(400) // Bad Request but available
     })
   })

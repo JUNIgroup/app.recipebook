@@ -1,9 +1,14 @@
+import { fetch, Request, Response } from 'cross-fetch'
 import ShortUniqueId from 'short-unique-id'
 import { FirebaseError } from './firebase-error'
 import { isEmulatorAvailable } from './helpers/emulator-utils'
 import { ProfileUpdateParams } from './helpers/rest-types'
 import { memoryPersistence } from './persistence'
 import { AuthUser, OnUserChanged, RestAuthService, Unsubscribe } from './rest-auth-service'
+
+global.fetch = fetch
+global.Request = Request
+global.Response = Response
 
 const uid = new ShortUniqueId()
 const emulatorIsAvailable = await isEmulatorAvailable()

@@ -1,12 +1,15 @@
 import ShortUniqueId from 'short-unique-id'
-import { isEmulatorAvailable } from '../../../infrastructure/firebase/helpers/emulator-utils'
-import { AuthError, AuthService, UserData } from './auth-service'
-import { MockAuthService } from './mock-auth-service'
-import { FirebaseRestAuthService } from './firebase-rest-auth-service'
-import { RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
-import { memoryPersistence, nonePersistence } from '../../../infrastructure/firebase/persistence'
-import { FirebaseAuthService } from './firebase-auth-service'
 import { FirebaseService } from '../../../infrastructure/firebase/firebase-service'
+import { isEmulatorAvailable } from '../../../infrastructure/firebase/helpers/emulator-utils'
+import { memoryPersistence, nonePersistence } from '../../../infrastructure/firebase/persistence'
+import { RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
+import { defineGlobalFetchForTesting } from '../../../infrastructure/query/fetch.test-helper'
+import { AuthError, AuthService, UserData } from './auth-service'
+import { FirebaseAuthService } from './firebase-auth-service'
+import { FirebaseRestAuthService } from './firebase-rest-auth-service'
+import { MockAuthService } from './mock-auth-service'
+
+defineGlobalFetchForTesting()
 
 const uid = new ShortUniqueId()
 

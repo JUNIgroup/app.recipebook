@@ -1,5 +1,7 @@
-import axios from 'axios'
+import { defineGlobalFetchForTesting } from '../../query/fetch.test-helper'
 import { isEmulatorAvailable } from './emulator-utils'
+
+defineGlobalFetchForTesting()
 
 const emulatorIsAvailable = await isEmulatorAvailable()
 
@@ -8,7 +10,7 @@ describe.runIf(emulatorIsAvailable)('if emulator is available', () => {
     const hub = emulatorIsAvailable?.hub
     expect(hub).toBeTruthy()
     const { host, port } = hub ?? {}
-    const ping = axios.get(`http://${host}:${port}`)
+    const ping = fetch(`http://${host}:${port}`, { method: 'GET' })
     await expect(ping).resolves.toBeTruthy()
   })
 
@@ -16,7 +18,7 @@ describe.runIf(emulatorIsAvailable)('if emulator is available', () => {
     const ui = emulatorIsAvailable?.ui
     expect(ui).toBeTruthy()
     const { host, port } = ui ?? {}
-    const ping = axios.get(`http://${host}:${port}`)
+    const ping = fetch(`http://${host}:${port}`, { method: 'GET' })
     await expect(ping).resolves.toBeTruthy()
   })
 
@@ -24,7 +26,7 @@ describe.runIf(emulatorIsAvailable)('if emulator is available', () => {
     const auth = emulatorIsAvailable?.auth
     expect(auth).toBeTruthy()
     const { host, port } = auth ?? {}
-    const ping = axios.get(`http://${host}:${port}`)
+    const ping = fetch(`http://${host}:${port}`, { method: 'GET' })
     await expect(ping).resolves.toBeTruthy()
   })
 })
