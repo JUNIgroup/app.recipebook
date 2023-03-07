@@ -14,8 +14,14 @@ export class FetchError extends Error {
    * @param message the error message
    * @param request the request that failed
    * @param response the (optional) response that was received (e.g. 404, 500, etc.)
+   * @param responseBody the body as text or JSON, if the body was available. Should be set if response.bodyUsed is true.
    */
-  constructor(message: string, public readonly request: Request, public readonly response?: Response) {
+  constructor(
+    message: string,
+    public readonly request: Request,
+    public readonly response?: Response,
+    public readonly responseBody?: string | ReturnType<typeof JSON.parse>,
+  ) {
     super(message)
     this.name = 'FetchError'
   }
@@ -42,15 +48,15 @@ export type Method = 'GET' | 'DELETE' | 'HEAD' | 'OPTIONS' | 'POST' | 'PUT' | 'P
 const getErrorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error))
 
 /**
- * Make a query with fetch.
+ * Make a request with fetch.
  *
  * @param method the HTTP method to use
- * @param url the URL to query
+ * @param url the URL to request
  * @param payload the payload to send
  * @returns the request and response combined as a FetchResponse
  * @throws FetchError with response is undefined if the request fails at the network level
  */
-export async function startQuery(method: Method, url: string, payload?: unknown): Promise<FetchResponse> {
+export async function startRequestJson(method: Method, url: string, payload?: unknown): Promise<FetchResponse> {
   const request = new Request(url, {
     method,
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -69,7 +75,7 @@ export function checkStatus({ request, response }: FetchResponse): FetchResponse
   if (response.ok) {
     return { request, response }
   }
-  throw new FetchError(`Query failed with status ${response.status} ${response.statusText}`, request, response)
+  throw new FetchError(`Request failed with status code ${response.status} (${response.statusText})`, request, response)
 }
 
 /**
@@ -81,28 +87,28 @@ export function checkStatus({ request, response }: FetchResponse): FetchResponse
  */
 export function extractFetchData<T>(validate: ValidateFunction<T>): (requestResponse: FetchResponse) => Promise<T> {
   return async ({ request, response }: FetchResponse) => {
+    let body: unknown
     try {
-      const data = await response.json()
-      validate(data)
-      return data
+      body = await response.text()
+      body = JSON.parse(body as string)
+      validate(body)
+      return body
     } catch (error) {
-      throw new FetchError(getErrorMessage(error), request, response)
+      throw new FetchError(getErrorMessage(error), request, response, body)
     }
   }
 }
 
 async function printableBody(body: Body) {
   if (!body.body) return ''
+  let printable: unknown = '...'
   try {
-    const text = await body.text()
-    try {
-      return JSON.parse(text)
-    } catch {
-      return text
-    }
+    printable = await body.text()
+    printable = JSON.parse(printable as string)
   } catch {
-    return '...'
+    /* ignore */
   }
+  return printable
 }
 
 function printableHeaders(headers: Headers) {
@@ -138,13 +144,14 @@ export function fetchErrorHandler(logger: Logger): (error: unknown) => Promise<n
 
     const { ok, status, statusText } = error.response
     const requestBody = await printableBody(error.request)
-    const responseBody = await printableBody(error.response)
+    const responseBody = error.responseBody ?? (await printableBody(error.response))
 
     if (ok) {
       logger.error('Validation Error: %s', error.message)
       logger.error(`         Request: %s %s, headers: %o`, method, url, headers)
       logger.error(`        Response: %d %s`, status, statusText)
-      logger.error('   Response-Body: %s', responseBody)
+      logger.error('   Response-Body: %o', responseBody)
+      throw new FirebaseError('SERVER_ERROR')
     }
 
     if (status !== 400) {
@@ -164,4 +171,25 @@ export function fetchErrorHandler(logger: Logger): (error: unknown) => Promise<n
     logger.error(` Response-Body: %o`, responseBody)
     throw new FirebaseError(errorCode)
   }
+}
+
+export type DataRequestQuery<T> = {
+  method: Method
+  url: string
+  body?: unknown
+  validate: ValidateFunction<T>
+}
+
+/**
+ * Make a request with fetch and validate the response.
+ *
+ * This function is a wrapper around startRequestJson, checkStatus, and extractFetchData.
+ *
+ * @param query the information about the request to make
+ * @returns the response JSON data, validated to ensure it matches the expected type
+ */
+export function requestJson<T>(query: DataRequestQuery<T>): Promise<T> {
+  return startRequestJson(query.method, query.url, query.body) //
+    .then(checkStatus)
+    .then(extractFetchData(query.validate))
 }

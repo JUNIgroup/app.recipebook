@@ -1,8 +1,12 @@
-import { fetch, Request, Headers, Response } from 'cross-fetch'
+import { fetch, Headers, Request, Response } from 'cross-fetch'
+
+if (import.meta.env.MODE !== 'test') {
+  throw new Error(`This file should only be imported in test mode but you are in mode: ${import.meta.env.MODE}`)
+}
 
 export function defineGlobalFetchForTesting() {
-  global.fetch = fetch
-  global.Request = Request
-  global.Headers = Headers
-  global.Response = Response
+  globalThis.fetch = fetch
+  globalThis.Request = Request
+  globalThis.Headers = Headers
+  globalThis.Response = Response
 }

@@ -1,6 +1,6 @@
 import { ServiceLogger } from '../logger/logger'
 import { FirebaseError } from './firebase-error'
-import { checkStatus, extractFetchData, fetchErrorHandler, startQuery } from './helpers/data-request'
+import { fetchErrorHandler, requestJson } from './helpers/data-request'
 import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './helpers/endpoints'
 import {
   assertAuthData,
@@ -12,7 +12,6 @@ import {
   AuthData,
   AuthToken,
   AuthUser,
-  DeleteAccountResponse,
   GetAccountInfoResponse,
   ProfileUpdateParams,
   SetAccountInfoResponse,
@@ -196,21 +195,24 @@ export class RestAuthService {
    */
   async signUpWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
     const logger = createLogger('signUp', email)
-    const { signUpWithPassword: signUpUrl, lookupProfile: profileUrl } = await this.endpoints
+    const endpoints = await this.endpoints
 
     try {
-      const signUpPayload = { email, password, returnSecureToken: true }
-      const signUpResponse = await startQuery('POST', signUpUrl, signUpPayload)
-        .then(checkStatus)
-        .then(extractFetchData<SignupNewUserResponse>(assertSignupNewUserResponse))
-        .catch(fetchErrorHandler(logger))
+      const signUpResponse = await requestJson({
+        method: 'POST',
+        url: endpoints.signUpWithPassword,
+        body: { email, password, returnSecureToken: true },
+        validate: assertSignupNewUserResponse,
+      }).catch(fetchErrorHandler(logger))
 
-      const profilePayload = { idToken: signUpResponse.idToken }
-      const profileResponse = await startQuery('POST', profileUrl, profilePayload)
-        .then(checkStatus)
-        .then(extractFetchData<GetAccountInfoResponse>(assertGetAccountInfoResponse))
+      const profileResponse = await requestJson({
+        method: 'POST',
+        url: endpoints.lookupProfile,
+        body: { idToken: signUpResponse.idToken },
+        validate: assertGetAccountInfoResponse,
+      })
         .catch(fetchErrorHandler(logger))
-        .catch(() => null) // ignore errors
+        .catch(() => null)
 
       const authData = RestAuthService.convertSignupNewUserResponse(signUpResponse, profileResponse)
       await this.setAuthData(authData)
@@ -253,14 +255,15 @@ export class RestAuthService {
   async updateProfile(profileChange: ProfileUpdateParams): Promise<AuthUser> {
     const authData = this.enforceAuthorized()
     const logger = createLogger('updateProfile', authData.user.email)
-    const { updateProfile: updateProfileUrl } = await this.endpoints
+    const endpoints = await this.endpoints
 
     try {
-      const payload = { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true }
-      const response = await startQuery('POST', updateProfileUrl, payload)
-        .then(checkStatus)
-        .then(extractFetchData<SetAccountInfoResponse>(assertSetAccountInfoResponse))
-        .catch(fetchErrorHandler(logger))
+      const response = await requestJson({
+        method: 'POST',
+        url: endpoints.updateProfile,
+        body: { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true },
+        validate: assertSetAccountInfoResponse,
+      }).catch(fetchErrorHandler(logger))
 
       const newAuthData = RestAuthService.convertProfileUpdateResponse(authData, response)
       await this.updateAuthData(newAuthData)
@@ -285,20 +288,22 @@ export class RestAuthService {
    */
   async signInWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
     const logger = createLogger('signUp', email)
-    const { signInWithPassword: signInUrl, lookupProfile: profileUrl } = await this.endpoints
+    const endpoints = await this.endpoints
 
     try {
-      const signInPayload = { email, password, returnSecureToken: true }
-      const signInResponse = await startQuery('POST', signInUrl, signInPayload)
-        .then(checkStatus)
-        .then(extractFetchData<VerifyPasswordResponse>(assertVerifyPasswordResponse))
-        .catch(fetchErrorHandler(logger))
+      const signInResponse = await requestJson({
+        method: 'POST',
+        url: endpoints.signInWithPassword,
+        body: { email, password, returnSecureToken: true },
+        validate: assertVerifyPasswordResponse,
+      }).catch(fetchErrorHandler(logger))
 
-      const profilePayload = { idToken: signInResponse.idToken }
-      const profileResponse = await startQuery('POST', profileUrl, profilePayload)
-        .then(checkStatus)
-        .then(extractFetchData<GetAccountInfoResponse>(assertGetAccountInfoResponse))
-        .catch(fetchErrorHandler(logger))
+      const profileResponse = await requestJson({
+        method: 'POST',
+        url: endpoints.lookupProfile,
+        body: { idToken: signInResponse.idToken },
+        validate: assertGetAccountInfoResponse,
+      }).catch(fetchErrorHandler(logger))
 
       const authData = RestAuthService.convertVerifyPasswordResponse(signInResponse, profileResponse)
       await this.setAuthData(authData)
@@ -333,14 +338,15 @@ export class RestAuthService {
   async deleteAccountPermanently(): Promise<void> {
     const authData = this.enforceAuthorized()
     const logger = createLogger('deleteAccount', authData.user.email)
-    const { deleteAccount: deleteAccountUrl } = await this.endpoints
+    const endpoints = await this.endpoints
 
     try {
-      const payload = { idToken: authData.token.secureToken }
-      await startQuery('POST', deleteAccountUrl, payload)
-        .then(checkStatus)
-        .then(extractFetchData<DeleteAccountResponse>(assertDeleteAccountResponse))
-        .catch(fetchErrorHandler(logger))
+      await requestJson({
+        method: 'POST',
+        url: endpoints.deleteAccount,
+        body: { idToken: authData.token.secureToken },
+        validate: assertDeleteAccountResponse,
+      }).catch(fetchErrorHandler(logger))
 
       await this.setAuthData(null)
     } finally {

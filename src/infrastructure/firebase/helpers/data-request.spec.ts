@@ -5,40 +5,54 @@ import { defineGlobalFetchForTesting } from '../../query/fetch.test-helper'
 import { ValidateFunction } from '../../validation/index'
 import { createValidationFunction } from '../../validation/superstruct.extend'
 import { FirebaseError } from '../firebase-error'
-import { checkStatus, extractFetchData, FetchError, fetchErrorHandler, startQuery } from './data-request'
+import {
+  checkStatus,
+  extractFetchData,
+  FetchError,
+  fetchErrorHandler,
+  DataRequestQuery,
+  requestJson,
+  startRequestJson,
+} from './data-request'
 
 defineGlobalFetchForTesting()
 
-const abortErrorName = 'AbortError'
-const abortErrorMessage = 'The user aborted a request.'
-
-const ValidStruct = object({
+const SampleTestDataStruct = object({
   foo: string(),
   bar: number(),
   baz: optional(boolean()),
 })
 
-type ValidType = Infer<typeof ValidStruct>
+type SampleTestData = Infer<typeof SampleTestDataStruct>
 
-const validate: ValidateFunction<ValidType> = createValidationFunction(ValidStruct)
+const assertSampleTestData: ValidateFunction<SampleTestData> = createValidationFunction(SampleTestDataStruct)
 
-it('should the AbortError have the name "AbortError', async () => {
-  // arrange
-  const abortController = new AbortController()
-  const act = fetch('http://example.com', {
-    signal: abortController.signal,
+function mockAbortError() {
+  const abortError = new Error('The user aborted a request.')
+  abortError.name = 'AbortError'
+  return abortError
+}
+
+describe('mockAbortError', () => {
+  it('should match abort error thrown by fetch in message and name', async () => {
+    // arrange
+    const abortController = new AbortController()
+    const act = fetch('http://example.com', {
+      signal: abortController.signal,
+    })
+    abortController.abort()
+    const thrown = await act.then(() => undefined).catch((e) => e as Error)
+
+    // act
+    const abortError = mockAbortError()
+
+    // assert
+    expect(abortError.message).toEqual(thrown?.message)
+    expect(abortError.name).toEqual(thrown?.name)
   })
-  abortController.abort()
-
-  // act
-  const thrown = await act.then(() => undefined).catch((e) => e as Error)
-
-  // assert
-  expect(thrown?.name).toEqual(abortErrorName)
-  expect(thrown?.message).toEqual(abortErrorMessage)
 })
 
-describe('startQuery', () => {
+describe('startRequestJson', () => {
   it('should return request/response if fetch does not throw an error', async () => {
     // arrange
     const request = new Request('http://localhost:8080', {
@@ -48,10 +62,10 @@ describe('startQuery', () => {
     })
     const response = new Response('', { status: 200 })
 
-    vi.spyOn(global, 'fetch').mockResolvedValue(response)
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(response)
 
     // act
-    const result = await startQuery('POST', 'http://localhost:8080', { pay: 'load' })
+    const result = await startRequestJson('POST', 'http://localhost:8080', { pay: 'load' })
 
     // assert
     expect(result).toEqual({ request, response })
@@ -59,66 +73,65 @@ describe('startQuery', () => {
 
   it('should return FetchError if fetch throws an abort error', async () => {
     // arrange
-    const request = new Request('http://localhost:8080', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ pay: 'load' }),
-    })
-    const error = new Error(abortErrorMessage)
-    error.name = abortErrorName
-
-    vi.spyOn(global, 'fetch').mockRejectedValue(error)
+    const error = mockAbortError()
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(error)
 
     // act
-    const query = startQuery('POST', 'http://localhost:8080', { pay: 'load' })
+    const query = startRequestJson('POST', 'http://localhost:8080', { pay: 'load' })
     const thrown = await query.then(() => undefined).catch((e) => e as FetchError)
 
     // assert
     expect(thrown).toBeInstanceOf(FetchError)
-    expect(thrown?.message).toEqual(abortErrorMessage)
-    expect(thrown?.request).toEqual(request)
+    expect(thrown?.message).toEqual(error.message)
+    expect(thrown?.request).toEqual(
+      new Request('http://localhost:8080', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ pay: 'load' }),
+      }),
+    )
   })
 
   it('should return FetchError if fetch throws a type error', async () => {
     // arrange
-    const request = new Request('http://localhost:8080', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ pay: 'load' }),
-    })
     const error = new TypeError('offline')
-
-    vi.spyOn(global, 'fetch').mockRejectedValue(error)
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(error)
 
     // act
-    const query = startQuery('POST', 'http://localhost:8080', { pay: 'load' })
+    const query = startRequestJson('POST', 'http://localhost:8080', { pay: 'load' })
     const thrown = await query.then(() => undefined).catch((e) => e as FetchError)
 
     // assert
     expect(thrown).toBeInstanceOf(FetchError)
     expect(thrown?.message).toEqual('offline')
-    expect(thrown?.request).toEqual(request)
+    expect(thrown?.request).toEqual(
+      new Request('http://localhost:8080', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ pay: 'load' }),
+      }),
+    )
   })
 
   it('should return FetchError if fetch throws an unexpected other error', async () => {
     // arrange
-    const request = new Request('http://localhost:8080', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ pay: 'load' }),
-    })
     const error = 'something else happened'
-
-    vi.spyOn(global, 'fetch').mockRejectedValue(error)
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(error)
 
     // act
-    const query = startQuery('POST', 'http://localhost:8080', { pay: 'load' })
+    const query = startRequestJson('POST', 'http://localhost:8080', { pay: 'load' })
     const thrown = await query.then(() => undefined).catch((e) => e as FetchError)
 
     // assert
     expect(thrown).toBeInstanceOf(FetchError)
     expect(thrown?.message).toEqual('something else happened')
-    expect(thrown?.request).toEqual(request)
+    expect(thrown?.request).toEqual(
+      new Request('http://localhost:8080', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ pay: 'load' }),
+      }),
+    )
   })
 })
 
@@ -152,7 +165,7 @@ describe('checkStatus', () => {
 
     // assert
     expect(result).toBeInstanceOf(FetchError)
-    expect(result.message).toEqual(`Query failed with status ${status} ${statusText}`)
+    expect(result.message).toEqual(`Request failed with status code ${status} (${statusText})`)
     expect(result.request).toBe(request)
     expect(result.response).toBe(response)
   })
@@ -161,7 +174,7 @@ describe('checkStatus', () => {
 describe('extractFetchData', () => {
   it('should return a handler function', () => {
     // act
-    const handler = extractFetchData(validate)
+    const handler = extractFetchData(assertSampleTestData)
 
     // assert
     expect(handler).toBeInstanceOf(Function)
@@ -169,10 +182,10 @@ describe('extractFetchData', () => {
 
   it('should extract valid data from response', async () => {
     // arrange
-    const payload: ValidType = { foo: 'foo', bar: 1, baz: true }
+    const payload: SampleTestData = { foo: 'foo', bar: 1, baz: true }
     const request = new Request('http://localhost:8080')
     const response = new Response(JSON.stringify(payload), { status: 200 })
-    const handler = extractFetchData(validate)
+    const handler = extractFetchData(assertSampleTestData)
 
     // act
     const data = await handler({ request, response })
@@ -186,7 +199,7 @@ describe('extractFetchData', () => {
     const payload = { foo: 123 }
     const request = new Request('http://localhost:8080')
     const response = new Response(JSON.stringify(payload), { status: 200 })
-    const handler = extractFetchData(validate)
+    const handler = extractFetchData(assertSampleTestData)
 
     // act
     const thrown = await handler({ request, response }).catch((e) => e)
@@ -203,7 +216,7 @@ describe('extractFetchData', () => {
     const payload = 'not a json'
     const request = new Request('http://localhost:8080')
     const response = new Response(payload, { status: 200 })
-    const handler = extractFetchData(validate)
+    const handler = extractFetchData(assertSampleTestData)
 
     // act
     const thrown = await handler({ request, response }).catch((e) => e)
@@ -292,7 +305,7 @@ describe('fetchErrorHandler', () => {
       // arrange
       const logger = new FakeLogger()
       const handler = fetchErrorHandler(logger)
-      const error = new FetchError(abortErrorMessage, request)
+      const error = new FetchError(mockAbortError().message, request)
 
       // act
       const thrown = await handler(error).catch((e) => e)
@@ -453,5 +466,241 @@ describe('fetchErrorHandler', () => {
         `[ERROR]  Response-Body: { error: { message: EMAIL_NOT_FOUND } }`,
       ])
     })
+  })
+})
+
+describe('queryJson with fetchErrorHandler', () => {
+  // the query used for all tests
+  let sampleTestDataQuery: DataRequestQuery<SampleTestData>
+
+  // a new empty fake logger for each test
+  let logger: FakeLogger
+
+  // the expected log for the request, if the query logs any errors
+  const expectedRequestLog =
+    'POST http://localhost:8080/sampleTestData, headers: { accept: application/json, content-type: application/json }'
+
+  beforeEach(() => {
+    sampleTestDataQuery = {
+      method: 'POST',
+      url: 'http://localhost:8080/sampleTestData',
+      body: { pay: 'load' },
+      validate: assertSampleTestData,
+    }
+    logger = new FakeLogger()
+  })
+
+  function mockFetchWithError(error: Error) {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(error)
+  }
+
+  function mockFetchWithResponse(status: number, body: string) {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(body, {
+        status,
+        headers: new Headers({
+          'Content-Type': 'application/json',
+        }),
+      }),
+    )
+  }
+
+  afterEach(() => {
+    vi.mocked(global.fetch).mockRestore()
+  })
+
+  it(`should return JSON from response`, async () => {
+    // arrange
+    mockFetchWithResponse(200, JSON.stringify({ foo: 'X', bar: 42, baz: true }))
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).resolves.toEqual({ foo: 'X', bar: 42, baz: true })
+    expect(logger.lines).toEqual([])
+  })
+
+  it(`should throw network FirebaseError for fetch was aborted`, async () => {
+    // arrange
+    const abortError = new Error('aborted')
+    abortError.name = 'AbortError'
+    mockFetchWithError(abortError)
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('NETWORK_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR] Network Error: aborted`, //
+      `[ERROR]       Request: ${expectedRequestLog}`,
+    ])
+  })
+
+  it(`should throw network FirebaseError for fetch failed with a type error`, async () => {
+    mockFetchWithError(new TypeError('offline'))
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('NETWORK_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR] Network Error: offline`, //
+      `[ERROR]       Request: ${expectedRequestLog}`,
+    ])
+  })
+
+  it(`should throw client FirebaseError for server error response with status 400 and error USER_NOT_FOUND`, async () => {
+    // arrange
+    mockFetchWithResponse(400, JSON.stringify({ error: { message: 'USER_NOT_FOUND' } }))
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('USER_NOT_FOUND'))
+    expect(logger.lines).toEqual([
+      `[ERROR] Firebase Error: Request failed with status code 400 (Bad Request)`, //
+      `[ERROR]        Request: ${expectedRequestLog}`,
+      `[ERROR]   Request-Body: { pay: load }`,
+      `[ERROR]       Response: USER_NOT_FOUND`,
+      `[ERROR]  Response-Body: { error: { message: USER_NOT_FOUND } }`,
+    ])
+  })
+
+  it(`should throw server FirebaseError for server error response with status 404`, async () => {
+    // arrange
+    mockFetchWithResponse(404, 'resource not found')
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR]  Server Error: Request failed with status code 404 (Not Found)`, //
+      `[ERROR]       Request: ${expectedRequestLog}`,
+      `[ERROR]  Request-Body: { pay: load }`,
+      `[ERROR]      Response: 404 Not Found`,
+      `[ERROR] Response-Body: resource not found`,
+    ])
+  })
+
+  it(`should throw server FirebaseError for server error response with status 500`, async () => {
+    // arrange
+    mockFetchWithResponse(500, 'server overloaded - try later')
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR]  Server Error: Request failed with status code 500 (Internal Server Error)`, //
+      `[ERROR]       Request: ${expectedRequestLog}`,
+      `[ERROR]  Request-Body: { pay: load }`,
+      `[ERROR]      Response: 500 Internal Server Error`,
+      `[ERROR] Response-Body: server overloaded - try later`,
+    ])
+  })
+
+  it(`should throw server FirebaseError for server error response with status 400 but unstructured error body`, async () => {
+    // arrange
+    mockFetchWithResponse(400, 'some error')
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR] Firebase Error: Request failed with status code 400 (Bad Request)`, //
+      `[ERROR]        Request: ${expectedRequestLog}`,
+      `[ERROR]   Request-Body: { pay: load }`,
+      `[ERROR]       Response: SERVER_ERROR`,
+      `[ERROR]  Response-Body: some error`,
+    ])
+  })
+
+  it(`should throw server FirebaseError for server error response with status 400 but error body with no message`, async () => {
+    // arrange
+    mockFetchWithResponse(400, JSON.stringify({ error: {} }))
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR] Firebase Error: Request failed with status code 400 (Bad Request)`, //
+      `[ERROR]        Request: ${expectedRequestLog}`,
+      `[ERROR]   Request-Body: { pay: load }`,
+      `[ERROR]       Response: SERVER_ERROR`,
+      `[ERROR]  Response-Body: { error: {} }`,
+    ])
+  })
+
+  it(`should throw server FirebaseError for server error response with status 400 but error body with no error`, async () => {
+    // arrange
+    mockFetchWithResponse(400, JSON.stringify({ foo: 'bar' }))
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR] Firebase Error: Request failed with status code 400 (Bad Request)`, //
+      `[ERROR]        Request: ${expectedRequestLog}`,
+      `[ERROR]   Request-Body: { pay: load }`,
+      `[ERROR]       Response: SERVER_ERROR`,
+      `[ERROR]  Response-Body: { foo: bar }`,
+    ])
+  })
+
+  it(`should throw server FirebaseError for server ok response but without valid json body`, async () => {
+    // arrange
+    mockFetchWithResponse(200, '{ "foo": { "bar": 42f } }')
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR] Validation Error: Unexpected token f in JSON at position 20`, //
+      `[ERROR]          Request: ${expectedRequestLog}`,
+      `[ERROR]         Response: 200 OK`,
+      `[ERROR]    Response-Body: { "foo": { "bar": 42f } }`,
+    ])
+  })
+
+  it(`should throw server FirebaseError for server ok response but json body with invalid data`, async () => {
+    // arrange
+    mockFetchWithResponse(200, JSON.stringify({ foo: 'X', bar: 'I am not a number' }))
+
+    // act
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+
+    // assert
+    await expect(query).rejects.toThrow(FirebaseError)
+    await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
+    expect(logger.lines).toEqual([
+      `[ERROR] Validation Error: At path: bar -- Expected a number, but received: "I am not a number"`, //
+      `[ERROR]          Request: ${expectedRequestLog}`,
+      `[ERROR]         Response: 200 OK`,
+      `[ERROR]    Response-Body: { foo: X, bar: I am not a number }`,
+    ])
   })
 })
