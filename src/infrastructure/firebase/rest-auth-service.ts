@@ -1,7 +1,6 @@
-import axios from 'axios'
 import { ServiceLogger } from '../logger/logger'
 import { FirebaseError } from './firebase-error'
-import { extractResponseData, requestErrorHandler } from './helpers/data-request'
+import { fetchErrorHandler, requestJson } from './helpers/data-request'
 import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './helpers/endpoints'
 import {
   assertAuthData,
@@ -13,7 +12,6 @@ import {
   AuthData,
   AuthToken,
   AuthUser,
-  DeleteAccountResponse,
   GetAccountInfoResponse,
   ProfileUpdateParams,
   SetAccountInfoResponse,
@@ -197,21 +195,24 @@ export class RestAuthService {
    */
   async signUpWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
     const logger = createLogger('signUp', email)
-    const { signUpWithPassword: signUpUrl, lookupProfile: profileUrl } = await this.endpoints
+    const endpoints = await this.endpoints
 
     try {
-      const signUpPayload = { email, password, returnSecureToken: true }
-      const signUpResponse = await axios
-        .post<SignupNewUserResponse>(signUpUrl, signUpPayload)
-        .then(extractResponseData(logger, assertSignupNewUserResponse))
-        .catch(requestErrorHandler(logger))
+      const signUpResponse = await requestJson({
+        method: 'POST',
+        url: endpoints.signUpWithPassword,
+        body: { email, password, returnSecureToken: true },
+        validate: assertSignupNewUserResponse,
+      }).catch(fetchErrorHandler(logger))
 
-      const profilePayload = { idToken: signUpResponse.idToken }
-      const profileResponse = await axios
-        .post<GetAccountInfoResponse>(profileUrl, profilePayload)
-        .then(extractResponseData(logger, assertGetAccountInfoResponse))
-        .catch(requestErrorHandler(logger))
-        .catch(() => null) // ignore errors
+      const profileResponse = await requestJson({
+        method: 'POST',
+        url: endpoints.lookupProfile,
+        body: { idToken: signUpResponse.idToken },
+        validate: assertGetAccountInfoResponse,
+      })
+        .catch(fetchErrorHandler(logger))
+        .catch(() => null)
 
       const authData = RestAuthService.convertSignupNewUserResponse(signUpResponse, profileResponse)
       await this.setAuthData(authData)
@@ -244,17 +245,25 @@ export class RestAuthService {
     return { user, token }
   }
 
+  /**
+   * Update the profile of the current user.
+   *
+   * @param profileChange the changes to apply to the profile
+   * @returns the updated user
+   * @throws FirebaseError if the user is not logged in
+   */
   async updateProfile(profileChange: ProfileUpdateParams): Promise<AuthUser> {
     const authData = this.enforceAuthorized()
     const logger = createLogger('updateProfile', authData.user.email)
-    const { updateProfile: updateProfileUrl } = await this.endpoints
+    const endpoints = await this.endpoints
 
     try {
-      const payload = { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true }
-      const response = await axios
-        .post<SetAccountInfoResponse>(updateProfileUrl, payload)
-        .then(extractResponseData(logger, assertSetAccountInfoResponse))
-        .catch(requestErrorHandler(logger))
+      const response = await requestJson({
+        method: 'POST',
+        url: endpoints.updateProfile,
+        body: { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true },
+        validate: assertSetAccountInfoResponse,
+      }).catch(fetchErrorHandler(logger))
 
       const newAuthData = RestAuthService.convertProfileUpdateResponse(authData, response)
       await this.updateAuthData(newAuthData)
@@ -275,24 +284,26 @@ export class RestAuthService {
    *
    * @param email the email address of the user
    * @param password the password of the user
-   * @returns
+   * @returns the logged in user
    */
   async signInWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
     const logger = createLogger('signUp', email)
-    const { signInWithPassword: signInUrl, lookupProfile: profileUrl } = await this.endpoints
+    const endpoints = await this.endpoints
 
     try {
-      const signInPayload = { email, password, returnSecureToken: true }
-      const signInResponse = await axios
-        .post<VerifyPasswordResponse>(signInUrl, signInPayload)
-        .then(extractResponseData(logger, assertVerifyPasswordResponse))
-        .catch(requestErrorHandler(logger))
+      const signInResponse = await requestJson({
+        method: 'POST',
+        url: endpoints.signInWithPassword,
+        body: { email, password, returnSecureToken: true },
+        validate: assertVerifyPasswordResponse,
+      }).catch(fetchErrorHandler(logger))
 
-      const profilePayload = { idToken: signInResponse.idToken }
-      const profileResponse = await axios
-        .post<GetAccountInfoResponse>(profileUrl, profilePayload)
-        .then(extractResponseData(logger, assertGetAccountInfoResponse))
-        .catch(requestErrorHandler(logger))
+      const profileResponse = await requestJson({
+        method: 'POST',
+        url: endpoints.lookupProfile,
+        body: { idToken: signInResponse.idToken },
+        validate: assertGetAccountInfoResponse,
+      }).catch(fetchErrorHandler(logger))
 
       const authData = RestAuthService.convertVerifyPasswordResponse(signInResponse, profileResponse)
       await this.setAuthData(authData)
@@ -327,14 +338,15 @@ export class RestAuthService {
   async deleteAccountPermanently(): Promise<void> {
     const authData = this.enforceAuthorized()
     const logger = createLogger('deleteAccount', authData.user.email)
-    const { deleteAccount: deleteAccountUrl } = await this.endpoints
+    const endpoints = await this.endpoints
 
     try {
-      const payload = { idToken: authData.token.secureToken }
-      await axios
-        .post<DeleteAccountResponse>(deleteAccountUrl, payload)
-        .then(extractResponseData(logger, assertDeleteAccountResponse))
-        .catch(requestErrorHandler(logger))
+      await requestJson({
+        method: 'POST',
+        url: endpoints.deleteAccount,
+        body: { idToken: authData.token.secureToken },
+        validate: assertDeleteAccountResponse,
+      }).catch(fetchErrorHandler(logger))
 
       await this.setAuthData(null)
     } finally {

@@ -21,5 +21,6 @@ export type SyntheticFirebaseErrorCode =
 export class FirebaseError extends Error {
   constructor(public errorCode: FirebaseErrorCode | SyntheticFirebaseErrorCode) {
     super(errorCode)
+    this.name = 'FirebaseError'
   }
 }

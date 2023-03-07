@@ -40,7 +40,14 @@
     // Prefer named exports to have fix import statements, if more exports will be provided.
     // Default export (maybe additional) to use React.lazy with dynamic imports.
     "import/prefer-default-export": "off",
-    //
+    // see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md
+    // Allow devDependencies in test files and test helper files
+    "import/no-extraneous-dependencies": [
+      "error",
+      {
+        "devDependencies": ["**/*.spec.{js,jsx,ts,tsx}", "**/*.test-helper.{js,jsx,ts,tsx}"]
+      }
+    ],
     //
     // react
     // --------------------------------------------------------------------

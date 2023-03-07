@@ -1,9 +1,14 @@
+import { fetch, Request, Response } from 'cross-fetch'
 import ShortUniqueId from 'short-unique-id'
 import { FirebaseError } from './firebase-error'
 import { isEmulatorAvailable } from './helpers/emulator-utils'
 import { ProfileUpdateParams } from './helpers/rest-types'
 import { memoryPersistence } from './persistence'
 import { AuthUser, OnUserChanged, RestAuthService, Unsubscribe } from './rest-auth-service'
+
+global.fetch = fetch
+global.Request = Request
+global.Response = Response
 
 const uid = new ShortUniqueId()
 const emulatorIsAvailable = await isEmulatorAvailable()
@@ -690,7 +695,7 @@ describe('RestAuthService', () => {
         expect(newOnUserChanged).toHaveBeenCalledWith(user)
       })
 
-      it('should not inform onUserChanged onUserChanged after it was unsubscribed', async () => {
+      it('should not inform onUserChanged after it was unsubscribed', async () => {
         // arrange
         const id = uid()
         const email = `test.signup.${id}@example.com`

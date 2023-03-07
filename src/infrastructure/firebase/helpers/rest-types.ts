@@ -1,6 +1,6 @@
 import { array, boolean, Infer, literal, nonempty, number, object, optional, string, type } from 'superstruct'
-import { createValidationFunction, positiveIntegerString } from '../../validation/superstruct.extend'
 import { ValidateFunction } from '../../validation/index'
+import { createValidationFunction, positiveIntegerString } from '../../validation/superstruct.extend'
 
 /**
  * Superstruct schema for AuthUser
