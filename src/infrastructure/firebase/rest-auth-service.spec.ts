@@ -1,5 +1,6 @@
 import { fetch, Request, Response } from 'cross-fetch'
 import ShortUniqueId from 'short-unique-id'
+import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 import { FirebaseError } from './firebase-error'
 import { isEmulatorAvailable } from './helpers/emulator-utils'
 import { ProfileUpdateParams } from './helpers/rest-types'
@@ -16,7 +17,8 @@ const emulatorIsAvailable = await isEmulatorAvailable()
 describe('RestAuthService.forRemote', () => {
   it('should return a service', () => {
     // act
-    const service = RestAuthService.forRemote('apiKey')
+    const logger = createFakeLogger()
+    const service = RestAuthService.forRemote(logger, 'apiKey')
 
     // assert
     expect(service).toBeTruthy()
@@ -26,7 +28,8 @@ describe('RestAuthService.forRemote', () => {
 describe('RestAuthService.forEmulator', () => {
   it.runIf(emulatorIsAvailable)('should return a service', () => {
     // act
-    const service = RestAuthService.forEmulator()
+    const logger = createFakeLogger()
+    const service = RestAuthService.forEmulator(logger)
 
     // assert
     expect(service).toBeTruthy()
@@ -54,7 +57,8 @@ describe('RestAuthService', () => {
     let service: RestAuthService
 
     beforeEach(() => {
-      service = RestAuthService.forEmulator()
+      const logger = createFakeLogger()
+      service = RestAuthService.forEmulator(logger)
     })
 
     describe('.signUpWithEmailAndPassword', () => {
@@ -143,7 +147,8 @@ describe('RestAuthService', () => {
       let usedPassword: string
 
       beforeEach(async () => {
-        const anotherService = RestAuthService.forEmulator()
+        const logger = createFakeLogger()
+        const anotherService = RestAuthService.forEmulator(logger)
         const id = uid()
         const email = `test.signin.${id}@example.com`
         const displayName = `John Doe (signin ${id})`
@@ -509,7 +514,8 @@ describe('RestAuthService', () => {
       let onUserChanged: OnUserChanged
 
       beforeEach(async () => {
-        service = RestAuthService.forEmulator()
+        const logger = createFakeLogger()
+        service = RestAuthService.forEmulator(logger)
         persistence = memoryPersistence()
         await service.setPersistence(persistence)
         onUserChanged = vi.fn()

@@ -1,4 +1,4 @@
-import { Logger } from '../../logger/logger'
+import { Log } from '../../../utilities/logger'
 import { ValidateFunction } from '../../validation'
 import { FirebaseError } from '../firebase-error'
 
@@ -122,23 +122,23 @@ function printableHeaders(headers: Headers) {
 /**
  * Converts a fetch error into a FirebaseError.
  *
- * @param logger the logger to use
+ * @param log the log to use
  * @returns a function that converts a fetch error into a FirebaseError.
  */
-export function fetchErrorHandler(logger: Logger): (error: unknown) => Promise<never> {
+export function fetchErrorHandler(log: Log): (error: unknown) => Promise<never> {
   return async (error) => {
     if (error instanceof FirebaseError) throw error
 
     if (!(error instanceof FetchError)) {
-      logger.error('Unknown Error: %s', error instanceof Error ? error.message : error)
+      log.error('Unknown Error:', error instanceof Error ? error.message : error)
       throw new FirebaseError('UNKNOWN_ERROR')
     }
     const { method, url } = error.request
     const headers = printableHeaders(error.request.headers)
 
     if (!error.response) {
-      logger.error('Network Error: %s', error.message)
-      logger.error(`      Request: %s %s, headers: %o`, method, url, headers)
+      log.error('Network Error:', error.message)
+      log.details(`      Request: ${method} ${url}, headers:`, headers)
       throw new FirebaseError('NETWORK_ERROR')
     }
 
@@ -147,28 +147,28 @@ export function fetchErrorHandler(logger: Logger): (error: unknown) => Promise<n
     const responseBody = error.responseBody ?? (await printableBody(error.response))
 
     if (ok) {
-      logger.error('Validation Error: %s', error.message)
-      logger.error(`         Request: %s %s, headers: %o`, method, url, headers)
-      logger.error(`        Response: %d %s`, status, statusText)
-      logger.error('   Response-Body: %o', responseBody)
+      log.error('Validation Error:', error.message)
+      log.details(`         Request: ${method} ${url}, headers:`, headers)
+      log.details(`        Response: ${status} ${statusText}`)
+      log.details(`   Response-Body:`, responseBody)
       throw new FirebaseError('SERVER_ERROR')
     }
 
     if (status !== 400) {
-      logger.error(' Server Error: %s', error.message)
-      logger.error(`      Request: %s %s, headers: %o`, method, url, headers)
-      logger.error(` Request-Body: %o`, requestBody)
-      logger.error(`     Response: %d %s`, status, statusText)
-      logger.error('Response-Body: %o', responseBody)
+      log.error(` Server Error:`, error.message)
+      log.details(`      Request: ${method} ${url}, headers:`, headers)
+      log.details(` Request-Body:`, requestBody)
+      log.details(`     Response: ${status} ${statusText}`)
+      log.details(`Response-Body:`, responseBody)
       throw new FirebaseError('SERVER_ERROR')
     }
 
     const errorCode = responseBody.error?.message ?? 'SERVER_ERROR'
-    logger.error('Firebase Error: %s', error.message)
-    logger.error(`       Request: %s %s, headers: %o`, method, url, headers)
-    logger.error(`  Request-Body: %o`, requestBody)
-    logger.error(`      Response: %s`, errorCode)
-    logger.error(` Response-Body: %o`, responseBody)
+    log.error('Firebase Error:', error.message)
+    log.details(`       Request: ${method} ${url}, headers:`, headers)
+    log.details(`  Request-Body:`, requestBody)
+    log.details(`      Response: ${errorCode}`)
+    log.details(` Response-Body:`, responseBody)
     throw new FirebaseError(errorCode)
   }
 }

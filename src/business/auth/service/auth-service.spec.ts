@@ -4,6 +4,7 @@ import { isEmulatorAvailable } from '../../../infrastructure/firebase/helpers/em
 import { memoryPersistence, nonePersistence } from '../../../infrastructure/firebase/persistence'
 import { RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
 import { defineGlobalFetchForTesting } from '../../../infrastructure/query/fetch.test-helper'
+import { createFakeLogger } from '../../../utilities/logger/fake-logger.test-helper'
 import { AuthError, AuthService, UserData } from './auth-service'
 import { FirebaseAuthService } from './firebase-auth-service'
 import { FirebaseRestAuthService } from './firebase-rest-auth-service'
@@ -34,7 +35,8 @@ function createFirebaseRestAuthServiceContext(): TestContext {
     testArePossible: !!emulatorAvailable,
     supportsErrors: true,
     authService: () => {
-      const auth = RestAuthService.forEmulator()
+      const logger = createFakeLogger()
+      const auth = RestAuthService.forEmulator(logger)
       const persistence = {
         permanent: memoryPersistence(),
         temporary: nonePersistence(),

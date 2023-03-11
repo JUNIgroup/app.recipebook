@@ -1,4 +1,4 @@
-import { ServiceLogger } from '../logger/logger'
+import { Log, Logger } from '../../utilities/logger'
 import { FirebaseError } from './firebase-error'
 import { fetchErrorHandler, requestJson } from './helpers/data-request'
 import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './helpers/endpoints'
@@ -31,8 +31,6 @@ interface EmailAndPassword {
 export type OnUserChanged = (user: AuthUser | null) => void
 export type Unsubscribe = () => void
 
-const createLogger = ServiceLogger('RestAuthService')
-
 type UserOf<T extends AuthData | null> = T extends AuthData ? AuthUser : null
 
 function userOf(data: AuthData | null): UserOf<AuthData>
@@ -46,6 +44,8 @@ function userOf<T extends AuthData | null>(data: T) {
  * @see https://firebase.google.com/docs/reference/rest/auth
  */
 export class RestAuthService {
+  private log: Log
+
   private authData: AuthData | null | undefined
 
   private persistence: AuthPersistence = nonePersistence()
@@ -58,9 +58,9 @@ export class RestAuthService {
    * @param apiKey the api key for the firebase project
    * @returns a new instance of the RestAuthService for the project.
    */
-  public static forRemote(apiKey: string) {
+  public static forRemote(logger: Logger<'infra'>, apiKey: string) {
     const endpoints = createRemoteEndpoints(apiKey)
-    return new RestAuthService(endpoints)
+    return new RestAuthService(logger, endpoints)
   }
 
   /**
@@ -69,12 +69,14 @@ export class RestAuthService {
    * @returns a new instance of the RestAuthService.
    * @throws an error if the firebase auth emulator is not running.
    */
-  public static forEmulator() {
+  public static forEmulator(logger: Logger<'infra'>) {
     const endpoints = createEmulatorEndpoints()
-    return new RestAuthService(endpoints)
+    return new RestAuthService(logger, endpoints)
   }
 
-  constructor(private endpoints: Promise<AccountEndpoints>) {}
+  constructor(logger: Logger<'infra'>, private endpoints: Promise<AccountEndpoints>) {
+    this.log = logger('infra:RestAuthService')
+  }
 
   private enforceAuthorized(): AuthData {
     if (!this.authData) {
@@ -124,15 +126,11 @@ export class RestAuthService {
    * @param persistence the persistence to use to save the user
    */
   async setPersistence(persistence: AuthPersistence): Promise<void> {
-    const logger = createLogger('setPersistence', persistence.name)
-    try {
-      await this.persistence.save(null) // clear the old persistence
-      this.persistence = persistence
-      if (this.authData !== undefined) {
-        await this.persistence.save(this.authData)
-      }
-    } finally {
-      logger.end()
+    this.log.info('setPersistence', persistence.name)
+    await this.persistence.save(null) // clear the old persistence
+    this.persistence = persistence
+    if (this.authData !== undefined) {
+      await this.persistence.save(this.authData)
     }
   }
 
@@ -142,25 +140,23 @@ export class RestAuthService {
    * @returns the user that was logged in or null if no user was persisted.
    */
   async autoSignIn(): Promise<AuthUser | null> {
-    const logger = createLogger('autoSignIn')
+    this.log.info('autoSignIn')
     try {
       const authData = await this.persistence.load()
       if (!authData) {
-        logger.log('No persisted user found.')
+        this.log.details('No persisted user found.')
         await this.setAuthData(null)
         return null
       }
 
       assertAuthData(authData)
-      logger.log('Persisted user found: %o', authData.user)
+      this.log.details('Persisted user found:', authData.user)
       await this.setAuthData(authData)
       return authData.user
     } catch (error) {
-      logger.log('Persisted user is invalid.')
+      this.log.error('Persisted user is invalid.')
       await this.setAuthData(null)
       return null
-    } finally {
-      logger.end()
     }
   }
 
@@ -177,13 +173,9 @@ export class RestAuthService {
    * Log out the current user.
    */
   async signOut(): Promise<null> {
-    const logger = createLogger('signOut', this.authData ? this.authData.user.email : '-')
-    try {
-      await this.setAuthData(null)
-      return null
-    } finally {
-      logger.end()
-    }
+    this.log.info('signOut', this.authData ? this.authData.user.email : '-')
+    await this.setAuthData(null)
+    return null
   }
 
   /**
@@ -194,32 +186,28 @@ export class RestAuthService {
    * @returns the user that was created and logged in
    */
   async signUpWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
-    const logger = createLogger('signUp', email)
+    this.log.info('signUp', email)
     const endpoints = await this.endpoints
 
-    try {
-      const signUpResponse = await requestJson({
-        method: 'POST',
-        url: endpoints.signUpWithPassword,
-        body: { email, password, returnSecureToken: true },
-        validate: assertSignupNewUserResponse,
-      }).catch(fetchErrorHandler(logger))
+    const signUpResponse = await requestJson({
+      method: 'POST',
+      url: endpoints.signUpWithPassword,
+      body: { email, password, returnSecureToken: true },
+      validate: assertSignupNewUserResponse,
+    }).catch(fetchErrorHandler(this.log))
 
-      const profileResponse = await requestJson({
-        method: 'POST',
-        url: endpoints.lookupProfile,
-        body: { idToken: signUpResponse.idToken },
-        validate: assertGetAccountInfoResponse,
-      })
-        .catch(fetchErrorHandler(logger))
-        .catch(() => null)
+    const profileResponse = await requestJson({
+      method: 'POST',
+      url: endpoints.lookupProfile,
+      body: { idToken: signUpResponse.idToken },
+      validate: assertGetAccountInfoResponse,
+    })
+      .catch(fetchErrorHandler(this.log))
+      .catch(() => null)
 
-      const authData = RestAuthService.convertSignupNewUserResponse(signUpResponse, profileResponse)
-      await this.setAuthData(authData)
-      return authData.user
-    } finally {
-      logger.end()
-    }
+    const authData = RestAuthService.convertSignupNewUserResponse(signUpResponse, profileResponse)
+    await this.setAuthData(authData)
+    return authData.user
   }
 
   private static convertSignupNewUserResponse(
@@ -254,23 +242,20 @@ export class RestAuthService {
    */
   async updateProfile(profileChange: ProfileUpdateParams): Promise<AuthUser> {
     const authData = this.enforceAuthorized()
-    const logger = createLogger('updateProfile', authData.user.email)
+    this.log.info('updateProfile', authData.user.email)
+    this.log.details('change:', profileChange)
     const endpoints = await this.endpoints
 
-    try {
-      const response = await requestJson({
-        method: 'POST',
-        url: endpoints.updateProfile,
-        body: { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true },
-        validate: assertSetAccountInfoResponse,
-      }).catch(fetchErrorHandler(logger))
+    const response = await requestJson({
+      method: 'POST',
+      url: endpoints.updateProfile,
+      body: { ...profileChange, idToken: authData.token.secureToken, returnSecureToken: true },
+      validate: assertSetAccountInfoResponse,
+    }).catch(fetchErrorHandler(this.log))
 
-      const newAuthData = RestAuthService.convertProfileUpdateResponse(authData, response)
-      await this.updateAuthData(newAuthData)
-      return newAuthData.user
-    } finally {
-      logger.end()
-    }
+    const newAuthData = RestAuthService.convertProfileUpdateResponse(authData, response)
+    await this.updateAuthData(newAuthData)
+    return newAuthData.user
   }
 
   private static convertProfileUpdateResponse(authData: AuthData, response: SetAccountInfoResponse): AuthData {
@@ -287,30 +272,26 @@ export class RestAuthService {
    * @returns the logged in user
    */
   async signInWithEmailAndPassword({ email, password }: EmailAndPassword): Promise<AuthUser> {
-    const logger = createLogger('signUp', email)
+    this.log.info('signIn', email)
     const endpoints = await this.endpoints
 
-    try {
-      const signInResponse = await requestJson({
-        method: 'POST',
-        url: endpoints.signInWithPassword,
-        body: { email, password, returnSecureToken: true },
-        validate: assertVerifyPasswordResponse,
-      }).catch(fetchErrorHandler(logger))
+    const signInResponse = await requestJson({
+      method: 'POST',
+      url: endpoints.signInWithPassword,
+      body: { email, password, returnSecureToken: true },
+      validate: assertVerifyPasswordResponse,
+    }).catch(fetchErrorHandler(this.log))
 
-      const profileResponse = await requestJson({
-        method: 'POST',
-        url: endpoints.lookupProfile,
-        body: { idToken: signInResponse.idToken },
-        validate: assertGetAccountInfoResponse,
-      }).catch(fetchErrorHandler(logger))
+    const profileResponse = await requestJson({
+      method: 'POST',
+      url: endpoints.lookupProfile,
+      body: { idToken: signInResponse.idToken },
+      validate: assertGetAccountInfoResponse,
+    }).catch(fetchErrorHandler(this.log))
 
-      const authData = RestAuthService.convertVerifyPasswordResponse(signInResponse, profileResponse)
-      await this.setAuthData(authData)
-      return authData.user
-    } finally {
-      logger.end()
-    }
+    const authData = RestAuthService.convertVerifyPasswordResponse(signInResponse, profileResponse)
+    await this.setAuthData(authData)
+    return authData.user
   }
 
   private static convertVerifyPasswordResponse(
@@ -337,20 +318,16 @@ export class RestAuthService {
 
   async deleteAccountPermanently(): Promise<void> {
     const authData = this.enforceAuthorized()
-    const logger = createLogger('deleteAccount', authData.user.email)
+    this.log.info('deleteAccount', authData.user.email)
     const endpoints = await this.endpoints
 
-    try {
-      await requestJson({
-        method: 'POST',
-        url: endpoints.deleteAccount,
-        body: { idToken: authData.token.secureToken },
-        validate: assertDeleteAccountResponse,
-      }).catch(fetchErrorHandler(logger))
+    await requestJson({
+      method: 'POST',
+      url: endpoints.deleteAccount,
+      body: { idToken: authData.token.secureToken },
+      validate: assertDeleteAccountResponse,
+    }).catch(fetchErrorHandler(this.log))
 
-      await this.setAuthData(null)
-    } finally {
-      logger.end()
-    }
+    await this.setAuthData(null)
   }
 }

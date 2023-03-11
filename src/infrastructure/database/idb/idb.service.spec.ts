@@ -1,5 +1,7 @@
 import { IDBFactory } from 'fake-indexeddb'
 import { lastValueFrom, tap } from 'rxjs'
+import { Logger } from '../../../utilities/logger'
+import { createFakeLogger } from '../../../utilities/logger/fake-logger.test-helper'
 import { collectFrom } from '../helpers/collect-from'
 import { IdbService } from './idb.service'
 
@@ -14,10 +16,16 @@ async function openDB(indexedDB: IDBFactory, dbId: string, dbVersion: number) {
 }
 
 describe(IdbService.name, () => {
+  let logger: Logger
+
+  beforeEach(() => {
+    logger = createFakeLogger()
+  })
+
   describe('.openDB', () => {
     it('should open a database', async () => {
       const indexedDB = new IDBFactory()
-      const idbService = new IdbService(indexedDB, 'test.db', 1, () => {})
+      const idbService = new IdbService(indexedDB, 'test.db', 1, () => {}, logger)
 
       await lastValueFrom(idbService.openDB())
 
@@ -30,7 +38,7 @@ describe(IdbService.name, () => {
       const upgrades = vi.fn()
 
       const indexedDB = new IDBFactory()
-      const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades)
+      const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades, logger)
 
       await lastValueFrom(idbService.openDB())
 
@@ -47,7 +55,7 @@ describe(IdbService.name, () => {
 
       const indexedDB = new IDBFactory()
       await openDB(indexedDB, 'test.db', version).then((db) => db.close())
-      const idbService = new IdbService(indexedDB, 'test.db', version, upgrades)
+      const idbService = new IdbService(indexedDB, 'test.db', version, upgrades, logger)
 
       await lastValueFrom(idbService.openDB())
 
@@ -60,7 +68,7 @@ describe(IdbService.name, () => {
 
       const indexedDB = new IDBFactory()
       await openDB(indexedDB, 'test.db', oldVersion).then((db) => db.close())
-      const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades)
+      const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades, logger)
 
       await lastValueFrom(idbService.openDB())
 
@@ -73,7 +81,7 @@ describe(IdbService.name, () => {
 
       const indexedDB = new IDBFactory()
       const otherDB = await openDB(indexedDB, 'test.db', oldVersion)
-      const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades)
+      const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades, logger)
 
       const state$ = idbService.openDB().pipe(
         tap((state) => {
@@ -101,7 +109,7 @@ describe(IdbService.name, () => {
 
       const indexedDB = new IDBFactory()
       await openDB(indexedDB, 'test.db', oldVersion).then((db) => db.close())
-      const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades)
+      const idbService = new IdbService(indexedDB, 'test.db', newVersion, upgrades, logger)
 
       const opened = lastValueFrom(idbService.openDB())
 
@@ -112,10 +120,16 @@ describe(IdbService.name, () => {
       const version = 2
 
       const indexedDB = new IDBFactory()
-      const idbService = new IdbService(indexedDB, 'test.db', version, ({ db }) => {
-        db.createObjectStore('foo')
-        db.createObjectStore('bar')
-      })
+      const idbService = new IdbService(
+        indexedDB,
+        'test.db',
+        version,
+        ({ db }) => {
+          db.createObjectStore('foo')
+          db.createObjectStore('bar')
+        },
+        logger,
+      )
 
       await lastValueFrom(idbService.openDB())
 

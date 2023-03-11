@@ -18,8 +18,8 @@ const dbUpgradeSteps: ((db: IDBDatabase) => void)[] = [
 
 export const dbVersion = dbUpgradeSteps.length
 
-export const dbUpgrades: IdbUpgrades = ({ db, oldVersion, newVersion, logger }) => {
-  logger.log('upgrade from version %d to %d', oldVersion, newVersion)
+export const dbUpgrades: IdbUpgrades = ({ db, oldVersion, newVersion, log }) => {
+  log.details(`upgrade from version ${oldVersion} to ${newVersion}`, oldVersion, newVersion)
   for (let version = oldVersion; version < newVersion; version += 1) {
     dbUpgradeSteps[version](db)
   }

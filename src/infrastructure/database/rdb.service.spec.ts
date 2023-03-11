@@ -1,5 +1,6 @@
 import { IDBFactory } from 'fake-indexeddb'
 import { lastValueFrom } from 'rxjs'
+import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 import { IdbService } from './idb/idb.service'
 import { wrapRequest } from './idb/idb.transactions'
 import { MockRdbService } from './mock-rdb/mock-rdb.service'
@@ -37,10 +38,17 @@ async function mockRdbSetup(): Promise<TestRdbContext> {
 
 async function idbSetup(): Promise<TestRdbContext> {
   const fakeIndexedDB = new IDBFactory()
-  const idbService = new IdbService<TestStoreName>(fakeIndexedDB, 'test-db', 1, ({ db }) => {
-    db.createObjectStore('foo', { keyPath: 'data.id' })
-    db.createObjectStore('bar', { keyPath: 'data.id' })
-  })
+  const logger = createFakeLogger()
+  const idbService = new IdbService<TestStoreName>(
+    fakeIndexedDB,
+    'test-db',
+    1,
+    ({ db }) => {
+      db.createObjectStore('foo', { keyPath: 'data.id' })
+      db.createObjectStore('bar', { keyPath: 'data.id' })
+    },
+    logger,
+  )
 
   const combine = (data: RdbData, meta: RdbMeta) => ({ ...meta, data })
   const split = ({ data, ...meta }: ReturnType<typeof combine>) => ({ data, meta })
