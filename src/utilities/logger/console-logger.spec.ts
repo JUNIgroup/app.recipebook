@@ -40,7 +40,7 @@ describe('ConsoleLogger', () => {
       const logger = createConsoleLogger()
 
       // act
-      const log = logger('test')
+      const log = logger('test:foo')
 
       // assert
       expect(log).toBeInstanceOf(ConsoleLog)
@@ -51,8 +51,8 @@ describe('ConsoleLogger', () => {
       const logger = createConsoleLogger()
 
       // act
-      const log1 = logger('test')
-      const log2 = logger('test')
+      const log1 = logger('test:foo')
+      const log2 = logger('test:foo')
 
       // assert
       expect(log1).toBe(log2)
@@ -63,8 +63,8 @@ describe('ConsoleLogger', () => {
       const logger = createConsoleLogger()
 
       // act
-      const log1 = logger('test')
-      const log2 = logger('test2')
+      const log1 = logger('test:foo')
+      const log2 = logger('test:bar')
 
       // assert
       expect(log1).not.toBe(log2)
@@ -74,7 +74,7 @@ describe('ConsoleLogger', () => {
       // arrange
       vi.spyOn(console, 'error')
       const logger = createConsoleLogger()
-      const log = logger('test')
+      const log = logger('test:foo')
 
       // act
       // we use 'error' here, because 'error' is not disabled
@@ -89,7 +89,7 @@ describe('ConsoleLogger', () => {
       // arrange
       const console = new FakeConsole()
       const logger = createConsoleLogger({ console })
-      const log = logger('test')
+      const log = logger('test:foo')
 
       // act
       // we use 'error' here, because 'error' is not disabled
@@ -103,7 +103,7 @@ describe('ConsoleLogger', () => {
       // arrange
       const console = new FakeConsole()
       const logger = createConsoleLogger<'FooBar'>({ console })
-      const log = logger('FooBar')
+      const log = logger('FooBar:baz')
 
       // act
       // we use 'error' here, because 'error' is not disabled
@@ -111,7 +111,7 @@ describe('ConsoleLogger', () => {
 
       // assert
       const argsOfFirstCall = console.innerError.mock.calls[0]
-      expect(argsOfFirstCall).toInclude('FooBar')
+      expect(argsOfFirstCall).toInclude('FooBar:baz')
     })
   })
 

@@ -11,7 +11,7 @@ export type ConsoleLoggerOptions = {
   console?: ConsolePipe
 }
 
-export interface ConsoleLogger<Namespace extends string> extends Logger<Namespace> {
+export interface ConsoleLogger<Scope extends string> extends Logger<Scope> {
   /**
    * Enable the given loggers temporary without updating the local storage key `debug`.
    *
@@ -27,11 +27,11 @@ export interface ConsoleLogger<Namespace extends string> extends Logger<Namespac
   disableAll(): void
 }
 
-type ConsoleLoggerApi<Namespace extends string> = {
-  [K in keyof ConsoleLogger<Namespace>]: ConsoleLogger<Namespace>[K]
+type ConsoleLoggerApi<Scope extends string> = {
+  [K in keyof ConsoleLogger<Scope>]: ConsoleLogger<Scope>[K]
 }
 
-class ConsoleLoggerImpl<Namespace extends string> implements ConsoleLoggerApi<Namespace> {
+class ConsoleLoggerImpl<Scope extends string> implements ConsoleLoggerApi<Scope> {
   private console: ConsolePipe
 
   private logs = new Map<string, ConsoleLog>()
@@ -63,7 +63,7 @@ class ConsoleLoggerImpl<Namespace extends string> implements ConsoleLoggerApi<Na
     }
   }
 
-  call(namespace: Namespace): Log {
+  call(namespace: `${Scope}:${string}`): Log {
     const log = this.logs.get(namespace)
     if (log) return log
 
@@ -74,11 +74,11 @@ class ConsoleLoggerImpl<Namespace extends string> implements ConsoleLoggerApi<Na
   }
 }
 
-export function createConsoleLogger<Namespace extends string = string>(
+export function createConsoleLogger<Scope extends string = string>(
   options: ConsoleLoggerOptions = {},
-): ConsoleLogger<Namespace> {
-  const logger = new ConsoleLoggerImpl<Namespace>(options)
-  return Object.assign((namespace: Namespace) => logger.call(namespace), {
+): ConsoleLogger<Scope> {
+  const logger = new ConsoleLoggerImpl<Scope>(options)
+  return Object.assign((namespace: `${Scope}:${string}`) => logger.call(namespace), {
     enableLogs: logger.enableLogs.bind(logger),
     disableAll: logger.disableAll.bind(logger),
   })

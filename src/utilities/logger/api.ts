@@ -69,11 +69,11 @@ export interface Log {
 /**
  * Gets a Log instance for the given namespace.
  */
-export interface Logger<Namespace extends string = string> {
+export interface Logger<Scope extends string = string> {
   /**
    * Gets a Log instance for the given namespace.
    *
    * @param namespace the namespace to get the logger for
    */
-  (namespace: Namespace): Log
+  (namespace: `${Scope}:${string}`): Log
 }
