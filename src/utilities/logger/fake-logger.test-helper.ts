@@ -30,6 +30,16 @@ export class FakeLog implements Log {
   }
 
   /**
+   * Filter the logged entries by level.
+   *
+   * @param level the level to filter for
+   * @returns all logged entries with the given level.
+   */
+  entriesOf(level: 'info' | 'details' | 'warn' | 'error'): FakeLogEntry[] {
+    return this.allEntries.filter((entry) => entry.level === level)
+  }
+
+  /**
    * @returns all logged messages but not the additional data.
    */
   get messages(): string[] {
@@ -68,8 +78,30 @@ export class FakeLog implements Log {
   }
 
   private formatEntry(entry: FakeLogEntry): string {
-    const parts = [entry.message, ...entry.more.map((m) => JSON.stringify(m))]
-    return `[${entry.level}|${this.namespace}] ${parts.join(' ')}`
+    const parts = [entry.message, ...entry.more.map((m) => FakeLog.formatValue(m))]
+    return `[${entry.level.padEnd(7, '.')}|${this.namespace}] ${parts.join(' ')}`
+  }
+
+  private static formatValue(value: unknown): string {
+    if (value === undefined) return '«undefined»'
+    if (value === null) return '«null»'
+    if (value === '') return '«empty string»'
+    if (typeof value === 'string') return value
+
+    const simple = /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$/
+
+    function stringify(v: unknown): string {
+      if (v === undefined) return 'undefined'
+      if (v === null) return 'null'
+      if (typeof v !== 'object') return JSON.stringify(v)
+      if (Array.isArray(v)) return `[ ${v.map((i) => stringify(i)).join(', ')} ]`
+      const entries = Object.entries(v)
+      if (entries.length === 0) return '{}'
+      return `{ ${entries
+        .map(([key, val]) => `${key.match(simple) ? key : JSON.stringify(key)}: ${stringify(val)}`)
+        .join(', ')} }`
+    }
+    return stringify(value)
   }
 }
 

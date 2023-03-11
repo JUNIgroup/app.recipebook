@@ -181,27 +181,59 @@ describe('FakeLog', () => {
     expect(log.entries).toEqual([{ level: 'error', message: 'Hello world!', more: ['foo', 'bar'] }])
   })
 
-  it('should log more data as json to lines', () => {
-    // arrange
-    const log = new FakeLog('test')
+  describe('format more data', () => {
+    it.each`
+      data                            | formatted
+      ${null}                         | ${'«null»'}
+      ${undefined}                    | ${'«undefined»'}
+      ${''}                           | ${'«empty string»'}
+      ${'foo'}                        | ${'foo'}
+      ${'foo bar'}                    | ${'foo bar'}
+      ${0}                            | ${'0'}
+      ${1.23}                         | ${'1.23'}
+      ${true}                         | ${'true'}
+      ${false}                        | ${'false'}
+      ${{ foo: 'bar' }}               | ${'{ foo: "bar" }'}
+      ${{ fää: 'bar', 'fää-bär': 3 }} | ${'{ fää: "bar", "fää-bär": 3 }'}
+      ${[1, 2, 3]}                    | ${'[ 1, 2, 3 ]'}
+      ${[1, null, 3]}                 | ${'[ 1, null, 3 ]'}
+    `('should log more data ($data) formatted to lines', ({ data, formatted }) => {
+      // arrange
+      const log = new FakeLog('test')
 
-    // act
-    log.info('Hello world!', { foo: 'bar' })
+      // act
+      log.info('formatted data:', data)
 
-    // assert
-    expect(log.lines).toEqual(['[info|test] Hello world! {"foo":"bar"}'])
-  })
+      // assert
+      expect(log.lines).toEqual([`[info...|test] formatted data: ${formatted}`])
+    })
 
-  it('should log more data as json to console', () => {
-    // arrange
-    const stream = vi.fn()
-    const log = new FakeLog('test', { console: stream })
+    it.each`
+      data                            | formatted
+      ${null}                         | ${'«null»'}
+      ${undefined}                    | ${'«undefined»'}
+      ${''}                           | ${'«empty string»'}
+      ${'foo'}                        | ${'foo'}
+      ${'foo bar'}                    | ${'foo bar'}
+      ${0}                            | ${'0'}
+      ${1.23}                         | ${'1.23'}
+      ${true}                         | ${'true'}
+      ${false}                        | ${'false'}
+      ${{ foo: 'bar' }}               | ${'{ foo: "bar" }'}
+      ${{ fää: 'bar', 'fää-bär': 3 }} | ${'{ fää: "bar", "fää-bär": 3 }'}
+      ${[1, 2, 3]}                    | ${'[ 1, 2, 3 ]'}
+      ${[1, null, 3]}                 | ${'[ 1, null, 3 ]'}
+    `('should log more data ($data) as json to console', ({ data, formatted }) => {
+      // arrange
+      const stream = vi.fn()
+      const log = new FakeLog('test', { console: stream })
 
-    // act
-    log.info('Hello world!', { foo: 'bar' })
+      // act
+      log.info('formatted data:', data)
 
-    // assert
-    expect(stream).toHaveBeenCalledWith('[info|test] Hello world! {"foo":"bar"}')
+      // assert
+      expect(stream).toHaveBeenCalledWith(`[info...|test] formatted data: ${formatted}`)
+    })
   })
 
   describe('multiple entries logged', () => {
@@ -253,14 +285,14 @@ describe('FakeLog', () => {
     it('should return logged lines', () => {
       // assert
       expect(log.lines).toEqual([
-        '[info|test] A info message',
-        '[info|test] A info message with more "foo" "bar"',
+        '[info...|test] A info message',
+        '[info...|test] A info message with more foo bar',
         '[details|test] A details message',
-        '[details|test] A details message with more "foo" "bar"',
-        '[warn|test] A warn message',
-        '[warn|test] A warn message with more "foo" "bar"',
-        '[error|test] A error message',
-        '[error|test] A error message with more "foo" "bar"',
+        '[details|test] A details message with more foo bar',
+        '[warn...|test] A warn message',
+        '[warn...|test] A warn message with more foo bar',
+        '[error..|test] A error message',
+        '[error..|test] A error message with more foo bar',
       ])
     })
   })
