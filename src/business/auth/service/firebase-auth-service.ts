@@ -17,33 +17,33 @@ import {
   UserCredential,
 } from 'firebase/auth'
 import { FirebaseService } from '../../../infrastructure/firebase/firebase-service'
-import { ServiceLogger } from '../../../infrastructure/logger/logger'
+import { Log, Logger } from '../../../utilities/logger'
 import { AuthService, LoginOptions, Subscription, UserData } from './auth-service'
 import { toAuthError, toUserData } from './firebase-auth-helper'
 
 const serviceName = 'FirebaseAuthService'
 
-const createLogger = ServiceLogger(serviceName)
-
 export class FirebaseAuthService implements AuthService {
+  private log: Log
+
   private auth: Auth
 
   private userData: UserData | null = null
 
   private subscriptions: Subscription<UserData | null>[] = []
 
-  constructor(private firebase: FirebaseService) {
+  constructor(private firebase: FirebaseService, logger: Logger<'business'>) {
     this.auth = firebase.getAuth()
+    this.log = logger('business:FirebaseAuthService')
     onAuthStateChanged(this.auth, (user) => this.updateUser(user))
   }
 
   private updateUser(user: User | null) {
-    const logger = createLogger('change user', user ? user.email : '-')
+    this.log.info('updateUser', user ? user.email : '-')
     this.userData = user ? toUserData(user) : null
 
-    logger.log('user: %o', this.userData)
+    this.log.details('user', this.userData)
     this.subscriptions.forEach((subscription) => subscription(this.userData))
-    logger.end()
   }
 
   async signUpWithEmailAndPassword(
@@ -52,9 +52,9 @@ export class FirebaseAuthService implements AuthService {
     password: string,
     options: LoginOptions = {},
   ): Promise<void> {
-    const logger = createLogger('signUpWithEmailAndPassword', email)
-    logger.log('name: %o', name)
-    logger.log('options: %o', options)
+    this.log.info('signUp', email)
+    this.log.details('name', name)
+    this.log.details('options', options)
     try {
       const auth = this.firebase.getAuth()
 
@@ -62,29 +62,25 @@ export class FirebaseAuthService implements AuthService {
       const userCredential: UserCredential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(userCredential.user, { displayName: name })
       this.updateUser(userCredential.user)
-      logger.log('logged in as user: %o', userCredential.user)
+      this.log.details('logged in as user', userCredential.user)
     } catch (error) {
-      logger.error('login failed: %o', error)
+      this.log.error('login failed', error)
       throw toAuthError(serviceName, error)
-    } finally {
-      logger.end()
     }
   }
 
   async signInWithEmailAndPassword(email: string, password: string, options: LoginOptions = {}): Promise<void> {
-    const logger = createLogger('signInWithEmailAndPassword', email)
-    logger.log('options: %o', options)
+    this.log.info('signIn', email)
+    this.log.details('options', options)
     try {
       const auth = this.firebase.getAuth()
 
       await setPersistence(auth, options.rememberMe ? indexedDBLocalPersistence : inMemoryPersistence)
       const userCredential: UserCredential = await signInWithEmailAndPassword(auth, email, password)
-      logger.log('logged in as user: %o', userCredential.user)
+      this.log.details('logged in as user', userCredential.user)
     } catch (error) {
-      logger.error('login failed: %o', error)
+      this.log.error('login failed', error)
       throw toAuthError(serviceName, error)
-    } finally {
-      logger.end()
     }
   }
 
@@ -102,14 +98,12 @@ export class FirebaseAuthService implements AuthService {
   }
 
   async logout(): Promise<void> {
-    const logger = createLogger('logout')
+    this.log.info('logout')
     try {
       const auth = this.firebase.getAuth()
       await signOut(auth)
     } catch (error) {
-      logger.error('logout failed: %o', error)
-    } finally {
-      logger.end()
+      this.log.error('logout failed', error)
     }
   }
 
@@ -117,14 +111,12 @@ export class FirebaseAuthService implements AuthService {
     const user = this.auth.currentUser
     if (!user?.email) return
 
-    const logger = createLogger('delete Account', user.email)
+    this.log.info('deleteAccount', user.email)
     try {
       await deleteUser(user)
     } catch (error) {
-      logger.error('delete account failed: %o', error)
+      this.log.error('delete account failed', error)
       throw toAuthError(serviceName, error)
-    } finally {
-      logger.end()
     }
   }
 
@@ -132,15 +124,13 @@ export class FirebaseAuthService implements AuthService {
     const user = this.auth.currentUser
     if (!user) return
 
-    const logger = createLogger('changeName', newName)
+    this.log.info('changeName', newName)
     try {
       await updateProfile(user, { displayName: newName })
       this.updateUser(this.auth.currentUser)
     } catch (error) {
-      logger.error('update failed: %o', error)
+      this.log.error('update failed', error)
       throw toAuthError(serviceName, error)
-    } finally {
-      logger.end()
     }
   }
 
@@ -148,15 +138,13 @@ export class FirebaseAuthService implements AuthService {
     const user = this.auth.currentUser
     if (!user) return
 
-    const logger = createLogger('changeEmail', newEmail)
+    this.log.info('changeEmail', newEmail)
     try {
       await updateEmail(user, newEmail)
       this.updateUser(this.auth.currentUser)
     } catch (error) {
-      logger.error('update failed: %o', error)
+      this.log.error('update failed', error)
       throw toAuthError(serviceName, error)
-    } finally {
-      logger.end()
     }
   }
 
@@ -164,26 +152,22 @@ export class FirebaseAuthService implements AuthService {
     const user = this.auth.currentUser
     if (!user) return
 
-    const logger = createLogger('changePassword', '...')
+    this.log.info('changePassword', '...')
     try {
       await updatePassword(user, newPassword)
     } catch (error) {
-      logger.error('update failed: %o', error)
+      this.log.error('update failed', error)
       throw toAuthError(serviceName, error)
-    } finally {
-      logger.end()
     }
   }
 
   async resetPassword(email: string) {
-    const logger = createLogger('resetPassword', email)
+    this.log.info('resetPassword', email)
     try {
       await sendPasswordResetEmail(this.auth, email)
     } catch (error) {
-      logger.error('send reset email failed: %o', error)
+      this.log.error('send reset email failed', error)
       throw toAuthError(serviceName, error)
-    } finally {
-      logger.end()
     }
   }
 }

@@ -41,17 +41,18 @@ function createFirebaseRestAuthServiceContext(): TestContext {
         permanent: memoryPersistence(),
         temporary: nonePersistence(),
       }
-      return new FirebaseRestAuthService(auth, persistence)
+      return new FirebaseRestAuthService(auth, logger, persistence)
     },
   }
 }
 
 function createFirebaseAuthServiceContext(): TestContext {
   const firebase = new FirebaseService()
+  const logger = createFakeLogger()
   return {
     testArePossible: true,
     supportsErrors: true,
-    authService: () => new FirebaseAuthService(firebase),
+    authService: () => new FirebaseAuthService(firebase, logger),
   }
 }
 

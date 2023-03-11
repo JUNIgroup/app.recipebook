@@ -29,7 +29,7 @@ const storage = localStorage
 const restAuthService = import.meta.env.VITE_FIREBASE__USE_EMULATOR
   ? RestAuthService.forEmulator(logger)
   : RestAuthService.forRemote(logger, import.meta.env.VITE_FIREBASE__API_KEY)
-const authService = new FirebaseRestAuthService(restAuthService, {
+const authService = new FirebaseRestAuthService(restAuthService, logger, {
   permanent: storagePersistence(IDB_ID, storage),
   temporary: memoryPersistence(),
 })
