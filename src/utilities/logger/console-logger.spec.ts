@@ -72,7 +72,7 @@ describe('ConsoleLogger', () => {
 
     it('should return a console log, which logs to the console by default', () => {
       // arrange
-      vi.spyOn(console, 'error')
+      vi.spyOn(console, 'error').mockImplementation(() => {})
       const logger = createConsoleLogger()
       const log = logger('test:foo')
 

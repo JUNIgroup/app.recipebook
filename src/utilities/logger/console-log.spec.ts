@@ -1,7 +1,16 @@
+import { Mock } from 'vitest'
 import { ConsoleLog } from './console-log'
 import { FakeConsole } from './console-log.test-helper'
 
 describe('ConsoleLog', () => {
+  /**
+   * Because the logger prefix the argument, we only test the last n arguments of the last call.
+   */
+  function expectLastCalledWithArgumentsEndingWith(mockFn: Mock, ...args: unknown[]) {
+    const argumentsOfLastCall = mockFn.mock.lastCall
+    expect(argumentsOfLastCall.slice(-args.length)).toEqual(args)
+  }
+
   describe('.info', () => {
     it('should log info messages, if log is enabled', () => {
       // arrange
@@ -12,7 +21,8 @@ describe('ConsoleLog', () => {
       log.info('Hello world!')
 
       // assert
-      expect(console.innerInfo).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!')
+      expect(console.innerInfo).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerInfo, 'Hello world!')
     })
 
     it('should not log info messages, if log is disabled', () => {
@@ -36,7 +46,8 @@ describe('ConsoleLog', () => {
       log.info('Hello world!', 'foo', 'bar')
 
       // assert
-      expect(console.innerInfo).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!', 'foo', 'bar')
+      expect(console.innerInfo).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerInfo, 'Hello world!', 'foo', 'bar')
     })
 
     it('should record location of info call in stack', () => {
@@ -65,7 +76,8 @@ describe('ConsoleLog', () => {
       log.details('Hello world!')
 
       // assert
-      expect(console.innerDebug).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!')
+      expect(console.innerDebug).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerDebug, 'Hello world!')
     })
 
     it('should not log details messages if log is disabled', () => {
@@ -89,7 +101,8 @@ describe('ConsoleLog', () => {
       log.details('Hello world!', 'foo', 'bar')
 
       // assert
-      expect(console.innerDebug).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!', 'foo', 'bar')
+      expect(console.innerDebug).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerDebug, 'Hello world!', 'foo', 'bar')
     })
 
     it('should record location of details call in stack', () => {
@@ -118,7 +131,8 @@ describe('ConsoleLog', () => {
       log.warn('Hello world!')
 
       // assert
-      expect(console.innerWarn).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!')
+      expect(console.innerWarn).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerWarn, 'Hello world!')
     })
 
     it('should log warn messages also if log is disabled', () => {
@@ -130,7 +144,8 @@ describe('ConsoleLog', () => {
       log.warn('Hello world!')
 
       // assert
-      expect(console.innerWarn).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!')
+      expect(console.innerWarn).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerWarn, 'Hello world!')
     })
 
     it('should log warn messages with additional data', () => {
@@ -142,7 +157,8 @@ describe('ConsoleLog', () => {
       log.warn('Hello world!', 'foo', 'bar')
 
       // assert
-      expect(console.innerWarn).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!', 'foo', 'bar')
+      expect(console.innerWarn).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerWarn, 'Hello world!', 'foo', 'bar')
     })
 
     it('should record location of warn call in stack', () => {
@@ -171,7 +187,8 @@ describe('ConsoleLog', () => {
       log.error('Hello world!')
 
       // assert
-      expect(console.innerError).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!')
+      expect(console.innerError).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerError, 'Hello world!')
     })
 
     it('should log error messages also if log is disabled', () => {
@@ -183,7 +200,8 @@ describe('ConsoleLog', () => {
       log.error('Hello world!')
 
       // assert
-      expect(console.innerError).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!')
+      expect(console.innerError).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerError, 'Hello world!')
     })
 
     it('should log error messages with additional data', () => {
@@ -195,7 +213,8 @@ describe('ConsoleLog', () => {
       log.error('Hello world!', 'foo', 'bar')
 
       // assert
-      expect(console.innerError).toHaveBeenCalledWith('[%s] %s', 'test', 'Hello world!', 'foo', 'bar')
+      expect(console.innerError).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerError, 'Hello world!', 'foo', 'bar')
     })
 
     it('should record location of error call in stack', () => {

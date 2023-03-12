@@ -1,4 +1,6 @@
 import { Log } from './api'
+import { getHashColor, styleConsoleLog } from './console-colors'
+import { isChrome } from './browser-detect'
 
 export type ConsolePipe = Pick<Console, 'debug' | 'info' | 'warn' | 'error'>
 
@@ -15,8 +17,11 @@ export class ConsoleLog implements Log {
 
   private logEnabled: boolean
 
+  private color = 'f36'
+
   constructor(public readonly namespace: string, private readonly console: ConsolePipe, enabled: boolean) {
     this.logEnabled = enabled
+    this.color = getHashColor(namespace)
     this.info = enabled ? this.pipeToConsole(this.console.info) : drain
     this.details = enabled ? this.pipeToConsole(this.console.debug) : drain
     this.warn = this.pipeToConsole(this.console.warn)
@@ -30,8 +35,13 @@ export class ConsoleLog implements Log {
   setEnabled(enabled: boolean) {
     if (this.logEnabled !== enabled) {
       this.logEnabled = enabled
-      this.info = enabled ? this.pipeToConsole(this.console.info) : drain
-      this.details = enabled ? this.pipeToConsole(this.console.debug) : drain
+      if (enabled) {
+        this.info = this.pipeToConsole(this.console.info)
+        this.details = this.pipeToConsole(this.console.debug)
+      } else {
+        this.info = drain
+        this.details = drain
+      }
     }
   }
 
@@ -43,7 +53,11 @@ export class ConsoleLog implements Log {
    * @see https://github.com/Download/ulog#preserves-callstack ulog
    */
   private pipeToConsole(stream: Console['info']): (message: string, ...more: unknown[]) => void {
-    const template = `[%s] %s`
-    return stream.bind(this.console, template, this.namespace)
+    const args = styleConsoleLog({
+      namespace: this.namespace,
+      namespaceColor: this.color,
+      chrome: isChrome,
+    })
+    return stream.bind(this.console, ...args) as (message: string, ...more: unknown[]) => void
   }
 }
