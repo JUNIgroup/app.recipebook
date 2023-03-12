@@ -329,13 +329,17 @@ describe('styleConsoleLog', () => {
   `('should return prefix arguments to style console log (simple namespace, $description)', ({ namespace, chrome }) => {
     // arrange
     const namespaceColor = '#123456'
+    const hintColor = '#654321'
+    const hint = '«hint»'
 
     // act
-    const styledString = styleConsoleLog({ namespace, namespaceColor, chrome })
+    const styledString = styleConsoleLog({ namespace, namespaceColor, hint, hintColor, chrome })
 
     // assert
     expect(styledString).toEqual([
-      `%c%s %c%s`, // styled namespace and styled message
+      `%c%s %c%s %c%s`, // styled hint, styled namespace and styled message
+      `color:#654321;font-size:smaller`, // style for hint
+      '«hint»', // hint instance
       `color:#123456;font-weight:bold`, // style for namespace
       namespace, // namespace text
       '', // reset style for message
@@ -351,14 +355,18 @@ describe('styleConsoleLog', () => {
     ({ namespace, scope, name }) => {
       // arrange
       const namespaceColor = '#123456'
+      const hintColor = '#654321'
+      const hint = '«hint»'
       const chrome = true
 
       // act
-      const styledString = styleConsoleLog({ namespace, namespaceColor, chrome })
+      const styledString = styleConsoleLog({ namespace, namespaceColor, hint, hintColor, chrome })
 
       // assert
       expect(styledString).toEqual([
-        `%c%s:%c%s %c%s`, // styled scope of namespace, styled name of namespace and styled message
+        `%c%s %c%s:%c%s %c%s`, // styled scope of namespace, styled name of namespace and styled message
+        `color:#654321;font-size:smaller`, // style for hint
+        '«hint»', // hint instance
         `color:#123456;font-weight:light`, // style for scope of namespace
         scope, // scope text of namespace
         `color:#123456;font-weight:bold`, // style for name of namespace

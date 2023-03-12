@@ -73,34 +73,42 @@ export function getHashColor(
 type StyleParams = {
   namespace: string
 
-  /** color in format #rgb or #rrggbb or as name */
+  /** color for the namespace in format #rgb or #rrggbb or as name */
   namespaceColor: string
+
+  /** hint to include in the prefix */
+  hint: unknown
+
+  /** color for the hint in format #rgb or #rrggbb or as name */
+  hintColor: string
 
   /** use more styles for chrome */
   chrome: boolean
 }
 
-export function styleConsoleLog({ namespace, namespaceColor, chrome }: StyleParams): unknown[] {
+export function styleConsoleLog({ namespace, namespaceColor, hint, hintColor, chrome }: StyleParams): unknown[] {
   if (chrome) {
     // chrome allows to split namespace into scope and name and filter by combined string
     const colon = namespace.indexOf(':')
     if (colon > 0 && colon < namespace.length - 1) {
       const scope = namespace.substring(0, colon) // include colon
       const name = namespace.substring(colon + 1)
-      const template = `%c%s:%c%s %c%s`
+      const template = `%c%s %c%s:%c%s %c%s`
+      const hintStyle = `color:${hintColor};font-size:smaller`
       const scopeStyle = `color:${namespaceColor};font-weight:light`
       const nameStyle = `color:${namespaceColor};font-weight:bold`
       const messageStyle = '' // reset style
-      const args = [template, scopeStyle, scope, nameStyle, name, messageStyle]
+      const args = [template, hintStyle, hint, scopeStyle, scope, nameStyle, name, messageStyle]
       return args
     }
   }
 
   // firefox does not allow to filter by combined string if scope and name are using different styles
   // if namespace is not split into scope and name, use the whole namespace as name
-  const template = `%c%s %c%s`
+  const template = `%c%s %c%s %c%s`
   const namespaceStyle = `color:${namespaceColor};font-weight:bold`
   const messageStyle = '' // reset style
-  const args = [template, namespaceStyle, namespace, messageStyle]
+  const hintStyle = `color:${hintColor};font-size:smaller`
+  const args = [template, hintStyle, hint, namespaceStyle, namespace, messageStyle]
   return args
 }

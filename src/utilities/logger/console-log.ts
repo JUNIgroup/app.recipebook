@@ -1,6 +1,7 @@
 import { Log } from './api'
-import { getHashColor, styleConsoleLog } from './console-colors'
+import { getHashColor, styleConsoleLog, middleGray } from './console-colors'
 import { isChrome } from './browser-detect'
+import { createDelay, Delay } from './console-delay'
 
 export type ConsolePipe = Pick<Console, 'debug' | 'info' | 'warn' | 'error'>
 
@@ -17,11 +18,14 @@ export class ConsoleLog implements Log {
 
   private logEnabled: boolean
 
-  private color = 'f36'
+  private readonly color: string
+
+  private readonly delay: Delay
 
   constructor(public readonly namespace: string, private readonly console: ConsolePipe, enabled: boolean) {
     this.logEnabled = enabled
     this.color = getHashColor(namespace)
+    this.delay = createDelay()
     this.info = enabled ? this.pipeToConsole(this.console.info) : drain
     this.details = enabled ? this.pipeToConsole(this.console.debug) : drain
     this.warn = this.pipeToConsole(this.console.warn)
@@ -56,6 +60,8 @@ export class ConsoleLog implements Log {
     const args = styleConsoleLog({
       namespace: this.namespace,
       namespaceColor: this.color,
+      hint: this.delay,
+      hintColor: middleGray,
       chrome: isChrome,
     })
     return stream.bind(this.console, ...args) as (message: string, ...more: unknown[]) => void
