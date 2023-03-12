@@ -1,4 +1,5 @@
 build
+analyze
 coverage
 dist
 package-lock.json

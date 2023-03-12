@@ -1,20 +1,18 @@
 import { Observable, Subject } from 'rxjs'
 import { IDB_ID } from '../../../app.constants'
-import { Logger, ServiceLogger } from '../../logger/logger'
+import { Log, Logger } from '../../../utilities/logger'
 import { MetaRecord, RdbService, ReadCallbacks, UpdateCallbacks } from '../rdb.service'
 import { IdbReadTransaction, IdbUpdateTransaction } from './idb.transactions'
-
-const serviceName = 'IdbService'
-
-const createLogger = ServiceLogger(serviceName)
 
 const DELETE_VERSION = -1
 
 type IdbTransactionCallback<T> = (tx: IDBTransaction) => Promise<T>
 
-export type IdbUpgrades = (args: { db: IDBDatabase; oldVersion: number; newVersion: number; logger: Logger }) => void
+export type IdbUpgrades = (args: { db: IDBDatabase; oldVersion: number; newVersion: number; log: Log }) => void
 
 export class IdbService<SupportedStoreName extends string> implements RdbService<SupportedStoreName> {
+  private log: Log
+
   private db: IDBDatabase | null = null
 
   constructor(
@@ -22,7 +20,10 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
     private dbId: string,
     private dbVersion: number,
     private dbUpgrades: IdbUpgrades,
-  ) {}
+    logger: Logger<'infra'>,
+  ) {
+    this.log = logger('infra:IdbService')
+  }
 
   /**
    * Open the DB.
@@ -33,28 +34,27 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
    * Handle the upgrade of the DB if needed.
    */
   openDB(): Observable<'blocked' | 'open'> {
+    this.log.info('openDB')
     const state$ = new Subject<'blocked' | 'open'>()
-    const logger = createLogger('openDB')
     const request: IDBOpenDBRequest = this.idb.open(this.dbId, this.dbVersion)
 
     request.onupgradeneeded = ({ oldVersion, newVersion }: IDBVersionChangeEvent) => {
       if (newVersion && oldVersion < newVersion) {
-        logger.log('upgrade from version %d to %d', oldVersion, newVersion)
+        this.log.info(`upgrade from version ${oldVersion} to ${newVersion}`)
         const db = request.result
-        this.dbUpgrades({ db, oldVersion, newVersion, logger })
+        this.dbUpgrades({ db, oldVersion, newVersion, log: this.log })
       }
     }
 
     request.onblocked = (event: IDBVersionChangeEvent) => {
-      logger.log('upgrade blocked from version %d to %d', event.oldVersion, event.newVersion ?? DELETE_VERSION)
+      this.log.warn(`upgrade blocked from version ${event.oldVersion} to ${event.newVersion ?? DELETE_VERSION}`)
       state$.next('blocked')
     }
 
     request.onerror = () => {
       const error = request.error ?? new DOMException('unknown error')
-      logger.error('open DB failed: %o', error)
+      this.log.error('open DB failed:', error)
       state$.error(error)
-      logger.end()
     }
 
     request.onsuccess = () => {
@@ -62,10 +62,9 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
       this.db.onclose = () => {
         localStorage.setItem('dbClosed', Date.now().toString())
       }
-      logger.log('open DB succeed')
+      this.log.details('open DB succeed')
       state$.next('open')
       state$.complete()
-      logger.end()
     }
 
     return state$
@@ -78,33 +77,31 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
    * Emit 'deleted' if the DB is closed and deleted.
    */
   closeAndDeleteDB(): Observable<'blocked' | 'deleted'> {
+    this.log.info('closeAndDeleteDB')
     const state$ = new Subject<'blocked' | 'deleted'>()
-    const logger = createLogger('closeAndDeleteDB')
     if (this.db) {
-      logger.log('close DB')
+      this.log.details('close DB')
       this.db.close()
       this.db = null
     }
 
     const request: IDBOpenDBRequest = this.idb.deleteDatabase(IDB_ID)
     request.onblocked = () => {
-      logger.log('upgrade blocked to delete DB')
+      this.log.warn('upgrade blocked to delete DB')
       state$.next('blocked')
     }
 
     request.onerror = () => {
       const error = request.error ?? new DOMException('unknown error')
-      logger.error('delete DB failed: %o', error)
+      this.log.error('delete DB failed:', error)
       state$.error(error)
-      logger.end()
     }
 
     request.onsuccess = () => {
       this.db = request.result
-      logger.log('delete DB succeed')
+      this.log.details('delete DB succeed')
       state$.next('deleted')
       state$.complete()
-      logger.end()
     }
     return state$
   }
@@ -140,28 +137,26 @@ export class IdbService<SupportedStoreName extends string> implements RdbService
     if (!this.db) {
       throw new Error('DB not open')
     }
-    const logger = createLogger('transaction', mode)
-    logger.log('store names: %o', storeNames)
+    this.log.info(`execute ${mode} transaction`)
+    this.log.details('store names:', storeNames)
     const tx = this.db.transaction(storeNames, mode)
+    this.log.details('transaction created')
     return new Promise<T>((resolve, reject) => {
       let result: T
       let abortError: unknown
 
       tx.onerror = () => {
         const error = tx.error ?? new DOMException('unknown error')
-        logger.error('transaction failed: %o', error)
-        logger.end()
+        this.log.error('transaction failed:', error)
         reject(error)
       }
       tx.onabort = () => {
         const error = abortError ?? new Error('transaction aborted')
-        logger.error('transaction aborted: %o', error)
-        logger.end()
+        this.log.error('transaction aborted:', error)
         reject(error)
       }
       tx.oncomplete = () => {
-        logger.log('transaction succeed: %o', result)
-        logger.end()
+        this.log.details('transaction succeed', result)
         resolve(result)
       }
       callback(tx)

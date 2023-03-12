@@ -1,26 +1,28 @@
 import { AuthPersistence } from '../../../infrastructure/firebase/persistence'
 import { AuthUser, RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
-import { ServiceLogger } from '../../../infrastructure/logger/logger'
+import { Log, Logger } from '../../../utilities/logger'
 import { AuthService, LoginOptions, Subscription, UserData } from './auth-service'
 import { toAuthError } from './firebase-rest-auth-errors'
 
-const createLogger = ServiceLogger('FirebaseRestAuthService')
-
 export class FirebaseRestAuthService implements AuthService {
+  private log: Log
+
   private userData: UserData | null | undefined
 
   private subscriptions: Subscription<UserData | null>[] = []
 
   constructor(
     private auth: RestAuthService,
+    logger: Logger<'business'>,
     private persistence: { permanent: AuthPersistence; temporary: AuthPersistence },
   ) {
+    this.log = logger('business:FirebaseRestAuthService')
     this.auth.onUserChanged((user) => this.updateUser(user))
     this.autoSignIn()
   }
 
   private updateUser(user: AuthUser | null) {
-    const logger = createLogger('change user', user ? user.email : '-')
+    this.log.info('updateUser', user ? user.email : '-')
     const userData =
       user === null
         ? null
@@ -32,10 +34,9 @@ export class FirebaseRestAuthService implements AuthService {
             createdAt: user.createdAt,
             lastLoginAt: user.lastLoginAt,
           }
-    logger.log('user: %o', userData)
+    this.log.details('user', userData)
     this.userData = userData
     this.subscriptions.forEach((subscription) => subscription(userData))
-    logger.end()
   }
 
   private async autoSignIn() {
@@ -49,49 +50,45 @@ export class FirebaseRestAuthService implements AuthService {
     password: string,
     options: LoginOptions = {},
   ): Promise<void> {
-    const logger = createLogger('signUpWithEmailAndPassword', email)
-    logger.log('name: %o', name)
-    logger.log('options: %o', options)
+    this.log.info('signUp', email)
+    this.log.details('name', name)
+    this.log.details('options', options)
     try {
       const persistence = options.rememberMe ? this.persistence.permanent : this.persistence.temporary
       await this.auth.setPersistence(persistence)
       let user = await this.auth.signUpWithEmailAndPassword({ email, password })
       user = await this.updateProfileSilently(user, { displayName: name })
-      logger.log('logged in as user: %o', user)
+      this.log.details('logged in as user', user)
     } catch (error) {
-      logger.error('login failed: %o', error)
+      this.log.error('login failed', error)
       throw toAuthError(error)
-    } finally {
-      logger.end()
     }
   }
 
   private async updateProfileSilently(user: AuthUser, profileChange: { displayName?: string }): Promise<AuthUser> {
-    const logger = createLogger('updateProfile', user.email)
+    this.log.details('update profile of', user.email)
     try {
       const updatedUser = await this.auth.updateProfile(profileChange)
-      logger.log('updated profile: %o', updatedUser)
+      this.log.details('updated to: ', updatedUser)
       return updatedUser
     } catch (error) {
-      logger.error('update profile failed: %o', error)
+      this.log.error('update profile failed', error)
       return user
     }
   }
 
   // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
   async signInWithEmailAndPassword(email: string, password: string, options: LoginOptions = {}): Promise<void> {
-    const logger = createLogger('signInWithEmailAndPassword', email)
-    logger.log('options: %o', options)
+    this.log.info('signIn', email)
+    this.log.details('options', options)
     try {
       const persistence = options.rememberMe ? this.persistence.permanent : this.persistence.temporary
       await this.auth.setPersistence(persistence)
       const user = await this.auth.signInWithEmailAndPassword({ email, password })
-      logger.log('logged in as user: %o', user)
+      this.log.details('logged in as user', user)
     } catch (error) {
-      logger.error('login failed: %o', error)
+      this.log.error('login failed', error)
       throw toAuthError(error)
-    } finally {
-      logger.end()
     }
   }
 
@@ -110,27 +107,22 @@ export class FirebaseRestAuthService implements AuthService {
   }
 
   async logout(): Promise<void> {
-    const logger = createLogger('logout')
+    this.log.info('logout')
     try {
       await this.auth.signOut()
     } catch (error) {
-      logger.error('logout failed: %o', error)
-    } finally {
-      logger.end()
+      this.log.error('logout failed', error)
     }
   }
 
   // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
   async deleteAccount(): Promise<void> {
-    const logger = createLogger('deleteAccount')
+    this.log.info('deleteAccount')
     try {
       await this.auth.deleteAccountPermanently()
     } catch (error) {
-      logger.error('delete account failed: %o', error)
-      // throw toAuthError(serviceName, error)
-      throw error
-    } finally {
-      logger.end()
+      this.log.error('delete account failed', error)
+      throw toAuthError(error)
     }
   }
 
@@ -138,14 +130,12 @@ export class FirebaseRestAuthService implements AuthService {
     const user = this.auth.currentUser
     if (!user) return
 
-    const logger = createLogger('changeName', newName)
+    this.log.info('changeName', newName)
     try {
       await this.auth.updateProfile({ displayName: newName })
     } catch (error) {
-      logger.error('update failed: %o', error)
+      this.log.error('update failed', error)
       throw toAuthError(error)
-    } finally {
-      logger.end()
     }
   }
 
@@ -153,15 +143,12 @@ export class FirebaseRestAuthService implements AuthService {
     const user = this.auth.currentUser
     if (!user) return
 
-    const logger = createLogger('changeEmail', newEmail)
+    this.log.info('changeEmail', newEmail)
     try {
       await this.auth.updateProfile({ email: newEmail })
     } catch (error) {
-      logger.error('update failed: %o', error)
-      // throw toAuthError(serviceName, error)
-      throw error
-    } finally {
-      logger.end()
+      this.log.error('update failed', error)
+      throw toAuthError(error)
     }
   }
 
@@ -169,14 +156,12 @@ export class FirebaseRestAuthService implements AuthService {
     const user = this.auth.currentUser
     if (!user) return
 
-    const logger = createLogger('changePassword', '...')
+    this.log.info('changePassword', '...')
     try {
       await this.auth.updateProfile({ password: newPassword })
     } catch (error) {
-      logger.error('update failed: %o', error)
+      this.log.error('update failed', error)
       throw toAuthError(error)
-    } finally {
-      logger.end()
     }
   }
 

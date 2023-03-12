@@ -1,16 +1,15 @@
 import { boolean, Infer, number, object, optional, string } from 'superstruct'
-import { FakeLogger } from '../../logger/fake-logger.test-helper'
-import { Logger } from '../../logger/logger'
+import { FakeLog } from '../../../utilities/logger/fake-logger.test-helper'
 import { defineGlobalFetchForTesting } from '../../query/fetch.test-helper'
 import { ValidateFunction } from '../../validation/index'
 import { createValidationFunction } from '../../validation/superstruct.extend'
 import { FirebaseError } from '../firebase-error'
 import {
   checkStatus,
+  DataRequestQuery,
   extractFetchData,
   FetchError,
   fetchErrorHandler,
-  DataRequestQuery,
   requestJson,
   startRequestJson,
 } from './data-request'
@@ -247,10 +246,10 @@ describe('fetchErrorHandler', () => {
 
   it('should return a handler function', () => {
     // arrange
-    const logger = { error: () => {} } as Logger
+    const log = new FakeLog('test')
 
     // act
-    const handler = fetchErrorHandler(logger)
+    const handler = fetchErrorHandler(log)
 
     // assert
     expect(handler).toBeInstanceOf(Function)
@@ -259,8 +258,8 @@ describe('fetchErrorHandler', () => {
   describe('the returned error handler', () => {
     it('should rethrow FirebaseError', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const error = new FirebaseError('EMAIL_NOT_FOUND')
 
       // act
@@ -268,13 +267,13 @@ describe('fetchErrorHandler', () => {
 
       // assert
       expect(thrown).toBe(error)
-      expect(logger.output).not.toHaveBeenCalled()
+      expect(log.entriesOf('error')).toBeEmpty()
     })
 
     it('should throw unknown FirebaseError for non-error', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const error = 'error text only'
 
       // act
@@ -283,13 +282,13 @@ describe('fetchErrorHandler', () => {
       // assert
       expect(thrown).toBeInstanceOf(FirebaseError)
       expect(thrown).toEqual(new FirebaseError('UNKNOWN_ERROR'))
-      expect(logger.output).toHaveBeenCalledWith('[ERROR] Unknown Error: error text only')
+      expect(log.lines).toInclude('[error..|test] Unknown Error: error text only')
     })
 
     it('should throw unknown FirebaseError for non FetchError', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const error = new Error('error but not a fetch error')
 
       // act
@@ -298,13 +297,13 @@ describe('fetchErrorHandler', () => {
       // assert
       expect(thrown).toBeInstanceOf(FirebaseError)
       expect(thrown).toEqual(new FirebaseError('UNKNOWN_ERROR'))
-      expect(logger.output).toHaveBeenCalledWith('[ERROR] Unknown Error: error but not a fetch error')
+      expect(log.lines).toInclude('[error..|test] Unknown Error: error but not a fetch error')
     })
 
     it('should throw network FirebaseError for a wrapped AbortError', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const error = new FetchError(mockAbortError().message, request)
 
       // act
@@ -313,18 +312,18 @@ describe('fetchErrorHandler', () => {
       // assert
       expect(thrown).toBeInstanceOf(FirebaseError)
       expect(thrown).toEqual(new FirebaseError('NETWORK_ERROR'))
-      expect(logger.output).toHaveBeenCalledWith('[ERROR] Network Error: The user aborted a request.')
+      expect(log.lines).toInclude('[error..|test] Network Error: The user aborted a request.')
     })
 
     it('should throw network FirebaseError for a FetchError without response', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const error = new FetchError(
         'fetch error without response', // message
         request,
       )
-      const headers = '{ accept: application/json, accept-charset: utf-8, content-type: application/json }'
+      const headers = '{ accept: "application/json", "accept-charset": "utf-8", "content-type": "application/json" }'
 
       // act
       const thrown = await handler(error).catch((e) => e)
@@ -332,16 +331,16 @@ describe('fetchErrorHandler', () => {
       // assert
       expect(thrown).toBeInstanceOf(FirebaseError)
       expect(thrown).toEqual(new FirebaseError('NETWORK_ERROR'))
-      expect(logger.lines).toEqual([
-        '[ERROR] Network Error: fetch error without response',
-        `[ERROR]       Request: POST http://localhost:8080/, headers: ${headers}`,
+      expect(log.lines).toEqual([
+        '[error..|test] Network Error: fetch error without response',
+        `[details|test]       Request: POST http://localhost:8080/, headers: ${headers}`,
       ])
     })
 
     it('should throw server FirebaseError for a FetchError with response and status !== 400 and response body as HTML', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const response = new Response('<html>...</html>', {
         status: 404,
         statusText: 'Not Found',
@@ -351,7 +350,7 @@ describe('fetchErrorHandler', () => {
         request,
         response,
       )
-      const headers = '{ accept: application/json, accept-charset: utf-8, content-type: application/json }'
+      const headers = '{ accept: "application/json", "accept-charset": "utf-8", "content-type": "application/json" }'
 
       // act
       const thrown = await handler(error).catch((e) => e)
@@ -359,19 +358,19 @@ describe('fetchErrorHandler', () => {
       // assert
       expect(thrown).toBeInstanceOf(FirebaseError)
       expect(thrown).toEqual(new FirebaseError('SERVER_ERROR'))
-      expect(logger.lines).toEqual([
-        '[ERROR]  Server Error: Request failed with status code 404',
-        `[ERROR]       Request: POST http://localhost:8080/, headers: ${headers}`,
-        `[ERROR]  Request-Body: { pay: load }`,
-        `[ERROR]      Response: 404 Not Found`,
-        `[ERROR] Response-Body: <html>...</html>`,
+      expect(log.lines).toEqual([
+        '[error..|test]  Server Error: Request failed with status code 404',
+        `[details|test]       Request: POST http://localhost:8080/, headers: ${headers}`,
+        `[details|test]  Request-Body: { pay: "load" }`,
+        `[details|test]      Response: 404 Not Found`,
+        `[details|test] Response-Body: <html>...</html>`,
       ])
     })
 
     it('should throw server FirebaseError for a FetchError with response and status !== 400 and response body as JSON', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const response = new Response(JSON.stringify({ foo: 'bar' }), {
         status: 404,
         statusText: 'Not Found',
@@ -384,7 +383,7 @@ describe('fetchErrorHandler', () => {
         request,
         response,
       )
-      const headers = '{ accept: application/json, accept-charset: utf-8, content-type: application/json }'
+      const headers = '{ accept: "application/json", "accept-charset": "utf-8", "content-type": "application/json" }'
 
       // act
       const thrown = await handler(error).catch((e) => e)
@@ -392,19 +391,19 @@ describe('fetchErrorHandler', () => {
       // assert
       expect(thrown).toBeInstanceOf(FirebaseError)
       expect(thrown).toEqual(new FirebaseError('SERVER_ERROR'))
-      expect(logger.lines).toEqual([
-        '[ERROR]  Server Error: Request failed with status code 404',
-        `[ERROR]       Request: POST http://localhost:8080/, headers: ${headers}`,
-        `[ERROR]  Request-Body: { pay: load }`,
-        `[ERROR]      Response: 404 Not Found`,
-        `[ERROR] Response-Body: { foo: bar }`,
+      expect(log.lines).toEqual([
+        '[error..|test]  Server Error: Request failed with status code 404',
+        `[details|test]       Request: POST http://localhost:8080/, headers: ${headers}`,
+        `[details|test]  Request-Body: { pay: "load" }`,
+        `[details|test]      Response: 404 Not Found`,
+        `[details|test] Response-Body: { foo: "bar" }`,
       ])
     })
 
     it('should throw server FirebaseError for a FetchError with response and status === 400 and response body non-expected error JSON', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const response = new Response(JSON.stringify({ foo: 'bar' }), {
         status: 400,
         statusText: 'Bad Request',
@@ -417,7 +416,7 @@ describe('fetchErrorHandler', () => {
         request,
         response,
       )
-      const headers = '{ accept: application/json, accept-charset: utf-8, content-type: application/json }'
+      const headers = '{ accept: "application/json", "accept-charset": "utf-8", "content-type": "application/json" }'
 
       // act
       const thrown = await handler(error).catch((e) => e)
@@ -425,19 +424,19 @@ describe('fetchErrorHandler', () => {
       // assert
       expect(thrown).toBeInstanceOf(FirebaseError)
       expect(thrown).toEqual(new FirebaseError('SERVER_ERROR'))
-      expect(logger.lines).toEqual([
-        '[ERROR] Firebase Error: Request failed with status code 400',
-        `[ERROR]        Request: POST http://localhost:8080/, headers: ${headers}`,
-        `[ERROR]   Request-Body: { pay: load }`,
-        `[ERROR]       Response: SERVER_ERROR`,
-        `[ERROR]  Response-Body: { foo: bar }`,
+      expect(log.lines).toEqual([
+        '[error..|test] Firebase Error: Request failed with status code 400',
+        `[details|test]        Request: POST http://localhost:8080/, headers: ${headers}`,
+        `[details|test]   Request-Body: { pay: "load" }`,
+        `[details|test]       Response: SERVER_ERROR`,
+        `[details|test]  Response-Body: { foo: "bar" }`,
       ])
     })
 
     it('should throw server FirebaseError for a firebase response with error EMAIL_NOT_FOUND', async () => {
       // arrange
-      const logger = new FakeLogger()
-      const handler = fetchErrorHandler(logger)
+      const log = new FakeLog('test')
+      const handler = fetchErrorHandler(log)
       const response = new Response(JSON.stringify({ error: { message: 'EMAIL_NOT_FOUND' } }), {
         status: 400,
         statusText: 'Bad Request',
@@ -450,7 +449,7 @@ describe('fetchErrorHandler', () => {
         request,
         response,
       )
-      const headers = '{ accept: application/json, accept-charset: utf-8, content-type: application/json }'
+      const headers = '{ accept: "application/json", "accept-charset": "utf-8", "content-type": "application/json" }'
 
       // act
       const thrown = await handler(error).catch((e) => e)
@@ -458,12 +457,12 @@ describe('fetchErrorHandler', () => {
       // assert
       expect(thrown).toBeInstanceOf(FirebaseError)
       expect(thrown).toEqual(new FirebaseError('EMAIL_NOT_FOUND'))
-      expect(logger.lines).toEqual([
-        '[ERROR] Firebase Error: Request failed with status code 400',
-        `[ERROR]        Request: POST http://localhost:8080/, headers: ${headers}`,
-        `[ERROR]   Request-Body: { pay: load }`,
-        `[ERROR]       Response: EMAIL_NOT_FOUND`,
-        `[ERROR]  Response-Body: { error: { message: EMAIL_NOT_FOUND } }`,
+      expect(log.lines).toEqual([
+        '[error..|test] Firebase Error: Request failed with status code 400',
+        `[details|test]        Request: POST http://localhost:8080/, headers: ${headers}`,
+        `[details|test]   Request-Body: { pay: "load" }`,
+        `[details|test]       Response: EMAIL_NOT_FOUND`,
+        `[details|test]  Response-Body: { error: { message: "EMAIL_NOT_FOUND" } }`,
       ])
     })
   })
@@ -474,11 +473,11 @@ describe('queryJson with fetchErrorHandler', () => {
   let sampleTestDataQuery: DataRequestQuery<SampleTestData>
 
   // a new empty fake logger for each test
-  let logger: FakeLogger
+  let log: FakeLog
 
   // the expected log for the request, if the query logs any errors
   const expectedRequestLog =
-    'POST http://localhost:8080/sampleTestData, headers: { accept: application/json, content-type: application/json }'
+    'POST http://localhost:8080/sampleTestData, headers: { accept: "application/json", "content-type": "application/json" }'
 
   beforeEach(() => {
     sampleTestDataQuery = {
@@ -487,7 +486,7 @@ describe('queryJson with fetchErrorHandler', () => {
       body: { pay: 'load' },
       validate: assertSampleTestData,
     }
-    logger = new FakeLogger()
+    log = new FakeLog('test')
   })
 
   function mockFetchWithError(error: Error) {
@@ -514,11 +513,11 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(200, JSON.stringify({ foo: 'X', bar: 42, baz: true }))
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).resolves.toEqual({ foo: 'X', bar: 42, baz: true })
-    expect(logger.lines).toEqual([])
+    expect(log.lines).toEqual([])
   })
 
   it(`should throw network FirebaseError for fetch was aborted`, async () => {
@@ -528,14 +527,14 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithError(abortError)
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('NETWORK_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR] Network Error: aborted`, //
-      `[ERROR]       Request: ${expectedRequestLog}`,
+    expect(log.lines).toEqual([
+      `[error..|test] Network Error: aborted`, //
+      `[details|test]       Request: ${expectedRequestLog}`,
     ])
   })
 
@@ -543,14 +542,14 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithError(new TypeError('offline'))
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('NETWORK_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR] Network Error: offline`, //
-      `[ERROR]       Request: ${expectedRequestLog}`,
+    expect(log.lines).toEqual([
+      `[error..|test] Network Error: offline`, //
+      `[details|test]       Request: ${expectedRequestLog}`,
     ])
   })
 
@@ -559,17 +558,17 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(400, JSON.stringify({ error: { message: 'USER_NOT_FOUND' } }))
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('USER_NOT_FOUND'))
-    expect(logger.lines).toEqual([
-      `[ERROR] Firebase Error: Request failed with status code 400 (Bad Request)`, //
-      `[ERROR]        Request: ${expectedRequestLog}`,
-      `[ERROR]   Request-Body: { pay: load }`,
-      `[ERROR]       Response: USER_NOT_FOUND`,
-      `[ERROR]  Response-Body: { error: { message: USER_NOT_FOUND } }`,
+    expect(log.lines).toEqual([
+      `[error..|test] Firebase Error: Request failed with status code 400 (Bad Request)`, //
+      `[details|test]        Request: ${expectedRequestLog}`,
+      `[details|test]   Request-Body: { pay: "load" }`,
+      `[details|test]       Response: USER_NOT_FOUND`,
+      `[details|test]  Response-Body: { error: { message: "USER_NOT_FOUND" } }`,
     ])
   })
 
@@ -578,17 +577,17 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(404, 'resource not found')
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR]  Server Error: Request failed with status code 404 (Not Found)`, //
-      `[ERROR]       Request: ${expectedRequestLog}`,
-      `[ERROR]  Request-Body: { pay: load }`,
-      `[ERROR]      Response: 404 Not Found`,
-      `[ERROR] Response-Body: resource not found`,
+    expect(log.lines).toEqual([
+      `[error..|test]  Server Error: Request failed with status code 404 (Not Found)`, //
+      `[details|test]       Request: ${expectedRequestLog}`,
+      `[details|test]  Request-Body: { pay: "load" }`,
+      `[details|test]      Response: 404 Not Found`,
+      `[details|test] Response-Body: resource not found`,
     ])
   })
 
@@ -597,17 +596,17 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(500, 'server overloaded - try later')
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR]  Server Error: Request failed with status code 500 (Internal Server Error)`, //
-      `[ERROR]       Request: ${expectedRequestLog}`,
-      `[ERROR]  Request-Body: { pay: load }`,
-      `[ERROR]      Response: 500 Internal Server Error`,
-      `[ERROR] Response-Body: server overloaded - try later`,
+    expect(log.lines).toEqual([
+      `[error..|test]  Server Error: Request failed with status code 500 (Internal Server Error)`, //
+      `[details|test]       Request: ${expectedRequestLog}`,
+      `[details|test]  Request-Body: { pay: "load" }`,
+      `[details|test]      Response: 500 Internal Server Error`,
+      `[details|test] Response-Body: server overloaded - try later`,
     ])
   })
 
@@ -616,17 +615,17 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(400, 'some error')
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR] Firebase Error: Request failed with status code 400 (Bad Request)`, //
-      `[ERROR]        Request: ${expectedRequestLog}`,
-      `[ERROR]   Request-Body: { pay: load }`,
-      `[ERROR]       Response: SERVER_ERROR`,
-      `[ERROR]  Response-Body: some error`,
+    expect(log.lines).toEqual([
+      `[error..|test] Firebase Error: Request failed with status code 400 (Bad Request)`, //
+      `[details|test]        Request: ${expectedRequestLog}`,
+      `[details|test]   Request-Body: { pay: "load" }`,
+      `[details|test]       Response: SERVER_ERROR`,
+      `[details|test]  Response-Body: some error`,
     ])
   })
 
@@ -635,17 +634,17 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(400, JSON.stringify({ error: {} }))
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR] Firebase Error: Request failed with status code 400 (Bad Request)`, //
-      `[ERROR]        Request: ${expectedRequestLog}`,
-      `[ERROR]   Request-Body: { pay: load }`,
-      `[ERROR]       Response: SERVER_ERROR`,
-      `[ERROR]  Response-Body: { error: {} }`,
+    expect(log.lines).toEqual([
+      `[error..|test] Firebase Error: Request failed with status code 400 (Bad Request)`, //
+      `[details|test]        Request: ${expectedRequestLog}`,
+      `[details|test]   Request-Body: { pay: "load" }`,
+      `[details|test]       Response: SERVER_ERROR`,
+      `[details|test]  Response-Body: { error: {} }`,
     ])
   })
 
@@ -654,17 +653,17 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(400, JSON.stringify({ foo: 'bar' }))
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR] Firebase Error: Request failed with status code 400 (Bad Request)`, //
-      `[ERROR]        Request: ${expectedRequestLog}`,
-      `[ERROR]   Request-Body: { pay: load }`,
-      `[ERROR]       Response: SERVER_ERROR`,
-      `[ERROR]  Response-Body: { foo: bar }`,
+    expect(log.lines).toEqual([
+      `[error..|test] Firebase Error: Request failed with status code 400 (Bad Request)`, //
+      `[details|test]        Request: ${expectedRequestLog}`,
+      `[details|test]   Request-Body: { pay: "load" }`,
+      `[details|test]       Response: SERVER_ERROR`,
+      `[details|test]  Response-Body: { foo: "bar" }`,
     ])
   })
 
@@ -673,16 +672,16 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(200, '{ "foo": { "bar": 42f } }')
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR] Validation Error: Unexpected token f in JSON at position 20`, //
-      `[ERROR]          Request: ${expectedRequestLog}`,
-      `[ERROR]         Response: 200 OK`,
-      `[ERROR]    Response-Body: { "foo": { "bar": 42f } }`,
+    expect(log.lines).toEqual([
+      `[error..|test] Validation Error: Unexpected token f in JSON at position 20`, //
+      `[details|test]          Request: ${expectedRequestLog}`,
+      `[details|test]         Response: 200 OK`,
+      `[details|test]    Response-Body: { "foo": { "bar": 42f } }`,
     ])
   })
 
@@ -691,16 +690,16 @@ describe('queryJson with fetchErrorHandler', () => {
     mockFetchWithResponse(200, JSON.stringify({ foo: 'X', bar: 'I am not a number' }))
 
     // act
-    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(logger))
+    const query = requestJson(sampleTestDataQuery).catch(fetchErrorHandler(log))
 
     // assert
     await expect(query).rejects.toThrow(FirebaseError)
     await expect(query).rejects.toThrow(new FirebaseError('SERVER_ERROR'))
-    expect(logger.lines).toEqual([
-      `[ERROR] Validation Error: At path: bar -- Expected a number, but received: "I am not a number"`, //
-      `[ERROR]          Request: ${expectedRequestLog}`,
-      `[ERROR]         Response: 200 OK`,
-      `[ERROR]    Response-Body: { foo: X, bar: I am not a number }`,
+    expect(log.lines).toEqual([
+      `[error..|test] Validation Error: At path: bar -- Expected a number, but received: "I am not a number"`, //
+      `[details|test]          Request: ${expectedRequestLog}`,
+      `[details|test]         Response: 200 OK`,
+      `[details|test]    Response-Body: { foo: "X", bar: "I am not a number" }`,
     ])
   })
 })
