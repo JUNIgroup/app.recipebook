@@ -15,7 +15,7 @@ function extractStack(): string[] {
 export class FakeConsole implements ConsolePipe {
   stack: string[] = ['not set']
 
-  innerInfo = vi.fn()
+  innerLog = vi.fn()
 
   innerDebug = vi.fn()
 
@@ -23,10 +23,10 @@ export class FakeConsole implements ConsolePipe {
 
   innerError = vi.fn()
 
-  info(...args: unknown[]) {
-    assert(this, 'this in not bound to the call of info')
+  log(...args: unknown[]) {
+    assert(this, 'this in not bound to the call of log')
     this.stack = extractStack()
-    this.innerInfo(...args)
+    this.innerLog(...args)
   }
 
   debug(...args: unknown[]) {

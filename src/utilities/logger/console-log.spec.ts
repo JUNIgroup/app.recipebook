@@ -21,8 +21,8 @@ describe('ConsoleLog', () => {
       log.info('Hello world!')
 
       // assert
-      expect(console.innerInfo).toHaveBeenCalledTimes(1)
-      expectLastCalledWithArgumentsEndingWith(console.innerInfo, 'Hello world!')
+      expect(console.innerLog).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerLog, 'Hello world!')
     })
 
     it('should not log info messages, if log is disabled', () => {
@@ -34,7 +34,7 @@ describe('ConsoleLog', () => {
       log.info('Hello world!')
 
       // assert
-      expect(console.innerInfo).not.toHaveBeenCalled()
+      expect(console.innerLog).not.toHaveBeenCalled()
     })
 
     it('should log info messages with additional data', () => {
@@ -46,8 +46,8 @@ describe('ConsoleLog', () => {
       log.info('Hello world!', 'foo', 'bar')
 
       // assert
-      expect(console.innerInfo).toHaveBeenCalledTimes(1)
-      expectLastCalledWithArgumentsEndingWith(console.innerInfo, 'Hello world!', 'foo', 'bar')
+      expect(console.innerLog).toHaveBeenCalledTimes(1)
+      expectLastCalledWithArgumentsEndingWith(console.innerLog, 'Hello world!', 'foo', 'bar')
     })
 
     it('should record location of info call in stack', () => {
@@ -290,7 +290,7 @@ describe('ConsoleLog', () => {
       log.info('Hello world!')
 
       // assert
-      expect(console.innerInfo).not.toHaveBeenCalled()
+      expect(console.innerLog).not.toHaveBeenCalled()
     })
 
     it('should now log info messages if log is enabled by setter', () => {
@@ -303,7 +303,7 @@ describe('ConsoleLog', () => {
       log.info('Hello world!')
 
       // assert
-      expect(console.innerInfo).toHaveBeenCalled()
+      expect(console.innerLog).toHaveBeenCalled()
     })
 
     it('should no longer log details messages if log is disabled by setter', () => {

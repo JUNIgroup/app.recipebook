@@ -3,7 +3,7 @@ import { getHashColor, styleConsoleLog, middleGray } from './console-colors'
 import { isChrome } from './browser-detect'
 import { createDelay, Delay } from './console-delay'
 
-export type ConsolePipe = Pick<Console, 'debug' | 'info' | 'warn' | 'error'>
+export type ConsolePipe = Pick<Console, 'debug' | 'log' | 'warn' | 'error'>
 
 const drain: (message: string, ...more: unknown[]) => void = () => {}
 
@@ -26,7 +26,7 @@ export class ConsoleLog implements Log {
     this.logEnabled = enabled
     this.color = getHashColor(namespace)
     this.delay = createDelay()
-    this.info = enabled ? this.pipeToConsole(this.console.info) : drain
+    this.info = enabled ? this.pipeToConsole(this.console.log) : drain
     this.details = enabled ? this.pipeToConsole(this.console.debug) : drain
     this.warn = this.pipeToConsole(this.console.warn)
     this.error = this.pipeToConsole(this.console.error)
@@ -40,7 +40,7 @@ export class ConsoleLog implements Log {
     if (this.logEnabled !== enabled) {
       this.logEnabled = enabled
       if (enabled) {
-        this.info = this.pipeToConsole(this.console.info)
+        this.info = this.pipeToConsole(this.console.log)
         this.details = this.pipeToConsole(this.console.debug)
       } else {
         this.info = drain
