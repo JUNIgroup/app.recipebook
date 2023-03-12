@@ -10,16 +10,16 @@ import { dbUpgrades, dbVersion } from './infrastructure/database/idb/idb.upgrade
 import { memoryPersistence, storagePersistence } from './infrastructure/firebase/persistence'
 import { RestAuthService } from './infrastructure/firebase/rest-auth-service'
 import { App } from './presentation/app'
-import { createConsoleLogger } from './utilities/logger'
+import { createConsoleLogger, createDebugObserver } from './utilities/logger'
 
 import './index.scss'
 
 type LogScope = 'app' | 'utils' | 'infra' | 'business' | 'ui'
 
 const logger = createConsoleLogger<LogScope>()
+createDebugObserver(logger.enableLogs.bind(logger))
 
 if (import.meta.env.DEV) {
-  logger.enableLogs('*')
   logger('app:main').warn('Running in development mode')
 }
 

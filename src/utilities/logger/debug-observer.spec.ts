@@ -107,7 +107,7 @@ describe('createDebugObserver', () => {
       observer = createDebugObserver(callback, { storage })
 
       // assert
-      expect(callback).toHaveBeenCalledWith('')
+      expect(callback).toHaveBeenCalledWith(null)
     })
 
     it('should initial read the debug namespaces (empty entry)', () => {
@@ -144,7 +144,7 @@ describe('createDebugObserver', () => {
       observer.read()
 
       // assert
-      expect(callback).toHaveBeenCalledWith('')
+      expect(callback).toHaveBeenCalledWith(null)
       expect(callback).toHaveBeenCalledWith('foo')
       expect(callback).toHaveBeenCalledTimes(2)
     })

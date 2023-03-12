@@ -35,8 +35,10 @@ export type DebugObserverOptions = {
 
 /**
  * The callback of the debug observer.
+ *
+ * @param namespaces the observed value or null if the key is not present in the local storage
  */
-export type DebugObserverCallback = (namespaces: DEBUG) => void
+export type DebugObserverCallback = (namespaces: DEBUG | null) => void
 
 /** API of the debug observer */
 export interface DebugObserver {
@@ -76,7 +78,7 @@ export function createDebugObserver(callback: DebugObserverCallback, options?: D
     const namespaces = storage.getItem(key)
     if (namespaces !== lastNamespaces) {
       lastNamespaces = namespaces
-      callback(namespaces ?? '')
+      callback(namespaces ?? null)
     }
     return namespaces ?? null
   }

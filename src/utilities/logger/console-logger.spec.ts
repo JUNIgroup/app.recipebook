@@ -115,6 +115,49 @@ describe('ConsoleLogger', () => {
     })
   })
 
+  describe('initial enableLogs', () => {
+    afterEach(() => {
+      process.env.NODE_ENV = 'test'
+    })
+
+    it('should initial enable specified logs', () => {
+      // arrange
+      const logger = createConsoleLogger({ enableLogs: 'foo:*' })
+
+      // act
+      const log1 = logger('foo:bar')
+      const log2 = logger('bar:foo')
+
+      // assert
+      expect(log1.enabled).toBe(true)
+      expect(log2.enabled).toBe(false)
+    })
+
+    it('should initial enable all logs by default in development mode', () => {
+      // arrange
+      process.env.NODE_ENV = 'development'
+      const logger = createConsoleLogger()
+
+      // act
+      const log = logger('foo:bar')
+
+      // assert
+      expect(log.enabled).toBe(true)
+    })
+
+    it('should initial enable all logs by default in non development mode', () => {
+      // arrange
+      process.env.NODE_ENV = 'production'
+      const logger = createConsoleLogger()
+
+      // act
+      const log = logger('foo:bar')
+
+      // assert
+      expect(log.enabled).toBe(false)
+    })
+  })
+
   describe('.enableLogs', () => {
     it('should enable matching logs, which are created later', () => {
       // arrange
@@ -162,6 +205,20 @@ describe('ConsoleLogger', () => {
 
       // assert
       expect(log.enabled).toBe(false)
+    })
+
+    it('should set enabling logs to default if given value is null', () => {
+      // arrange
+      const logger = createConsoleLogger({ enableLogs: 'foo:*' })
+      logger.enableLogs('*')
+
+      // act
+      logger.enableLogs(null)
+      const log1 = logger('foo:bar').enabled
+      const log2 = logger('bar:foo').enabled
+
+      // assert
+      expect({ log1, log2 }).toEqual({ log1: true, log2: false })
     })
   })
 

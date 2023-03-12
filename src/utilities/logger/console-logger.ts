@@ -9,15 +9,24 @@ export type ConsoleLoggerOptions = {
    * @default the system console
    */
   console?: ConsolePipe
+
+  /**
+   * Initial namespaces to enable.
+   *
+   * @default '*' if development mode, '' otherwise
+   */
+  enableLogs?: DEBUG
 }
 
 export interface ConsoleLogger<Scope extends string> extends Logger<Scope> {
   /**
    * Enable the given loggers temporary without updating the local storage key `debug`.
    *
+   * If the given namespace is null, the default settings for enabling loggers will be used.
+   *
    * @param namespaces the namespaces of the loggers to enable
    */
-  enableLogs(namespaces: DEBUG): void
+  enableLogs(namespaces: DEBUG | null): void
 
   /**
    * Disable the all loggers temporary without updating the local storage key `debug`.
@@ -36,17 +45,21 @@ class ConsoleLoggerImpl<Scope extends string> implements ConsoleLoggerApi<Scope>
 
   private logs = new Map<string, ConsoleLog>()
 
-  private namespaces: DEBUG = ''
+  private defaultNamespaces: DEBUG
+
+  private namespaces: DEBUG
 
   private namespaceMatcher: DebugMatcher
 
   constructor(options: ConsoleLoggerOptions = {}) {
     this.console = options.console ?? globalThis.console
+    this.defaultNamespaces = options.enableLogs ?? (process.env.NODE_ENV === 'development' ? '*' : '')
+    this.namespaces = this.defaultNamespaces
     this.namespaceMatcher = createDebugMatcher(this.namespaces)
   }
 
   enableLogs(namespaces: DEBUG): void {
-    this.enableLogsInternal(namespaces)
+    this.enableLogsInternal(namespaces ?? this.defaultNamespaces)
   }
 
   disableAll(): void {
