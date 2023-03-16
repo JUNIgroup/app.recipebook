@@ -8,7 +8,10 @@ import { FirebaseRestAuthService } from './business/auth/service/firebase-rest-a
 import { IdbService } from './infrastructure/database/idb/idb.service'
 import { dbUpgrades, dbVersion } from './infrastructure/database/idb/idb.upgrades'
 import { memoryPersistence, storagePersistence } from './infrastructure/firebase/persistence'
-import { RestAuthService } from './infrastructure/firebase/rest-auth-service'
+import {
+  createRestAuthServiceForEmulator,
+  createRestAuthServiceForRemote,
+} from './infrastructure/firebase/rest-auth-service'
 import { App } from './presentation/app'
 import { createConsoleLogger, createDebugObserver } from './utilities/logger'
 
@@ -27,8 +30,8 @@ const storage = localStorage
 // const firebaseService = new FirebaseService()
 // const authServiceOld = new FirebaseAuthService(firebaseService)
 const restAuthService = import.meta.env.VITE_FIREBASE__USE_EMULATOR
-  ? RestAuthService.forEmulator(logger)
-  : RestAuthService.forRemote(logger, import.meta.env.VITE_FIREBASE__API_KEY)
+  ? createRestAuthServiceForEmulator(logger)
+  : createRestAuthServiceForRemote(logger, import.meta.env.VITE_FIREBASE__API_KEY)
 const authService = new FirebaseRestAuthService(restAuthService, logger, {
   permanent: storagePersistence(IDB_ID, storage),
   temporary: memoryPersistence(),

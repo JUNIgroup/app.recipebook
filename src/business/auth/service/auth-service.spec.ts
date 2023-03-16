@@ -2,7 +2,7 @@ import ShortUniqueId from 'short-unique-id'
 import { FirebaseService } from '../../../infrastructure/firebase/firebase-service'
 import { isEmulatorAvailable } from '../../../infrastructure/firebase/helpers/emulator-utils'
 import { memoryPersistence, nonePersistence } from '../../../infrastructure/firebase/persistence'
-import { RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
+import { createRestAuthServiceForEmulator } from '../../../infrastructure/firebase/rest-auth-service'
 import { defineGlobalFetchForTesting } from '../../../infrastructure/query/fetch.test-helper'
 import { createFakeLogger } from '../../../utilities/logger/fake-logger.test-helper'
 import { AuthError, AuthService, UserData } from './auth-service'
@@ -36,7 +36,7 @@ function createFirebaseRestAuthServiceContext(): TestContext {
     supportsErrors: true,
     authService: () => {
       const logger = createFakeLogger()
-      const auth = RestAuthService.forEmulator(logger)
+      const auth = createRestAuthServiceForEmulator(logger)
       const persistence = {
         permanent: memoryPersistence(),
         temporary: nonePersistence(),

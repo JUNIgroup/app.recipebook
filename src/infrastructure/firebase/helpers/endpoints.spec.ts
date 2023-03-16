@@ -1,6 +1,6 @@
 import { defineGlobalFetchForTesting } from '../../query/fetch.test-helper'
 import { isEmulatorAvailable } from './emulator-utils'
-import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './endpoints'
+import { AccountEndpoints, createEmulatorAccountEndpoints, createRemoteAccountEndpoints } from './endpoints'
 
 defineGlobalFetchForTesting()
 
@@ -12,11 +12,11 @@ const accountEndpointNames: (keyof AccountEndpoints)[] = [
   'deleteAccount',
 ]
 
-describe('createRemoteEndpoints', () => {
+describe('createRemoteAccountEndpoints', () => {
   it.each(accountEndpointNames)(
     'should endpoint for "%s" be absolute URI to google identity toolkit',
     async (endpointName) => {
-      const endpoints = await createRemoteEndpoints('my-api-key')
+      const endpoints = await createRemoteAccountEndpoints('my-api-key')
       expect(endpoints[endpointName]).toMatch(/^https:\/\/identitytoolkit\.googleapis\.com\/v1\/accounts/)
     },
   )
@@ -24,10 +24,10 @@ describe('createRemoteEndpoints', () => {
 
 const emulatorAvailable = await isEmulatorAvailable()
 
-describe('createEmulatorEndpoints', () => {
+describe('createEmulatorAccountEndpoints', () => {
   describe.runIf(emulatorAvailable)('if emulator is available', () => {
     it.each(accountEndpointNames)('should endpoint for "%s" be available', async (endpointName) => {
-      const endpoints = await createEmulatorEndpoints()
+      const endpoints = await createEmulatorAccountEndpoints()
       const endpoint = endpoints[endpointName]
       const email = 'invalid-email'
       const ping = await fetch(endpoint, { method: 'POST', body: JSON.stringify({ email }) })
@@ -37,7 +37,7 @@ describe('createEmulatorEndpoints', () => {
 
   describe.runIf(!emulatorAvailable)('if emulator is not available', () => {
     it('should throw an error', async () => {
-      const endpoints = createEmulatorEndpoints()
+      const endpoints = createEmulatorAccountEndpoints()
       await expect(endpoints).rejects.toThrowError('Firebase auth emulator is not running.')
     })
   })

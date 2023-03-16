@@ -1,7 +1,7 @@
 import { Log, Logger } from '../../utilities/logger'
 import { FirebaseError } from './firebase-error'
 import { fetchErrorHandler, requestJson } from './helpers/data-request'
-import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './helpers/endpoints'
+import { AccountEndpoints, createEmulatorAccountEndpoints, createRemoteAccountEndpoints } from './helpers/endpoints'
 import {
   assertAuthData,
   assertDeleteAccountResponse,
@@ -51,28 +51,6 @@ export class RestAuthService {
   private persistence: AuthPersistence = nonePersistence()
 
   private subscriptions: OnUserChanged[] = []
-
-  /**
-   * Creates a new instance of the RestAuthService, using the remote endpoints for the firebase auth service.
-   *
-   * @param apiKey the api key for the firebase project
-   * @returns a new instance of the RestAuthService for the project.
-   */
-  public static forRemote(logger: Logger<'infra'>, apiKey: string) {
-    const endpoints = createRemoteEndpoints(apiKey)
-    return new RestAuthService(logger, endpoints)
-  }
-
-  /**
-   * Creates a new instance of the RestAuthService, using the endpoints for the firebase auth emulator.
-   *
-   * @returns a new instance of the RestAuthService.
-   * @throws an error if the firebase auth emulator is not running.
-   */
-  public static forEmulator(logger: Logger<'infra'>) {
-    const endpoints = createEmulatorEndpoints()
-    return new RestAuthService(logger, endpoints)
-  }
 
   constructor(logger: Logger<'infra'>, private endpoints: Promise<AccountEndpoints>) {
     this.log = logger('infra:RestAuthService')
@@ -330,4 +308,26 @@ export class RestAuthService {
 
     await this.setAuthData(null)
   }
+}
+
+/**
+ * Creates a new instance of the RestAuthService, using the remote endpoints for the firebase auth service.
+ *
+ * @param apiKey the api key for the firebase project
+ * @returns a new instance of the RestAuthService for the project.
+ */
+export function createRestAuthServiceForRemote(logger: Logger<'infra'>, apiKey: string) {
+  const endpoints = createRemoteAccountEndpoints(apiKey)
+  return new RestAuthService(logger, endpoints)
+}
+
+/**
+ * Creates a new instance of the RestAuthService, using the endpoints for the firebase auth emulator.
+ *
+ * @returns a new instance of the RestAuthService.
+ * @throws an error if the firebase auth emulator is not running.
+ */
+export function createRestAuthServiceForEmulator(logger: Logger<'infra'>) {
+  const endpoints = createEmulatorAccountEndpoints()
+  return new RestAuthService(logger, endpoints)
 }
