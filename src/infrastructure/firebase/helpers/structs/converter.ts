@@ -1,11 +1,7 @@
-import { Struct, StructError } from 'superstruct'
+import { Struct } from 'superstruct'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ANY = any
-
-export type Converted<T> =
-  | [T] // successful => return value
-  | [undefined, StructError | string, ANY | undefined] // failed => error, found value
+type ANY = any
 
 /**
  * A converter transform the data between the internal and the external format.
@@ -79,5 +75,3 @@ export function declare<IT, ET>(
     toE,
   }
 }
-
-export type Infer<C extends Converter<ANY>> = C['iStruct']['TYPE']
