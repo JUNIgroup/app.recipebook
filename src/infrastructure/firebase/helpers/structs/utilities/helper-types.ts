@@ -46,3 +46,27 @@ export type Optionalize<O extends object> = OmitBy<O, undefined> & Partial<PickB
 export type InferMap<RC extends Record<string, Converter<ANY>>> = Simplify<
   Optionalize<{ [K in keyof RC]: Infer<RC[K]> }>
 >
+
+/**
+ * Convert a path of property keys to a nested object type.
+ *
+ * @example StringAt<['a', 'b', 'c'], number> = { a: { b: { c: number } } }
+ */
+export type TypeAt<P extends string[], T> = P extends [infer Head, ...infer Tail]
+  ? { [K in Head & string]: Tail extends string[] ? TypeAt<Tail, T> : never }
+  : T
+
+type ExpectConverterFor<T> = Converter<T>
+
+/**
+ * A map of converters, where the key is the value at the path in the type of the converter.
+ */
+export type DiscriminatedUnion<P extends string[], U extends Record<string, Converter<ANY>>> = {
+  [K in keyof U]: Infer<U[K]> extends TypeAt<P, K> ? U[K] : ExpectConverterFor<TypeAt<P, K>>
+}
+
+/**
+ * Union of the inferred types of the converters.
+ */
+export type InferUnion<U extends Record<string, Converter<ANY>>> = //
+  Simplify<{ [K in keyof U]: Infer<U[K]> }[keyof U]>

@@ -1,10 +1,22 @@
 import { integer } from 'superstruct'
+import { Converter } from '../converter'
 import { optional } from '../refinements/optional'
 import { arrayValue } from '../values/array-value'
 import { integerValue } from '../values/integer-value'
 import { mapValue } from '../values/map-value'
 import { stringValue } from '../values/string-value'
-import { Infer, InferMap, NonUndefined, OmitBy, Optionalize, PickBy, Simplify } from './helper-types'
+import {
+  DiscriminatedUnion,
+  Infer,
+  InferMap,
+  NonUndefined,
+  OmitBy,
+  Optionalize,
+  PickBy,
+  Simplify,
+  TypeAt,
+  InferUnion,
+} from './helper-types'
 
 describe('NonUndefined', () => {
   it('should accept non-undefined value', () => {
@@ -196,5 +208,92 @@ describe('InferMap', () => {
         }
       }
     }>()
+  })
+})
+
+describe('TypeAt', () => {
+  it('should return the type T with an empty path', () => {
+    // arrange
+    type T = number
+
+    // act
+    type Type = TypeAt<[], T>
+
+    // assert
+    expectTypeOf<Type>().toEqualTypeOf<T>()
+  })
+
+  it('should return the type T a property in an object', () => {
+    // arrange
+    type T = number
+
+    // act
+    type Type = TypeAt<['foo'], T>
+
+    // assert
+    expectTypeOf<Type>().toEqualTypeOf<{ foo: T }>()
+  })
+
+  it('should return the type T on a deep nested property', () => {
+    // arrange
+    type T = number
+
+    // act
+    type Type = TypeAt<['foo', 'bar', 'baz'], T>
+
+    // assert
+    expectTypeOf<Type>().toEqualTypeOf<{
+      foo: {
+        bar: {
+          baz: T
+        }
+      }
+    }>()
+  })
+})
+
+describe('DiscriminatedUnion', () => {
+  it('should accept key-converter pairs, if the converter accept a type with the key at the given path', () => {
+    // act
+    type Type = DiscriminatedUnion<
+      ['a', 'b'],
+      {
+        foo: Converter<{ a: { b: 'foo'; foo: number } }>
+        bar: Converter<{ a: { b: 'bar'; bar: string } }>
+      }
+    >
+
+    // assert
+    expectTypeOf<Type>().toEqualTypeOf<{
+      foo: Converter<{ a: { b: 'foo'; foo: number } }>
+      bar: Converter<{ a: { b: 'bar'; bar: string } }>
+    }>()
+  })
+
+  it('should replace converter for key with minimal expected object id the converter does not accept a type the the key at the given path', () => {
+    // act
+    type Type = DiscriminatedUnion<
+      ['a', 'b'],
+      {
+        foo: Converter<{ a: { b: 'foo'; foo: number } }>
+        bar: Converter<{ a: string }>
+      }
+    >
+
+    // assert
+    expectTypeOf<Type>().toEqualTypeOf<{
+      foo: Converter<{ a: { b: 'foo'; foo: number } }> // accept
+      bar: Converter<{ a: { b: 'bar' } }> // replace
+    }>()
+  })
+})
+
+describe('InferUnion', () => {
+  it('should return an union of inferred types of the given converters', () => {
+    // act
+    type Type = InferUnion<{ foo: Converter<string>; bar: Converter<number> }>
+
+    // assert
+    expectTypeOf<Type>().toEqualTypeOf<string | number>()
   })
 })
