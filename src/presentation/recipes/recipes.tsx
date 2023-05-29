@@ -13,6 +13,7 @@ import { RecipeBody } from './random/random'
 import { LocalRecipesColumn } from './local/local-recipes'
 import { RandomRecipesColumn } from './random/random-recipes'
 
+import { FireRecipesColumn } from './fire/fire-recipes'
 import './styles.scss'
 
 export const RecipesPage = () => {
@@ -47,6 +48,7 @@ export const RecipesPage = () => {
       <div className="columns">
         <RandomRecipesColumn actions={[addRandomRecipeAction]} />
         <LocalRecipesColumn setError={setError} />
+        <FireRecipesColumn setError={setError} />
       </div>
     </div>
   )

@@ -33,7 +33,7 @@ export const RandomRecipesColumn: React.FC<RandomRecipesColumnProps> = ({ action
   return (
     <div className="column">
       <h2 className="title">
-        <div className="title-text">Add a new recipe</div>
+        <div className="title-text stretch">Add a new recipe</div>
         <button className="title-action icon" data-testid="random" type="button" onClick={newRandomRecipes}>
           ↺
         </button>

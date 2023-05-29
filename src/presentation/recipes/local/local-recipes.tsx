@@ -30,7 +30,7 @@ export const LocalRecipesColumn: React.FC<LocalRecipesProps> = ({ setError }) =>
   return (
     <div className="column">
       <h2 className="title">
-        <div className="title-text">Your recipes</div>
+        <div className="title-text stretch">Your recipes</div>
         <button className="title-action icon" type="button" onClick={refreshRecipes}>
           ↺
         </button>

@@ -54,7 +54,7 @@ export const RecipeItem = ({ recipe }: { recipe: Recipe }) => {
         ) : (
           <span className="card-title">{recipe.title}</span>
         )}
-        <span className="card-subtitle clickable" onClick={() => updateRecipe()}>
+        <span className="card-subtitle" onClick={() => updateRecipe()}>
           {recipe.subtitle}
         </span>
       </div>
