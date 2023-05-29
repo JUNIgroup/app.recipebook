@@ -6,3 +6,9 @@ export {
 } from './recipe-books.selectors'
 
 export const selectAllRecipeBooksSortedByTitle = selectAllBucketDocumentsSortedByString((doc) => doc.title)
+
+export {
+  refreshBucketDocuments as refreshRecipeBooks,
+  setBucketDocument as setRecipeBook,
+  deleteBucketDocument as deleteRecipeBook,
+} from './recipe-books.thunks'

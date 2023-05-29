@@ -3,7 +3,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
 import { actionError } from '../../helper/redux/redux-action-helper'
-import { Recipe, RecipeBook } from '../model/recipe-book.model'
+import { Recipe, RecipeBook } from '../model'
 import { fullRecipeBook } from '../model/recipe-books.samples'
 
 export type RecipeBookBucketsState = {
@@ -35,14 +35,14 @@ const bucketSlice = createSlice({
     /**
      * Add or update a bucket document.
      */
-    setBucketDocument(state, action: PayloadAction<{ bucket: RecipeBook }>) {
-      const { bucket } = action.payload
-      const { id } = bucket
+    setBucketDocument(state, action: PayloadAction<{ document: RecipeBook }>) {
+      const { document } = action.payload
+      const { id } = document
 
       const isNew = !state.recipeBooks.entities[id]
       if (isNew) state.recipeBooks.ids.push(id)
 
-      state.recipeBooks.entities[id] = bucket
+      state.recipeBooks.entities[id] = document
     },
 
     /**

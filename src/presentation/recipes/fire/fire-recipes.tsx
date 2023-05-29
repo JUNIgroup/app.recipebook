@@ -3,6 +3,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
+import { useState } from 'react'
 import * as fromAuth from '../../../business/auth'
 import * as fromRecipes from '../../../business/recipes'
 import { selectAllRecipesSortedByName } from '../../../business/recipes/store/recipe.selectors'
@@ -16,6 +17,8 @@ export type FireRecipesProps = {
 }
 
 export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError }) => {
+  const [selectedBookId, selectBookId] = useState<string | null>(null)
+
   const user = useAppSelector(fromAuth.selectAuthorizedUser)
   if (!user) return null
 
@@ -32,7 +35,7 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError }) => {
   return (
     <div className="column">
       <h2 className="title">
-        <BookSelector setError={setError} />
+        <BookSelector setError={setError} selectedBookId={selectedBookId} onSelectBookId={selectBookId} />
         <button className="title-action icon" type="button" onClick={refreshRecipes}>
           ↺
         </button>
