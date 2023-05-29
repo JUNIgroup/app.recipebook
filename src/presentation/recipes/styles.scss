@@ -35,14 +35,66 @@ h1 + .error {
   flex-flow: row nowrap;
   align-content: stretch;
   justify-content: start;
+  background-color: rebeccapurple;
+  column-gap: 3px;
 
   & > .column {
     flex: 1 1 100px;
+    background-color: white;
+    padding: 0.5rem;
 
     & > h2 {
       margin-top: 0;
-      text-align: center;
+      text-align: left;
     }
+
+    & > .title {
+      display: flex;
+      flex-flow: row nowrap;
+      margin-top: 0;
+      text-align: left;
+
+      & > .title-text {
+        flex: 1 1 auto;
+      }
+    }
+  }
+}
+
+.column > .cards {
+  display: flex;
+  flex-flow: column wrap;
+  row-gap: 3px;
+  padding: 0;
+}
+
+.card {
+  display: flex;
+  flex-flow: row nowrap;
+  marker: none;
+  border: 1px solid darkgray;
+  border-radius: 5px;
+  padding: 0;
+
+  .card-body {
+    display: block;
+    flex: 1 1 auto;
+    padding: 4px 8px;
+  }
+
+  .card-subtitle {
+    font-size: 0.8rem;
+    font-weight: normal;
+
+    &:not(:empty)::before {
+      content: ' - ';
+    }
+  }
+
+  .card-actions {
+    display: flex;
+    flex-flow: column;
+    background-color: lightgray;
   }
 }
 

@@ -1,5 +1,5 @@
-import { Recipe } from '../../business/recipes/model/recipe.model'
-import { UNLOADED, dataFilter } from '../../business/helper/redux/redux-helper'
+import { Recipe } from '../../../business/recipes/model/recipe.model'
+import { UNLOADED, dataFilter } from '../../../business/helper/redux/redux-helper'
 
 const API_KEY = '1' // for development purpose
 const API_ENDPOINT = `https://www.themealdb.com/api/json/v1/${API_KEY}/random.php`
