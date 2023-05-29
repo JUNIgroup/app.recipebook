@@ -5,8 +5,8 @@
 
 import { useState } from 'react'
 import * as fromAuth from '../../../business/auth'
+import * as fromRecipeBooks from '../../../business/recipe-books/store'
 import * as fromRecipes from '../../../business/recipes'
-import { selectAllRecipesSortedByName } from '../../../business/recipes/store/recipe.selectors'
 import { useAppDispatch, useAppSelector } from '../../store.hooks'
 
 import { BookSelector } from './book-selector'
@@ -23,7 +23,7 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError }) => {
   if (!user) return null
 
   const dispatch = useAppDispatch()
-  const allRecipes = useAppSelector(selectAllRecipesSortedByName)
+  const allRecipes = useAppSelector((state) => fromRecipeBooks.selectAllRecipesFromRecipeBook(state, selectedBookId))
 
   const refreshRecipes = () => {
     setError(null)
