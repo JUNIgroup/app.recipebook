@@ -50,7 +50,7 @@ function createFirebaseAuthServiceContext(): TestContext {
   const firebase = new FirebaseService()
   const logger = createFakeLogger()
   return {
-    testArePossible: true,
+    testArePossible: !!emulatorAvailable,
     supportsErrors: true,
     authService: () => new FirebaseAuthService(firebase, logger),
   }
