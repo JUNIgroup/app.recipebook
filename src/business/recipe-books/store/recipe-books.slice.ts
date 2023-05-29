@@ -4,7 +4,7 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
 import { actionError } from '../../helper/redux/redux-action-helper'
 import { Recipe, RecipeBook } from '../model'
-import { fullRecipeBook } from '../model/recipe-books.samples'
+import { fullRecipe, fullRecipeBook } from '../model/recipe-books.samples'
 
 export type RecipeBookBucketsState = {
   recipeBooks: {
@@ -23,8 +23,8 @@ const initialState: RecipeBookBucketsState = {
     entities: { [fullRecipeBook.id]: fullRecipeBook },
   },
   recipes: {
-    ids: [],
-    entities: {},
+    ids: [fullRecipe.id],
+    entities: { [fullRecipe.id]: fullRecipe },
   },
 }
 
