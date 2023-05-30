@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import * as fromAuth from '../../business/auth'
 import { useAppSelector } from '../store.hooks'
 import { RecipeBody } from './random/random'
@@ -26,13 +26,13 @@ export const RecipesPage = () => {
     action: () => {},
   })
 
-  const setAddLocalRecipe = (fn: null | ((recipe: RecipeBody) => Promise<void>)) => {
+  const setAddLocalRecipe = useCallback((fn: null | ((recipe: RecipeBody) => Promise<void>)) => {
     setAddLocalRecipeAction((action) => ({
       ...action,
       enabled: fn != null,
       action: fn ?? (() => {}),
     }))
-  }
+  }, [])
 
   const [addFireRecipeAction, setAddFireRecipeAction] = useState<Action>({
     key: 'add-fire',
@@ -41,13 +41,13 @@ export const RecipesPage = () => {
     action: () => {},
   })
 
-  const setAddFireRecipe = (fn: null | ((recipe: RecipeBody) => Promise<void>)) => {
+  const setAddFireRecipe = useCallback((fn: null | ((recipe: RecipeBody) => Promise<void>)) => {
     setAddFireRecipeAction((action) => ({
       ...action,
       enabled: fn != null,
       action: fn ?? (() => {}),
     }))
-  }
+  }, [])
 
   return (
     <div>
