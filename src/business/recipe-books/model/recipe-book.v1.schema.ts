@@ -1,5 +1,4 @@
-// import { JSONSchemaType, validation } from '../../helper/validation/validation-helper'
-import { Infer, literal, nonempty, object, optional, string, is, number, array } from 'superstruct'
+import { Infer, is, literal, nonempty, number, object, optional, string } from 'superstruct'
 import { nonArray } from '../../../infrastructure/validation/superstruct.extend'
 
 const RecipeBookV1Struct = nonArray(
@@ -11,8 +10,6 @@ const RecipeBookV1Struct = nonArray(
     // --- content ---
     title: nonempty(string()),
     subtitle: optional(string()),
-    // --- references ---
-    recipes: array(string()),
   }),
 )
 
