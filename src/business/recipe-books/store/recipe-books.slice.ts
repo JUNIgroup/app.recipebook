@@ -6,25 +6,29 @@ import { actionError } from '../../helper/redux/redux-action-helper'
 import { Recipe, RecipeBook } from '../model'
 import { fullRecipe, fullRecipeBook } from '../model/recipe-books.samples'
 
-export type RecipeBookBucketsState = {
-  recipeBooks: {
-    ids: string[]
-    entities: Record<string, RecipeBook>
-  }
+type RecipeBookBucket = {
+  entity: RecipeBook
   recipes: {
     ids: string[]
     entities: Record<string, Recipe>
   }
 }
 
+export type RecipeBookBucketsState = {
+  ids: string[]
+  buckets: Record<string, RecipeBookBucket>
+}
+
 const initialState: RecipeBookBucketsState = {
-  recipeBooks: {
-    ids: [fullRecipeBook.id],
-    entities: { [fullRecipeBook.id]: fullRecipeBook },
-  },
-  recipes: {
-    ids: [fullRecipe.id],
-    entities: { [fullRecipe.id]: fullRecipe },
+  ids: [fullRecipeBook.id],
+  buckets: {
+    [fullRecipeBook.id]: {
+      entity: fullRecipeBook,
+      recipes: {
+        ids: [fullRecipe.id],
+        entities: { [fullRecipe.id]: fullRecipe },
+      },
+    },
   },
 }
 
@@ -33,44 +37,153 @@ const bucketSlice = createSlice({
   initialState,
   reducers: {
     /**
-     * Add or update a bucket document.
+     * Add a bucket document.
      */
-    setBucketDocument(state, action: PayloadAction<{ document: RecipeBook }>) {
+    addBucketDocument(state, action: PayloadAction<{ document: RecipeBook }>) {
       const { document } = action.payload
       const { id } = document
 
-      const isNew = !state.recipeBooks.entities[id]
-      if (isNew) state.recipeBooks.ids.push(id)
+      if (state.buckets[id]) {
+        actionError(action, 'document id already used')
+        return
+      }
 
-      state.recipeBooks.entities[id] = document
+      state.ids.push(id)
+      state.buckets[id] = {
+        entity: document,
+        recipes: {
+          ids: [],
+          entities: {},
+        },
+      }
+    },
+
+    /**
+     * Update a bucket document.
+     */
+    updateBucketDocument(state, action: PayloadAction<{ document: RecipeBook }>) {
+      const { document } = action.payload
+      const { id } = document
+
+      const bucket = state.buckets[id]
+      if (!bucket) {
+        actionError(action, 'bucket id is unknown')
+        return
+      }
+
+      bucket.entity = document
     },
 
     /**
      * Delete a bucket document and all its references.
      */
-    deleteBucketDocument(state, action: PayloadAction<{ id: string }>) {
-      const { id } = action.payload
+    deleteBucketDocument(state, action: PayloadAction<{ bucketId: string }>) {
+      const { bucketId: id } = action.payload
 
-      const bucket = state.recipeBooks.entities[id]
+      const bucket = state.buckets[id]
       if (!bucket) {
-        actionError(action, 'id is unknown')
+        actionError(action, 'bucket id is unknown')
         return
       }
 
-      // delete references not implemented yet
+      state.ids.splice(state.ids.indexOf(id), 1)
+      delete state.buckets[id]
+    },
 
-      state.recipeBooks.ids.splice(state.recipeBooks.ids.indexOf(id), 1)
-      delete state.recipeBooks.entities[id]
+    /**
+     * Add or update a bucket document.
+     */
+    addCollectionDocument(
+      state,
+      action: PayloadAction<{
+        bucketId: string
+        collection: 'recipes'
+        document: Recipe
+      }>,
+    ) {
+      const { bucketId, collection: collectionName, document } = action.payload
+      const { id } = document
+
+      const bucket = state.buckets[bucketId]
+      if (!bucket) {
+        actionError(action, 'bucket id is unknown')
+        return
+      }
+
+      const collection = bucket[collectionName]
+      if (collection.entities[id]) {
+        actionError(action, 'document id already used')
+        return
+      }
+
+      collection.entities[id] = document
+      collection.ids.push(id)
+    },
+
+    /**
+     * update a bucket document.
+     */
+    updateCollectionDocument(
+      state,
+      action: PayloadAction<{
+        bucketId: string
+        collection: 'recipes'
+        document: Recipe
+      }>,
+    ) {
+      const { bucketId, collection: collectionName, document } = action.payload
+      const { id } = document
+
+      const bucket = state.buckets[bucketId]
+      if (!bucket) {
+        actionError(action, 'bucket id is unknown')
+        return
+      }
+
+      const collection = bucket[collectionName]
+      if (!collection.entities[id]) {
+        actionError(action, 'document id is unknown')
+        return
+      }
+
+      collection.entities[id] = document
+    },
+
+    /**
+     * Delete a bucket document and all its references.
+     */
+    deleteCollectionDocument(
+      state,
+      action: PayloadAction<{
+        bucketId: string
+        collection: 'recipes'
+        id: string
+      }>,
+    ) {
+      const { bucketId, collection: collectionName, id } = action.payload
+
+      const bucket = state.buckets[bucketId]
+      if (!bucket) {
+        actionError(action, 'bucket id is unknown')
+        return
+      }
+
+      const collection = bucket[collectionName]
+      if (!collection.entities[id]) {
+        actionError(action, 'document id is unknown')
+        return
+      }
+
+      collection.ids.splice(collection.ids.indexOf(id), 1)
+      delete collection.entities[id]
     },
 
     /**
      * Clear all buckets and their references.
      */
     clearAll(state) {
-      state.recipeBooks.ids = []
-      state.recipeBooks.entities = {}
-      state.recipes.ids = []
-      state.recipes.entities = {}
+      state.ids = []
+      state.buckets = {}
     },
   },
 })

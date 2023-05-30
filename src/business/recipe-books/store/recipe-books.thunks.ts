@@ -1,6 +1,8 @@
 import { AppThunk } from '../../app.store'
-import { RecipeBook } from '../model'
+import { Recipe, RecipeBook } from '../model'
 import { actions } from './recipe-books.slice'
+
+type Collection = 'recipes'
 
 export function refreshBucketDocuments(): AppThunk<Promise<void>> {
   return async () => {
@@ -8,14 +10,57 @@ export function refreshBucketDocuments(): AppThunk<Promise<void>> {
   }
 }
 
-export function setBucketDocument(recipeBook: RecipeBook): AppThunk<Promise<void>> {
+export function createBucket(recipeBook: RecipeBook): AppThunk<Promise<void>> {
   return async (dispatch) => {
-    dispatch(actions.setBucketDocument({ document: recipeBook }))
+    dispatch(actions.addBucketDocument({ document: recipeBook }))
   }
 }
 
-export function deleteBucketDocument(id: string): AppThunk<Promise<void>> {
+export function updateBucketDocument(recipeBook: RecipeBook): AppThunk<Promise<void>> {
   return async (dispatch) => {
-    dispatch(actions.deleteBucketDocument({ id }))
+    dispatch(actions.updateBucketDocument({ document: recipeBook }))
+  }
+}
+
+export function deleteBucket(bucketId: string): AppThunk<Promise<void>> {
+  return async (dispatch) => {
+    dispatch(actions.deleteBucketDocument({ bucketId }))
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function refreshCollectionDocuments(bucketId: string, collection: Collection): AppThunk<Promise<void>> {
+  return async () => {
+    // not implemented yet
+  }
+}
+
+export function addCollectionDocument(
+  bucketId: string,
+  collection: Collection,
+  document: Recipe,
+): AppThunk<Promise<void>> {
+  return async (dispatch) => {
+    dispatch(actions.addCollectionDocument({ bucketId, collection, document }))
+  }
+}
+
+export function updateCollectionDocument(
+  bucketId: string,
+  collection: Collection,
+  document: Recipe,
+): AppThunk<Promise<void>> {
+  return async (dispatch) => {
+    dispatch(actions.updateCollectionDocument({ bucketId, collection, document }))
+  }
+}
+
+export function deleteCollectionDocument(
+  bucketId: string,
+  collection: Collection,
+  id: string,
+): AppThunk<Promise<void>> {
+  return async (dispatch) => {
+    dispatch(actions.deleteCollectionDocument({ bucketId, collection, id }))
   }
 }
