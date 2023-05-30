@@ -6,7 +6,6 @@
 import { useState } from 'react'
 import * as fromAuth from '../../../business/auth'
 import * as fromRecipeBooks from '../../../business/recipe-books/store'
-import * as fromRecipes from '../../../business/recipes'
 import { useAppDispatch, useAppSelector } from '../../store.hooks'
 
 import { BookSelector } from './book-selector'
@@ -23,13 +22,20 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError }) => {
   if (!user) return null
 
   const dispatch = useAppDispatch()
-  const allRecipes = useAppSelector((state) => fromRecipeBooks.selectAllRecipesFromRecipeBook(state, selectedBookId))
+  const allRecipes = useAppSelector((state) =>
+    fromRecipeBooks.selectAllRecipesFromRecipeBook(state, selectedBookId ?? ''),
+  )
 
-  const refreshRecipes = () => {
+  const refreshRecipes = async () => {
     setError(null)
-    dispatch(fromRecipes.fetchRecipes()).catch((err) => setError(err.message))
-    // eslint-disable-next-line no-console
-    console.log('Recipes fetched')
+    if (selectedBookId == null) return
+    try {
+      await dispatch(fromRecipeBooks.refreshRecipes(selectedBookId))
+      // eslint-disable-next-line no-console
+      console.log('Recipes fetched')
+    } catch (err) {
+      setError((err as Error).message)
+    }
   }
 
   return (
@@ -42,7 +48,7 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError }) => {
       </h2>
       <ul className="cards">
         {allRecipes.map((recipe) => (
-          <RecipeItem key={recipe.id} recipe={recipe} />
+          <RecipeItem key={recipe.id} setError={setError} bookId={selectedBookId ?? ''} recipe={recipe} />
         ))}
       </ul>{' '}
     </div>

@@ -21,7 +21,7 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
   if (!user) return null
 
   const dispatch = useAppDispatch()
-  const selectedBook = useAppSelector((state) => fromRecipeBooks.selectRecipeBookById(state, selectedBookId))
+  const selectedBook = useAppSelector((state) => fromRecipeBooks.selectRecipeBookById(state, selectedBookId ?? ''))
   const allBooks = useAppSelector(fromRecipeBooks.selectAllRecipeBooksSortedByTitle)
   const inputRef = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -48,7 +48,7 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
         subtitle: `created at ${new Date().toLocaleString()}`,
         recipes: [],
       }
-      await dispatch(fromRecipeBooks.setRecipeBook(book))
+      await dispatch(fromRecipeBooks.addRecipeBook(book))
       // eslint-disable-next-line no-console
       console.log(`Book created: ${title}`)
       return book

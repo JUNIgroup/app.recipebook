@@ -3,37 +3,46 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
 import { Recipe } from '../../../business/recipe-books/model'
-// import { useAppDispatch, useAppSelector } from '../../store.hooks'
+import * as fromRecipeBooks from '../../../business/recipe-books/store'
+import { useAppDispatch } from '../../store.hooks'
 
-export const RecipeItem = ({ recipe }: { recipe: Recipe }) => {
-  // const dispatch = useAppDispatch()
+export type RecipeItemProps = {
+  setError: (error: string | null) => void
+  bookId: string
+  recipe: Recipe
+}
+
+export const RecipeItem: React.FC<RecipeItemProps> = ({ setError, bookId, recipe }) => {
+  const dispatch = useAppDispatch()
 
   // const state = useAppSelector((rootState) => selectDBObjectStateById(rootState, recipe.id))
 
   const removeRecipe = async () => {
+    setError(null)
+    try {
+      await dispatch(fromRecipeBooks.deleteRecipe(bookId, recipe.id))
+      // eslint-disable-next-line no-console
+      console.log('Recipe removed')
+    } catch (err) {
+      setError((err as Error).message)
+    }
     // dispatch(fromRecipes.removeRecipe(recipe.id))
     // eslint-disable-next-line no-console
     console.log('Document deleted with ID: ', recipe.id)
   }
 
   const updateRecipe = () => {
-    // const inc = (string: string) => {
-    //   const match = string.match(/(.*) 👍(\d+)$/)
-    //   return match ? `${match[1]} 👍${parseInt(match[2], 10) + 1}` : `${string} 👍1`
-    // }
-    // const update = {
-    //   ...recipe,
-    //   subtitle: inc(recipe.subtitle ?? ''),
-    // }
-    // dispatch(fromRecipes.updateRecipe(update))
+    const inc = (string: string) => {
+      const match = string.match(/(.*) 👍(\d+)$/)
+      return match ? `${match[1]} 👍${parseInt(match[2], 10) + 1}` : `${string} 👍1`
+    }
+    const update = {
+      ...recipe,
+      subtitle: inc(recipe.subtitle ?? ''),
+    }
+    dispatch(fromRecipeBooks.updateRecipe(bookId, update))
     // eslint-disable-next-line no-console
     console.log('Document updated with ID: ', recipe.id)
-  }
-
-  const refreshRecipe = () => {
-    // dispatch(fromRecipes.refreshRecipe(recipe.id))
-    // eslint-disable-next-line no-console
-    console.log('Document refreshed with ID: ', recipe.id)
   }
 
   return (
@@ -51,20 +60,14 @@ export const RecipeItem = ({ recipe }: { recipe: Recipe }) => {
         ) : (
           <span className="card-title">{recipe.title}</span>
         )}
-        <span className="card-subtitle" onClick={() => updateRecipe()}>
+        <span className="card-subtitle clickable" onClick={() => updateRecipe()}>
           {recipe.subtitle}
         </span>
       </div>
       <div className="card-actions">
-        {false ? (
-          <button type="button" className="icon" onClick={() => refreshRecipe()}>
-            ↺
-          </button>
-        ) : (
-          <button type="button" className="icon" onClick={() => removeRecipe()}>
-            -
-          </button>
-        )}
+        <button type="button" className="icon" onClick={() => removeRecipe()}>
+          -
+        </button>
       </div>
     </li>
   )
