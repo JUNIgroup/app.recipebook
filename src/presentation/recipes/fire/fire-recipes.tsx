@@ -3,19 +3,22 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { ulid } from 'ulid'
 import * as fromAuth from '../../../business/auth'
+import { Recipe } from '../../../business/recipe-books/model'
 import * as fromRecipeBooks from '../../../business/recipe-books/store'
 import { useAppDispatch, useAppSelector } from '../../store.hooks'
-
+import { RecipeBody } from '../random/random'
 import { BookSelector } from './book-selector'
 import { RecipeItem } from './recipe-item'
 
 export type FireRecipesProps = {
   setError: (error: string | null) => void
+  setAddRecipe: (action: null | ((recipe: RecipeBody) => Promise<void>)) => void
 }
 
-export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError }) => {
+export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError, setAddRecipe }) => {
   const [selectedBookId, selectBookId] = useState<string | null>(null)
 
   const user = useAppSelector(fromAuth.selectAuthorizedUser)
@@ -37,6 +40,33 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError }) => {
       setError((err as Error).message)
     }
   }
+
+  useEffect(() => {
+    if (selectedBookId == null) {
+      setAddRecipe(null)
+      return undefined
+    }
+
+    setAddRecipe(async (recipeBody: RecipeBody) => {
+      const recipe: Recipe = {
+        ...recipeBody,
+        id: ulid(),
+        rev: 0,
+      }
+      try {
+        await dispatch(fromRecipeBooks.addRecipe(selectedBookId, recipe))
+
+        // eslint-disable-next-line no-console
+        console.log('Document added with ID: ', recipe.id)
+      } catch (err) {
+        setError((err as Error).message)
+      }
+    })
+
+    return () => {
+      setAddRecipe(null)
+    }
+  }, [dispatch, setAddRecipe, user.id, selectedBookId])
 
   return (
     <div className="column">

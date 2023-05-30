@@ -2,18 +2,22 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
+import { useEffect } from 'react'
+import { ulid } from 'ulid'
 import * as fromAuth from '../../../business/auth'
 import * as fromRecipes from '../../../business/recipes'
+import { Recipe } from '../../../business/recipes/model/recipe.model'
 import { selectAllRecipesSortedByName } from '../../../business/recipes/store/recipe.selectors'
 import { useAppDispatch, useAppSelector } from '../../store.hooks'
-
+import { RecipeBody } from '../random/random'
 import { RecipeItem } from './recipe-item'
 
 export type LocalRecipesProps = {
   setError: (error: string | null) => void
+  setAddRecipe: (action: null | ((recipe: RecipeBody) => Promise<void>)) => void
 }
 
-export const LocalRecipesColumn: React.FC<LocalRecipesProps> = ({ setError }) => {
+export const LocalRecipesColumn: React.FC<LocalRecipesProps> = ({ setError, setAddRecipe }) => {
   const user = useAppSelector(fromAuth.selectAuthorizedUser)
   if (!user) return null
 
@@ -26,6 +30,29 @@ export const LocalRecipesColumn: React.FC<LocalRecipesProps> = ({ setError }) =>
     // eslint-disable-next-line no-console
     console.log('Recipes fetched')
   }
+
+  useEffect(() => {
+    if (user == null) {
+      setAddRecipe(null)
+      return undefined
+    }
+
+    setAddRecipe(async (recipeBody: RecipeBody) => {
+      const recipe: Recipe = {
+        ...recipeBody,
+        id: ulid(),
+        creator: user?.id ?? '',
+      }
+      await dispatch(fromRecipes.addRecipe(recipe))
+
+      // eslint-disable-next-line no-console
+      console.log('Document added with ID: ', recipe.id)
+    })
+
+    return () => {
+      setAddRecipe(null)
+    }
+  }, [dispatch, setAddRecipe, user.id])
 
   return (
     <div className="column">

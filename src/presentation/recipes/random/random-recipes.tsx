@@ -10,6 +10,7 @@ import { RecipeBody, getRandomRecipes } from './random'
 export type Action = {
   key: string
   text: React.ReactNode
+  enabled?: boolean
   action: (recipe: RecipeBody) => void
 }
 
@@ -62,7 +63,13 @@ export const RandomRecipesColumn: React.FC<RandomRecipesColumnProps> = ({ action
               </div>
               <div className="card-actions">
                 {actions.map((action) => (
-                  <button key={action.key} type="button" className="icon" onClick={() => action.action(recipe)}>
+                  <button
+                    key={action.key}
+                    type="button"
+                    className="icon"
+                    disabled={!(action.enabled ?? true)}
+                    onClick={() => action.action(recipe)}
+                  >
                     {action.text}
                   </button>
                 ))}
