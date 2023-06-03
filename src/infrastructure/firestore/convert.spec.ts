@@ -1,7 +1,7 @@
 import { ulid } from 'ulid'
-import { isEmulatorAvailable } from '../../../../infrastructure/firebase/helpers/emulator-utils'
+import { isEmulatorAvailable } from '../firebase/helpers/emulator-utils'
 import { convertToPlainValue } from './convert-from'
-import { convertToTypedValue, convertObjectToFields } from './convert-to'
+import { convertObjectToFields, convertToTypedValue } from './convert-to'
 import { FirestoreTestHelper } from './firestore.test-helper'
 
 const emulatorAvailable = await isEmulatorAvailable()

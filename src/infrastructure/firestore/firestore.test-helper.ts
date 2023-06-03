@@ -1,5 +1,5 @@
-import { Log } from '../../../../utilities/logger'
-import { createFakeLogger } from '../../../../utilities/logger/fake-logger.test-helper'
+import { Log } from '../../utilities/logger'
+import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 
 /**
  * Represents a firestore document.

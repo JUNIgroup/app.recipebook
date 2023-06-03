@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-
 /**
  * Convert an object to a Firestore fields object.
  *

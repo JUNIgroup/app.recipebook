@@ -1,17 +1,9 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import { Doc, Result } from '../database'
+import { FirestoreDocument, Result } from './types'
 
-export type FirestoreDocument = {
-  name: string
-  fields?: object
-  createTime: string
-  updateTime: string
-}
-
-export function convertDocumentToResult(document: FirestoreDocument): Result<Doc> {
+export function convertDocumentToResult(document: FirestoreDocument): Result {
   const { fields = {}, updateTime } = document
   const lastUpdate = new Date(updateTime).getTime()
-  const doc = convertFieldsToObject(fields) as Doc
+  const doc = convertFieldsToObject(fields)
   return { lastUpdate, doc }
 }
 
