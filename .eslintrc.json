@@ -49,6 +49,14 @@
       }
     ],
     //
+    // typescript
+    // --------------------------------------------------------------------
+    // see https://typescript-eslint.io/rules/no-use-before-define/
+    // see https://eslint.org/docs/latest/rules/no-use-before-define#options
+    // Prefer to order functions by their usage.
+    // Functions are hoisted, so they can be used before they are declared.
+    "@typescript-eslint/no-use-before-define": ["error", { "functions": false }],
+    //
     // react
     // --------------------------------------------------------------------
     // see https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/function-component-definition.md
