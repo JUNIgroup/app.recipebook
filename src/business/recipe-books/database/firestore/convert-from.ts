@@ -1,0 +1,65 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
+import { Doc, Result } from '../database'
+
+export type FirestoreDocument = {
+  name: string
+  fields?: object
+  createTime: string
+  updateTime: string
+}
+
+export function convertDocumentToResult(document: FirestoreDocument): Result<Doc> {
+  const { fields = {}, updateTime } = document
+  const lastUpdate = new Date(updateTime).getTime()
+  const doc = convertFieldsToObject(fields) as Doc
+  return { lastUpdate, doc }
+}
+
+/**
+ * Convert deep a fields object to a plain object.
+ *
+ * Fields objects are used in Firestore documents and in MapValues.
+ *
+ * @param fields the fields object to convert
+ * @returns the converted object
+ */
+export function convertFieldsToObject(fields: object = {}): object {
+  const result: Record<string, unknown> = {}
+  Object.entries(fields).forEach(([key, value]) => {
+    result[key] = convertToPlainValue(value as object)
+  })
+  return result
+}
+
+/**
+ * Convert a Firestore typed value to a plain value.
+ *
+ * @param typedValue the firestore typed value to convert
+ * @returns the converted plain value
+ */
+export function convertToPlainValue(typedValue: object): unknown {
+  if ('mapValue' in typedValue) {
+    const { fields } = typedValue.mapValue as { fields?: object }
+    return convertFieldsToObject(fields)
+  }
+  if ('stringValue' in typedValue) {
+    return typedValue.stringValue
+  }
+  if ('booleanValue' in typedValue) {
+    return typedValue.booleanValue
+  }
+  if ('integerValue' in typedValue) {
+    return Number.parseInt(typedValue.integerValue as string, 10)
+  }
+  if ('doubleValue' in typedValue) {
+    return typedValue.doubleValue
+  }
+  if ('nullValue' in typedValue) {
+    return null
+  }
+  if ('arrayValue' in typedValue) {
+    const { values = [] } = typedValue.arrayValue as { values?: object[] }
+    return values.map(convertToPlainValue)
+  }
+  throw new Error(`Could not convert value with keys: ${Object.keys(typedValue)}`)
+}
