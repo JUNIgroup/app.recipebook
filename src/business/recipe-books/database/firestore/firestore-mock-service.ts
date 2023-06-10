@@ -1,0 +1,51 @@
+import { Observable, defer, filter, of } from 'rxjs'
+import { FirestoreService, ReadDoc } from './firestore-service.api'
+
+export class FirestoreMockService implements FirestoreService {
+  mockData: Map<string, Record<string, ReadDoc>> = new Map()
+
+  readDocs(collectionPath: string[], after?: number | undefined): Observable<ReadDoc> {
+    return defer(() => {
+      const record = this.getRecord(collectionPath)
+      const docs = Object.values(record)
+      return of(...docs).pipe(filter((doc) => !after || doc.lastUpdate > after))
+    })
+  }
+
+  async readDoc(docPath: string[]): Promise<ReadDoc> {
+    const { parentPath, docId } = splitDocPath(docPath)
+    const record = this.getRecord(parentPath)
+    const doc = record[docId]
+    if (!doc) throw new Error(`Document not found: ${docPath.join('/')}`)
+    return doc
+  }
+
+  async writeDoc(docPath: string[], doc: object): Promise<void> {
+    const { parentPath, docId } = splitDocPath(docPath)
+    const record = this.getRecord(parentPath)
+    const lastUpdate = Date.now()
+    record[docId] = { lastUpdate, doc }
+  }
+
+  async delDoc(docPath: string[]): Promise<void> {
+    const { parentPath, docId } = splitDocPath(docPath)
+    const record = this.getRecord(parentPath)
+    delete record[docId]
+  }
+
+  private getRecord(path: string[]): Record<string, ReadDoc> {
+    const key = path.join('/')
+    let record = this.mockData.get(key)
+    if (!record) {
+      record = {}
+      this.mockData.set(key, record)
+    }
+    return record
+  }
+}
+
+function splitDocPath(docPath: string[]): { parentPath: string[]; docId: string } {
+  const parentPath = docPath.slice(0, -1)
+  const docId = docPath[docPath.length - 1]
+  return { parentPath, docId }
+}
