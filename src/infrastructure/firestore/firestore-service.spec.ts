@@ -14,21 +14,16 @@ function byNumber<T>(extractor: (value: T) => number) {
 }
 
 describe.runIf(firestoreEmulator)('FirestoreService', () => {
-  assert(firestoreEmulator, 'Firestore emulator is not available')
+  const { host: firestoreHost = '', port: firestorePort = 0 } = firestoreEmulator ?? {}
 
   const options: FirestoreOptions = {
-    apiEndpoint: `http://${firestoreEmulator.host}:${firestoreEmulator.port}/v1`,
+    apiEndpoint: `http://${firestoreHost}:${firestorePort}/v1`,
     apiKey: 'dummy-key',
     projectId: import.meta.env.VITE_FIREBASE__PROJECT_ID,
     databaseId: '(default)',
   }
 
-  const testHelper = new FirestoreTestHelper(
-    firestoreEmulator.host,
-    firestoreEmulator.port,
-    options.projectId,
-    options.databaseId,
-  )
+  const testHelper = new FirestoreTestHelper(firestoreHost, firestorePort, options.projectId, options.databaseId)
 
   const collections = [
     'Col-Empty',

@@ -37,12 +37,12 @@ describe('convert between plain and firebase data', () => {
   })
 
   describe.runIf(firestoreEmulator)('over firestore: convert, put, get and convert back', () => {
-    assert(firestoreEmulator, 'Firestore emulator is not available')
+    const { host: firestoreHost = '', port: firestorePort = 0 } = firestoreEmulator ?? {}
 
     const projectId = import.meta.env.VITE_FIREBASE__PROJECT_ID
     const databaseId = '(default)'
     const collectionId = 'convert-spec'
-    const testHelper = new FirestoreTestHelper(firestoreEmulator.host, firestoreEmulator.port, projectId, databaseId)
+    const testHelper = new FirestoreTestHelper(firestoreHost, firestorePort, projectId, databaseId)
 
     beforeAll(async () => {
       await testHelper.deleteEmulatorCollection(collectionId)
