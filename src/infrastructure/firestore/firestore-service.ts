@@ -3,6 +3,7 @@ import { Log, Logger } from '../../utilities/logger'
 import { convertDocumentToResult } from './convert-from'
 import { convertObjectToFields } from './convert-to'
 import { EpochTimestamp, QueryResponseData, Result } from './types'
+import { FirestoreError } from './firestore-error'
 
 type FetchOptions = {
   signal?: AbortSignal
@@ -172,7 +173,7 @@ export class FirestoreService {
     if (!response.ok) {
       const errorBody = await response.text()
       this.log.error(`error : ${errorBody}`)
-      throw new Error(`${method} failed: ${response.status} ${response.statusText}: ${errorBody}`)
+      throw new FirestoreError(`${method} failed: ${response.status} ${response.statusText}: ${errorBody}`)
     }
 
     const data = await response.json()
