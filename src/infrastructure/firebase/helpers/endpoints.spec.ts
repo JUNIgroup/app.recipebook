@@ -1,5 +1,5 @@
-import { defineGlobalFetchForTesting } from '../../query/fetch.test-helper'
-import { isEmulatorAvailable } from './emulator-utils'
+import { isEmulatorAvailable } from '../../../utilities/firebase/emulator-utils'
+import { defineGlobalFetchForTesting } from '../../../utilities/query/fetch.test-helper'
 import { AccountEndpoints, createEmulatorEndpoints, createRemoteEndpoints } from './endpoints'
 
 defineGlobalFetchForTesting()

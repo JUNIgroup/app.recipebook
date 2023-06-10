@@ -1,4 +1,4 @@
-import { defineGlobalFetchForTesting } from '../../query/fetch.test-helper'
+import { defineGlobalFetchForTesting } from '../query/fetch.test-helper'
 import { isEmulatorAvailable } from './emulator-utils'
 
 defineGlobalFetchForTesting()
