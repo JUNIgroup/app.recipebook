@@ -56,6 +56,9 @@
     // Prefer to order functions by their usage.
     // Functions are hoisted, so they can be used before they are declared.
     "@typescript-eslint/no-use-before-define": ["error", { "functions": false }],
+    // see https://typescript-eslint.io/rules/lines-between-class-members/
+    // Prefer to write class members compact without empty lines.
+    "@typescript-eslint/lines-between-class-members": ["error", "always", { "exceptAfterSingleLine": true }],
     //
     // react
     // --------------------------------------------------------------------
