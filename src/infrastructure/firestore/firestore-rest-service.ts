@@ -2,8 +2,13 @@ import { Observable, Subscriber } from 'rxjs'
 import { Log, Logger } from '../../utilities/logger'
 import { convertDocumentToResult } from './convert-from'
 import { convertObjectToFields } from './convert-to'
-import { EpochTimestamp, QueryResponseData, Result } from './types'
-import { FirestoreError } from './firestore-error'
+import { QueryResponseData } from './types'
+import { FirestoreRestError } from './firestore-rest-error'
+import {
+  EpochTimestamp,
+  FirestoreService,
+  ReadDoc,
+} from '../../business/recipe-books/database/firestore/firestore-service.api'
 
 type FetchOptions = {
   signal?: AbortSignal
@@ -41,7 +46,7 @@ export type FirestoreOptions = {
 /**
  * Using the REST API to access the Firestore database.
  */
-export class FirestoreService {
+export class FirestoreRestService implements FirestoreService {
   private readonly log: Log
   private readonly endpoint: string
   private readonly namePrefix: string
@@ -54,13 +59,13 @@ export class FirestoreService {
    * @param apiEndpoint the endpoint of the Firestore REST API
    */
   constructor(logger: Logger<'infra'>, options: FirestoreOptions) {
-    this.log = logger('infra:FirestoreService')
+    this.log = logger('infra:FirestoreRestService')
     this.endpoint = `${options.apiEndpoint}/projects/${options.projectId}/databases/${options.databaseId}/documents`
     this.namePrefix = `projects/${options.projectId}/databases/${options.databaseId}/documents`
     this.keyParam = `key=${options.apiKey}`
   }
 
-  readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<Result> {
+  readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<ReadDoc> {
     return new Observable((subscriber) => {
       const abortController = new AbortController()
       this.getDocsQuery(subscriber, abortController, collectionPath, after)
@@ -72,7 +77,7 @@ export class FirestoreService {
    * @see https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/runQuery
    */
   private async getDocsQuery(
-    subscriber: Subscriber<Result>,
+    subscriber: Subscriber<ReadDoc>,
     abortController: AbortController,
     collectionPath: string[],
     after?: EpochTimestamp,
@@ -173,7 +178,7 @@ export class FirestoreService {
     if (!response.ok) {
       const errorBody = await response.text()
       this.log.error(`error : ${errorBody}`)
-      throw new FirestoreError(`${method} failed: ${response.status} ${response.statusText}: ${errorBody}`)
+      throw new FirestoreRestError(`${method} failed: ${response.status} ${response.statusText}: ${errorBody}`)
     }
 
     const data = await response.json()

@@ -1,6 +1,7 @@
-import { EpochTimestamp, FirestoreDocumentWithLastUpdate, Result } from './types'
+import { EpochTimestamp, ReadDoc } from '../../business/recipe-books/database/firestore/firestore-service.api'
+import { FirestoreDocumentWithLastUpdate } from './types'
 
-export function convertDocumentToResult(document: FirestoreDocumentWithLastUpdate): Result {
+export function convertDocumentToResult(document: FirestoreDocumentWithLastUpdate): ReadDoc {
   const {
     __lastUpdate: { timestampValue },
     ...fields

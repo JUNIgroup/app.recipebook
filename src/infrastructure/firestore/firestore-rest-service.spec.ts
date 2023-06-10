@@ -3,7 +3,7 @@ import { Logger } from '../../utilities/logger'
 import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 import { collectFrom } from '../database/helpers/collect-from'
 import { isEmulatorAvailable } from '../firebase/helpers/emulator-utils'
-import { FirestoreOptions, FirestoreService } from './firestore-service'
+import { FirestoreOptions, FirestoreRestService } from './firestore-rest-service'
 import { FirestoreTestHelper } from './firestore.test-helper'
 
 const emulatorAvailable = await isEmulatorAvailable()
@@ -13,7 +13,7 @@ function byNumber<T>(extractor: (value: T) => number) {
   return (a: T, b: T) => extractor(a) - extractor(b)
 }
 
-describe.runIf(firestoreEmulator)('FirestoreService', () => {
+describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
   const { host: firestoreHost = '', port: firestorePort = 0 } = firestoreEmulator ?? {}
 
   const options: FirestoreOptions = {
@@ -53,7 +53,7 @@ describe.runIf(firestoreEmulator)('FirestoreService', () => {
   let logger: Logger<'infra'>
 
   beforeEach(() => {
-    logger = createFakeLogger({ console: true })
+    logger = createFakeLogger()
   })
 
   beforeAll(async () => {
@@ -62,17 +62,17 @@ describe.runIf(firestoreEmulator)('FirestoreService', () => {
 
   it('should initialize', async () => {
     // act
-    const db = new FirestoreService(logger, options)
+    const db = new FirestoreRestService(logger, options)
 
     // assert
     expect(db).toBeDefined()
   })
 
   describe('service', () => {
-    let db: FirestoreService
+    let db: FirestoreRestService
 
     beforeEach(() => {
-      db = new FirestoreService(logger, options)
+      db = new FirestoreRestService(logger, options)
     })
 
     describe('.readDocs', () => {
@@ -372,7 +372,7 @@ describe.runIf(firestoreEmulator)('FirestoreService', () => {
       })
     })
 
-    describe.only('.delDoc', () => {
+    describe('.delDoc', () => {
       it.each`
         pathString
         ${'Col-Delete/doc-id-123'}
