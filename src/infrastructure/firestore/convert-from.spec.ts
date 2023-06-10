@@ -1,23 +1,7 @@
 import { convertDocumentToResult, convertFieldsToObject, convertToPlainValue } from './convert-from'
 
 describe('convertDocumentToResult', () => {
-  it('should convert an empty document to a result', () => {
-    // arrange
-    const document = {
-      name: 'foo',
-      createTime: '2021-01-01T17:18:19.234567Z',
-      updateTime: '2022-12-31T23:59:59.999999Z',
-    }
-    const expectedLastUpdate = new Date('2022-12-31T23:59:59.999Z').getTime()
-
-    // act
-    const result = convertDocumentToResult(document)
-
-    // assert
-    expect(result).toEqual({ lastUpdate: expectedLastUpdate, doc: {} })
-  })
-
-  it('should convert a document with fields to a result', () => {
+  it('should convert a document with fields and __lastUpdate to a result', () => {
     // arrange
     const document = {
       name: 'foo',
@@ -25,9 +9,10 @@ describe('convertDocumentToResult', () => {
         id: { stringValue: 'foo' },
         rev: { integerValue: '42' },
         content: { mapValue: { fields: { bar: { stringValue: 'baz' } } } },
+        __lastUpdate: { timestampValue: '2022-12-31T23:59:59.999999Z' },
       },
       createTime: '2021-01-01T17:18:19.234567Z',
-      updateTime: '2022-12-31T23:59:59.999999Z',
+      updateTime: '2023-01-01T17:18:19.234567Z',
     }
     const expectedLastUpdate = new Date('2022-12-31T23:59:59.999Z').getTime()
 
@@ -39,6 +24,29 @@ describe('convertDocumentToResult', () => {
       lastUpdate: expectedLastUpdate,
       doc: { id: 'foo', rev: 42, content: { bar: 'baz' } },
     })
+  })
+
+  it.each`
+    timestamp                        | problem
+    ${'2022-12-31T23:59:59.999999Z'} | ${'direct string'}
+    ${4832749327498743}              | ${'direct number'}
+    ${{ timestampValue: 'foo' }}     | ${'object with wrong value'}
+  `('should throw exception for invalid timestamp ($problem)', ({ timestamp }) => {
+    // arrange
+    const document = {
+      name: 'foo',
+      fields: {
+        __lastUpdate: timestamp,
+      },
+      createTime: '2021-01-01T17:18:19.234567Z',
+      updateTime: '2023-01-01T17:18:19.234567Z',
+    }
+
+    // act
+    const act = () => convertDocumentToResult(document)
+
+    // assert
+    expect(act).toThrowError(`Could not convert timestamp string: `)
   })
 })
 

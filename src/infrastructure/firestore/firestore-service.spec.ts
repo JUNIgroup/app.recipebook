@@ -3,7 +3,7 @@ import { Logger } from '../../utilities/logger'
 import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 import { collectFrom } from '../database/helpers/collect-from'
 import { isEmulatorAvailable } from '../firebase/helpers/emulator-utils'
-import { FirestoreService } from './firestore-service'
+import { FirestoreOptions, FirestoreService } from './firestore-service'
 import { FirestoreTestHelper } from './firestore.test-helper'
 
 const emulatorAvailable = await isEmulatorAvailable()
@@ -16,10 +16,19 @@ function byNumber<T>(extractor: (value: T) => number) {
 describe.runIf(firestoreEmulator)('FirestoreService', () => {
   assert(firestoreEmulator, 'Firestore emulator is not available')
 
-  const projectId = import.meta.env.VITE_FIREBASE__PROJECT_ID
-  const databaseId = '(default)'
-  const endpoint = `http://${firestoreEmulator.host}:${firestoreEmulator.port}/v1/projects/${projectId}/databases/${databaseId}/documents`
-  const testHelper = new FirestoreTestHelper(firestoreEmulator.host, firestoreEmulator.port, projectId, databaseId)
+  const options: FirestoreOptions = {
+    apiEndpoint: `http://${firestoreEmulator.host}:${firestoreEmulator.port}/v1`,
+    apiKey: 'dummy-key',
+    projectId: import.meta.env.VITE_FIREBASE__PROJECT_ID,
+    databaseId: '(default)',
+  }
+
+  const testHelper = new FirestoreTestHelper(
+    firestoreEmulator.host,
+    firestoreEmulator.port,
+    options.projectId,
+    options.databaseId,
+  )
 
   const collections = [
     'Col-Empty',
@@ -38,6 +47,12 @@ describe.runIf(firestoreEmulator)('FirestoreService', () => {
     'Col-Put',
     'Col-Put/d1/Col-Sub1',
     'Col-Put/d1/Col-Sub1/d2/Col-Sub2',
+    'Col-ReadWrite',
+    'Col-ReadWrite/d1/Col-Sub1',
+    'Col-ReadWrite/d1/Col-Sub1/d2/Col-Sub2',
+    'Col-Delete',
+    'Col-Delete/d1/Col-Sub1',
+    'Col-Delete/d1/Col-Sub1/d2/Col-Sub2',
   ]
 
   let logger: Logger<'infra'>
@@ -52,20 +67,20 @@ describe.runIf(firestoreEmulator)('FirestoreService', () => {
 
   it('should initialize', async () => {
     // act
-    const db = new FirestoreService(logger, endpoint)
+    const db = new FirestoreService(logger, options)
 
     // assert
     expect(db).toBeDefined()
   })
 
-  describe('getDocs', () => {
+  describe('service', () => {
     let db: FirestoreService
 
     beforeEach(() => {
-      db = new FirestoreService(logger, endpoint)
+      db = new FirestoreService(logger, options)
     })
 
-    describe('root collection', () => {
+    describe('.readDocs', () => {
       it.each`
         pathString
         ${'Col-Empty'}
@@ -76,7 +91,7 @@ describe.runIf(firestoreEmulator)('FirestoreService', () => {
         const path = pathString.split('/')
 
         // act
-        const result = await collectFrom(db.getDocs(path))
+        const result = await collectFrom(db.readDocs(path))
 
         // assert
         expect(result).toBeEmpty()
@@ -92,20 +107,22 @@ describe.runIf(firestoreEmulator)('FirestoreService', () => {
         const path = pathString.split('/')
         const after = undefined
         const randomString = ulid()
+        const requestTime = new Date()
         await testHelper.patchDocument(`${pathString}/doc-id`, {
           fields: {
             foo: { stringValue: randomString },
             more: { mapValue: { fields: { bar: { stringValue: 'baz' } } } },
+            __lastUpdate: { timestampValue: requestTime.toISOString() },
           },
         })
 
         // act
-        const result = await collectFrom(db.getDocs(path, after))
+        const result = await collectFrom(db.readDocs(path, after))
 
         // assert
         expect(result).toEqual([
           {
-            lastUpdate: expect.any(Number),
+            lastUpdate: requestTime.getTime(),
             doc: {
               foo: randomString,
               more: { bar: 'baz' },
@@ -123,163 +140,264 @@ describe.runIf(firestoreEmulator)('FirestoreService', () => {
         // arrange
         const path = pathString.split('/')
         const randomString1 = ulid()
+        const requestTime1 = new Date()
         await testHelper.patchDocument(`${pathString}/foo`, {
           fields: {
             foo: { stringValue: randomString1 },
             bar: { integerValue: 1 },
+            __lastUpdate: { timestampValue: requestTime1.toISOString() },
           },
         })
         const randomString2 = ulid()
+        const requestTime2 = new Date()
         await testHelper.patchDocument(`${pathString}/bar`, {
           fields: {
             foo: { stringValue: randomString2 },
             bar: { integerValue: 2 },
+            __lastUpdate: { timestampValue: requestTime2.toISOString() },
           },
         })
         const randomString3 = ulid()
+        const requestTime3 = new Date()
         await testHelper.patchDocument(`${pathString}/baz`, {
           fields: {
             foo: { stringValue: randomString3 },
             bar: { integerValue: 3 },
+            __lastUpdate: { timestampValue: requestTime3.toISOString() },
           },
         })
 
         // act
-        const results = await collectFrom(db.getDocs(path))
+        const results = await collectFrom(db.readDocs(path))
 
         // assert
         results.sort(byNumber((result) => result.lastUpdate))
         expect(results).toEqual([
           {
-            lastUpdate: expect.any(Number),
+            lastUpdate: requestTime1.getTime(),
             doc: { foo: randomString1, bar: 1 },
           },
           {
-            lastUpdate: expect.any(Number),
+            lastUpdate: requestTime2.getTime(),
             doc: { foo: randomString2, bar: 2 },
           },
           {
-            lastUpdate: expect.any(Number),
+            lastUpdate: requestTime3.getTime(),
             doc: { foo: randomString3, bar: 3 },
           },
         ])
       })
 
-      it.skip.each`
+      it.each`
         pathString
         ${'Col-Updates'}
         ${'Col-Updates/d1/Col-Sub1'}
         ${'Col-Updates/d1/Col-Sub1/d2/Col-Sub2'}
-      `('[not implemented yet] should emit only updated documents with time argument', async ({ pathString }) => {
+      `('should emit only updated documents with time argument', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
         const randomString1 = ulid()
+        const requestTime1 = new Date()
         await testHelper.patchDocument(`${pathString}/foo`, {
           fields: {
             foo: { stringValue: randomString1 },
             bar: { integerValue: 1 },
+            __lastUpdate: { timestampValue: requestTime1.toISOString() },
           },
         })
         const randomString2 = ulid()
+        const requestTime2 = new Date()
         await testHelper.patchDocument(`${pathString}/bar`, {
           fields: {
             foo: { stringValue: randomString2 },
             bar: { integerValue: 2 },
+            __lastUpdate: { timestampValue: requestTime2.toISOString() },
           },
         })
-        const firstResults = await collectFrom(db.getDocs(path))
-        const lastUpdate = firstResults.reduce((max, result) => Math.max(max, result.lastUpdate), 0)
 
+        const randomString1update = ulid()
+        const requestTime1update = new Date()
+        await testHelper.patchDocument(`${pathString}/foo`, {
+          fields: {
+            foo: { stringValue: randomString1update },
+            bar: { integerValue: 1 },
+            __lastUpdate: { timestampValue: requestTime1update.toISOString() },
+          },
+        })
         const randomString3 = ulid()
+        const requestTime3 = new Date()
         await testHelper.patchDocument(`${pathString}/baz`, {
           fields: {
             foo: { stringValue: randomString3 },
             bar: { integerValue: 3 },
+            __lastUpdate: { timestampValue: requestTime3.toISOString() },
           },
         })
 
         // act
-        const results = await collectFrom(db.getDocs(path, lastUpdate))
+        const results = await collectFrom(db.readDocs(path, requestTime2.getTime()))
 
         // assert
         results.sort(byNumber((result) => result.lastUpdate))
         expect(results).toEqual([
           {
-            lastUpdate: expect.any(Number),
+            lastUpdate: requestTime1update.getTime(),
+            doc: { foo: randomString1update, bar: 1 },
+          },
+          {
+            lastUpdate: requestTime3.getTime(),
             doc: { foo: randomString3, bar: 3 },
           },
         ])
       })
     })
-  })
 
-  describe('putDoc', () => {
-    let db: FirestoreService
+    describe('.writeDoc', () => {
+      it.each`
+        pathString
+        ${'Col-Put/doc-id-123'}
+        ${'Col-Put/d1/Col-Sub1/doc-id-123'}
+        ${'Col-Put/d1/Col-Sub1/d2/Col-Sub2/doc-id-123'}
+      `('should add a new document $pathString', async ({ pathString }) => {
+        // arrange
+        const path = pathString.split('/')
+        const doc = {
+          foo: ulid(),
+          bar: 1,
+        }
 
-    beforeEach(() => {
-      db = new FirestoreService(logger, endpoint)
-    })
+        // act
+        const begin = new Date()
+        await db.writeDoc(path, doc)
+        const end = new Date()
 
-    it.each`
-      pathString
-      ${'Col-Put/doc-id-123'}
-      ${'Col-Put/d1/Col-Sub1/doc-id-123'}
-      ${'Col-Put/d1/Col-Sub1/d2/Col-Sub2/doc-id-123'}
-    `('should add a new document $pathString', async ({ pathString }) => {
-      // arrange
-      const path = pathString.split('/')
-      const doc = {
-        foo: ulid(),
-        bar: 1,
-      }
+        // assert
+        const document = await testHelper.getDocument(pathString)
+        expect(document).toEqual({
+          name: expect.stringMatching(/.*\/doc-id-123/),
+          fields: {
+            foo: { stringValue: doc.foo },
+            bar: { integerValue: '1' },
+            __lastUpdate: { timestampValue: expect.any(String) },
+          },
+          createTime: expect.any(String),
+          updateTime: expect.any(String),
+        })
+        // eslint-disable-next-line no-underscore-dangle
+        const lastUpdate = new Date(document.fields.__lastUpdate.timestampValue)
+        expect(lastUpdate, 'lastUpdate').toBeBetween(begin, end)
+      })
 
-      // act
-      await db.putDoc(path, doc)
+      it.each`
+        pathString
+        ${'Col-Put/doc-id-345'}
+        ${'Col-Put/d1/Col-Sub1/doc-id-345'}
+        ${'Col-Put/d1/Col-Sub1/d2/Col-Sub2/doc-id-345'}
+      `('should update an existing document $pathString', async ({ pathString }) => {
+        // arrange
+        const path = pathString.split('/')
+        const doc = {
+          foo: ulid(),
+          bar: 1,
+        }
+        await db.writeDoc(path, doc)
+        const update = {
+          ...doc,
+          bar: 2,
+        }
 
-      // assert
-      const document = await testHelper.getDocument(pathString)
-      expect(document).toEqual({
-        name: expect.stringMatching(/.*\/doc-id-123/),
-        fields: {
-          foo: { stringValue: doc.foo },
-          bar: { integerValue: '1' },
-        },
-        createTime: expect.any(String),
-        updateTime: expect.any(String),
+        // act
+        const begin = new Date()
+        await db.writeDoc(path, update)
+        const end = new Date()
+
+        // assert
+        const document = await testHelper.getDocument(pathString)
+        expect(document).toEqual({
+          name: expect.stringMatching(/.*\/doc-id-345/),
+          fields: {
+            foo: { stringValue: doc.foo },
+            bar: { integerValue: '2' },
+            __lastUpdate: { timestampValue: expect.any(String) },
+          },
+          createTime: expect.any(String),
+          updateTime: expect.any(String),
+        })
+        // eslint-disable-next-line no-underscore-dangle
+        const lastUpdate = new Date(document.fields.__lastUpdate.timestampValue)
+        expect(lastUpdate, 'lastUpdate').toBeBetween(begin, end)
       })
     })
 
-    it.each`
-      pathString
-      ${'Col-Put/doc-id-345'}
-      ${'Col-Put/d1/Col-Sub1/doc-id-345'}
-      ${'Col-Put/d1/Col-Sub1/d2/Col-Sub2/doc-id-345'}
-    `('should update an existing document $pathString', async ({ pathString }) => {
-      // arrange
-      const path = pathString.split('/')
-      const doc = {
-        foo: ulid(),
-        bar: 1,
-      }
-      await db.putDoc(path, doc)
-      const update = {
-        ...doc,
-        bar: 2,
-      }
+    describe('.writeDoc and .readDoc', () => {
+      it.each`
+        pathString
+        ${'Col-ReadWrite'}
+        ${'Col-ReadWrite/d1/Col-Sub1'}
+        ${'Col-ReadWrite/d1/Col-Sub1/d2/Col-Sub2'}
+      `('should emit only updated documents with time argument', async ({ pathString }) => {
+        // arrange
+        const path = pathString.split('/')
+        const doc1 = { foo: ulid(), bar: 1 }
+        const doc1update = { foo: ulid(), bar: 1 }
+        const doc2 = { foo: ulid(), bar: 2 }
+        const doc3 = { foo: ulid(), bar: 3 }
 
-      // act
-      await db.putDoc(path, update)
+        // act
+        await db.writeDoc([...path, 'foo'], doc1)
+        await db.writeDoc([...path, 'bar'], doc2)
+        const results1 = await collectFrom(db.readDocs(path))
+        const totalLastUpdate = results1[1].lastUpdate
 
-      // assert
-      const document = await testHelper.getDocument(pathString)
-      expect(document).toEqual({
-        name: expect.stringMatching(/.*\/doc-id-345/),
-        fields: {
-          foo: { stringValue: doc.foo },
-          bar: { integerValue: '2' },
-        },
-        createTime: expect.any(String),
-        updateTime: expect.any(String),
+        await db.writeDoc([...path, 'foo'], doc1update)
+        await db.writeDoc([...path, 'baz'], doc3)
+        const results2 = await collectFrom(db.readDocs(path, totalLastUpdate))
+
+        // assert
+        expect(results1, 'before timestamp').toEqual([
+          {
+            lastUpdate: expect.any(Number),
+            doc: { foo: doc1.foo, bar: doc1.bar },
+          },
+          {
+            lastUpdate: expect.any(Number),
+            doc: { foo: doc2.foo, bar: doc2.bar },
+          },
+        ])
+        expect(results2, 'after timestamp').toEqual([
+          {
+            lastUpdate: expect.any(Number),
+            doc: { foo: doc1update.foo, bar: doc1update.bar },
+          },
+          {
+            lastUpdate: expect.any(Number),
+            doc: { foo: doc3.foo, bar: doc3.bar },
+          },
+        ])
+      })
+    })
+
+    describe.only('.delDoc', () => {
+      it.each`
+        pathString
+        ${'Col-Delete/doc-id-123'}
+        ${'Col-Delete/d1/Col-Sub1/doc-id-123'}
+        ${'Col-Delete/d1/Col-Sub1/d2/Col-Sub2/doc-id-123'}
+      `('should delete a document $pathString', async ({ pathString }) => {
+        // arrange
+        const path = pathString.split('/')
+        const doc = {
+          foo: ulid(),
+          bar: 1,
+        }
+        await db.writeDoc(path, doc)
+
+        // act
+        await db.delDoc(path)
+
+        // assert
+        const documents = await testHelper.listDocuments(path.slice(0, -1).join('/'))
+        expect(documents).toEqual({})
       })
     })
   })

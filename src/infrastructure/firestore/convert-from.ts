@@ -1,10 +1,19 @@
-import { FirestoreDocument, Result } from './types'
+import { EpochTimestamp, FirestoreDocumentWithLastUpdate, Result } from './types'
 
-export function convertDocumentToResult(document: FirestoreDocument): Result {
-  const { fields = {}, updateTime } = document
-  const lastUpdate = new Date(updateTime).getTime()
+export function convertDocumentToResult(document: FirestoreDocumentWithLastUpdate): Result {
+  const {
+    __lastUpdate: { timestampValue },
+    ...fields
+  } = document.fields
+  const lastUpdate = convertTimestampStringToEpochTimestamp(timestampValue)
   const doc = convertFieldsToObject(fields)
   return { lastUpdate, doc }
+}
+
+export function convertTimestampStringToEpochTimestamp(timestamp: string): EpochTimestamp {
+  const time = new Date(timestamp).getTime()
+  if (Number.isNaN(time)) throw new Error(`Could not convert timestamp string: ${timestamp}`)
+  return time
 }
 
 /**
