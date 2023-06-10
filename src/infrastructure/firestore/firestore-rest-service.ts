@@ -1,14 +1,14 @@
 import { Observable, Subscriber } from 'rxjs'
-import { Log, Logger } from '../../utilities/logger'
-import { convertDocumentToResult } from './convert-from'
-import { convertObjectToFields } from './convert-to'
-import { QueryResponseData } from './types'
-import { FirestoreRestError } from './firestore-rest-error'
 import {
   EpochTimestamp,
   FirestoreService,
   ReadDoc,
 } from '../../business/recipe-books/database/firestore/firestore-service.api'
+import { Log, Logger } from '../../utilities/logger'
+import { convertDocumentToResult } from './convert-from'
+import { convertObjectToFields } from './convert-to'
+import { FirestoreRestError } from './firestore-rest-error'
+import { FirestoreDocumentWithLastUpdate, QueryResponseData } from './types'
 
 type FetchOptions = {
   signal?: AbortSignal
@@ -109,6 +109,20 @@ export class FirestoreRestService implements FirestoreService {
     } catch (error) {
       subscriber.error(error)
     }
+  }
+
+  /**
+   * Read a document from the database.
+   *
+   * @param docPath the path of the document to read
+   *
+   * @see https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/get
+   */
+  async readDoc(docPath: string[]): Promise<ReadDoc> {
+    const url = this.createUrl(docPath)
+    const data = await this.fetch<FirestoreDocumentWithLastUpdate>('GET', url, undefined)
+    if (!data.fields) throw new FirestoreRestError(`Document ${docPath.join('/')} not found.`)
+    return convertDocumentToResult(data)
   }
 
   /**

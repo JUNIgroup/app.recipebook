@@ -32,6 +32,15 @@ export interface FirestoreService {
   readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<ReadDoc>
 
   /**
+   * Read a single document from the database.
+   *
+   * @param docPath the path of the document to read. Must have an even number of elements.
+   * @returns a promise that resolves to the document.
+   * @throws an Error if the document does not exist.
+   */
+  readDoc(docPath: string[]): Promise<ReadDoc>
+
+  /**
    * Write a single document to the database.
    *
    * @param docPath the path of the document to write. Must have an even number of elements.

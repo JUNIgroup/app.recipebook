@@ -4,6 +4,7 @@ import { FirestoreTestHelper } from '../../utilities/firebase/firestore.test-hel
 import { Logger } from '../../utilities/logger'
 import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 import { collectFrom } from '../database/helpers/collect-from'
+import { FirestoreRestError } from './firestore-rest-error'
 import { FirestoreOptions, FirestoreRestService } from './firestore-rest-service'
 
 const emulatorAvailable = await isEmulatorAvailable()
@@ -25,29 +26,33 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
 
   const testHelper = new FirestoreTestHelper(firestoreHost, firestorePort, options.projectId, options.databaseId)
 
+  const PREFIX = 'FirestoreRestService'
+
   const collections = [
-    'Col-Empty',
-    'Col-Empty',
-    'Col-Empty/d1/Col-Sub1',
-    'Col-Empty/d1/Col-Sub1/d2/Col-Sub2',
-    'Col-Single',
-    'Col-Single/d1/Col-Sub1',
-    'Col-Single/d1/Col-Sub1/d2/Col-Sub2',
-    'Col-Multiple',
-    'Col-Multiple/d1/Col-Sub1',
-    'Col-Multiple/d1/Col-Sub1/d2/Col-Sub2',
-    'Col-Updates',
-    'Col-Updates/d1/Col-Sub1',
-    'Col-Updates/d1/Col-Sub1/d2/Col-Sub2',
-    'Col-Put',
-    'Col-Put/d1/Col-Sub1',
-    'Col-Put/d1/Col-Sub1/d2/Col-Sub2',
-    'Col-ReadWrite',
-    'Col-ReadWrite/d1/Col-Sub1',
-    'Col-ReadWrite/d1/Col-Sub1/d2/Col-Sub2',
-    'Col-Delete',
-    'Col-Delete/d1/Col-Sub1',
-    'Col-Delete/d1/Col-Sub1/d2/Col-Sub2',
+    `${PREFIX}-Empty`,
+    `${PREFIX}-Empty/d1/Col-Sub1`,
+    `${PREFIX}-Empty/d1/Col-Sub1/d2/Col-Sub2`,
+    `${PREFIX}-Single`,
+    `${PREFIX}-Single/d1/Col-Sub1`,
+    `${PREFIX}-Single/d1/Col-Sub1/d2/Col-Sub2`,
+    `${PREFIX}-Multiple`,
+    `${PREFIX}-Multiple/d1/Col-Sub1`,
+    `${PREFIX}-Multiple/d1/Col-Sub1/d2/Col-Sub2`,
+    `${PREFIX}-Read`,
+    `${PREFIX}-Read/d1/Col-Sub1`,
+    `${PREFIX}-Read/d1/Col-Sub1/d2/Col-Sub2`,
+    `${PREFIX}-Updates`,
+    `${PREFIX}-Updates/d1/Col-Sub1`,
+    `${PREFIX}-Updates/d1/Col-Sub1/d2/Col-Sub2`,
+    `${PREFIX}-Put`,
+    `${PREFIX}-Put/d1/Col-Sub1`,
+    `${PREFIX}-Put/d1/Col-Sub1/d2/Col-Sub2`,
+    `${PREFIX}-ReadWrite`,
+    `${PREFIX}-ReadWrite/d1/Col-Sub1`,
+    `${PREFIX}-ReadWrite/d1/Col-Sub1/d2/Col-Sub2`,
+    `${PREFIX}-Delete`,
+    `${PREFIX}-Delete/d1/Col-Sub1`,
+    `${PREFIX}-Delete/d1/Col-Sub1/d2/Col-Sub2`,
   ]
 
   let logger: Logger<'infra'>
@@ -78,9 +83,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
     describe('.readDocs', () => {
       it.each`
         pathString
-        ${'Col-Empty'}
-        ${'Col-Empty/d1/Col-Sub1'}
-        ${'Col-Empty/d1/Col-Sub1/d2/Col-Sub2'}
+        ${`${PREFIX}-Empty`}
+        ${`${PREFIX}-Empty/d1/Col-Sub1`}
+        ${`${PREFIX}-Empty/d1/Col-Sub1/d2/Col-Sub2`}
       `('should return an empty observable of collection $pathString', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
@@ -94,9 +99,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
 
       it.each`
         pathString
-        ${'Col-Single'}
-        ${'Col-Single/d1/Col-Sub1'}
-        ${'Col-Single/d1/Col-Sub1/d2/Col-Sub2'}
+        ${`${PREFIX}-Single`}
+        ${`${PREFIX}-Single/d1/Col-Sub1`}
+        ${`${PREFIX}-Single/d1/Col-Sub1/d2/Col-Sub2`}
       `('should emit the one and only document of $pathString', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
@@ -128,9 +133,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
 
       it.each`
         pathString
-        ${'Col-Multiple'}
-        ${'Col-Multiple/d1/Col-Sub1'}
-        ${'Col-Multiple/d1/Col-Sub1/d2/Col-Sub2'}
+        ${`${PREFIX}-Multiple`}
+        ${`${PREFIX}-Multiple/d1/Col-Sub1`}
+        ${`${PREFIX}-Multiple/d1/Col-Sub1/d2/Col-Sub2`}
       `('should emit all documents of $pathString', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
@@ -185,9 +190,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
 
       it.each`
         pathString
-        ${'Col-Updates'}
-        ${'Col-Updates/d1/Col-Sub1'}
-        ${'Col-Updates/d1/Col-Sub1/d2/Col-Sub2'}
+        ${`${PREFIX}-Updates`}
+        ${`${PREFIX}-Updates/d1/Col-Sub1`}
+        ${`${PREFIX}-Updates/d1/Col-Sub1/d2/Col-Sub2`}
       `('should emit only updated documents with time argument', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
@@ -247,12 +252,63 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
       })
     })
 
+    describe('.readDoc', () => {
+      it.each`
+        pathString
+        ${`${PREFIX}-Empty`}
+        ${`${PREFIX}-Empty/d1/Col-Sub1`}
+        ${`${PREFIX}-Empty/d1/Col-Sub1/d2/Col-Sub2`}
+      `('should return an empty observable of collection $pathString', async ({ pathString }) => {
+        // arrange
+        const path = pathString.split('/')
+
+        // act
+        const result = db.readDoc(path)
+
+        // assert
+        await expect(result).rejects.toThrow(FirestoreRestError)
+        await expect(result).rejects.toThrowError(pathString)
+        await expect(result).rejects.toThrowError('not found')
+      })
+
+      it.each`
+        pathString
+        ${`${PREFIX}-Read/doc-id`}
+        ${`${PREFIX}-Read/d1/Col-Sub1/doc-id`}
+        ${`${PREFIX}-Read/d1/Col-Sub1/d2/Col-Sub2/doc-id`}
+      `('should read the document of $pathString', async ({ pathString }) => {
+        // arrange
+        const path = pathString.split('/')
+        const randomString = ulid()
+        const requestTime = new Date()
+        await testHelper.patchDocument(`${pathString}`, {
+          fields: {
+            foo: { stringValue: randomString },
+            more: { mapValue: { fields: { bar: { stringValue: 'baz' } } } },
+            __lastUpdate: { timestampValue: requestTime.toISOString() },
+          },
+        })
+
+        // act
+        const result = db.readDoc(path)
+
+        // assert
+        await expect(result).resolves.toEqual({
+          lastUpdate: requestTime.getTime(),
+          doc: {
+            foo: randomString,
+            more: { bar: 'baz' },
+          },
+        })
+      })
+    })
+
     describe('.writeDoc', () => {
       it.each`
         pathString
-        ${'Col-Put/doc-id-123'}
-        ${'Col-Put/d1/Col-Sub1/doc-id-123'}
-        ${'Col-Put/d1/Col-Sub1/d2/Col-Sub2/doc-id-123'}
+        ${`${PREFIX}-Put/doc-id-123`}
+        ${`${PREFIX}-Put/d1/Col-Sub1/doc-id-123`}
+        ${`${PREFIX}-Put/d1/Col-Sub1/d2/Col-Sub2/doc-id-123`}
       `('should add a new document $pathString', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
@@ -285,9 +341,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
 
       it.each`
         pathString
-        ${'Col-Put/doc-id-345'}
-        ${'Col-Put/d1/Col-Sub1/doc-id-345'}
-        ${'Col-Put/d1/Col-Sub1/d2/Col-Sub2/doc-id-345'}
+        ${`${PREFIX}-Put/doc-id-345`}
+        ${`${PREFIX}-Put/d1/Col-Sub1/doc-id-345`}
+        ${`${PREFIX}-Put/d1/Col-Sub1/d2/Col-Sub2/doc-id-345`}
       `('should update an existing document $pathString', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
@@ -327,9 +383,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
     describe('.writeDoc and .readDoc', () => {
       it.each`
         pathString
-        ${'Col-ReadWrite'}
-        ${'Col-ReadWrite/d1/Col-Sub1'}
-        ${'Col-ReadWrite/d1/Col-Sub1/d2/Col-Sub2'}
+        ${`${PREFIX}-ReadWrite`}
+        ${`${PREFIX}-ReadWrite/d1/Col-Sub1`}
+        ${`${PREFIX}-ReadWrite/d1/Col-Sub1/d2/Col-Sub2`}
       `('should emit only updated documents with time argument', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
@@ -375,9 +431,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
     describe('.delDoc', () => {
       it.each`
         pathString
-        ${'Col-Delete/doc-id-123'}
-        ${'Col-Delete/d1/Col-Sub1/doc-id-123'}
-        ${'Col-Delete/d1/Col-Sub1/d2/Col-Sub2/doc-id-123'}
+        ${`${PREFIX}-Delete/doc-id-123`}
+        ${`${PREFIX}-Delete/d1/Col-Sub1/doc-id-123`}
+        ${`${PREFIX}-Delete/d1/Col-Sub1/d2/Col-Sub2/doc-id-123`}
       `('should delete a document $pathString', async ({ pathString }) => {
         // arrange
         const path = pathString.split('/')
