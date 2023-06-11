@@ -73,6 +73,18 @@ describe('FirestoreDatabase', () => {
     expect(db).toBeDefined()
   })
 
+  it(`should create 'business' log with class name`, async () => {
+    // arrange
+    const mockLogger = vi.fn().mockImplementation(logger)
+
+    // act
+    // eslint-disable-next-line no-new
+    new FirestoreDatabase(mockLogger, new FirestoreMockService())
+
+    // assert
+    expect(mockLogger).toHaveBeenCalledWith(`business:${FirestoreDatabase.name}`)
+  })
+
   const factories = [
     { factory: mockFirestoreService, available: true },
     { factory: emulatorFirestoreService, available: !!firestoreEmulator },

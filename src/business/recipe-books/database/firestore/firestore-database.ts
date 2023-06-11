@@ -1,8 +1,9 @@
 import { Observable, map, tap } from 'rxjs'
 import { encodeTime } from 'ulid'
 import { Log, Logger } from '../../../../utilities/logger'
-import { CollectionPath, Database, Doc, EpochTimestamp, Result } from '../database'
-import { FirestoreService } from './firestore-service.api'
+import { CollectionPath, Database, Result } from '../database'
+import { EpochTimestamp, FirestoreService } from './firestore-service.api'
+import { Doc } from '../database-types'
 
 /**
  * Using the REST API for Firestore, implement the Database interface.
