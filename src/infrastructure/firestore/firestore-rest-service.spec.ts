@@ -73,6 +73,18 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
     expect(db).toBeDefined()
   })
 
+  it(`should create 'infra' log with class name`, async () => {
+    // arrange
+    const mockLogger = vi.fn().mockImplementation(logger)
+
+    // act
+    // eslint-disable-next-line no-new
+    new FirestoreRestService(mockLogger, options)
+
+    // assert
+    expect(mockLogger).toHaveBeenCalledWith(`infra:${FirestoreRestService.name}`)
+  })
+
   describe('service', () => {
     let db: FirestoreRestService
 
