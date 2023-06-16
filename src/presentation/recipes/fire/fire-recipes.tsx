@@ -11,7 +11,7 @@ import * as fromRecipeBooks from '../../../business/recipe-books/store'
 import { useAppDispatch, useAppSelector } from '../../store.hooks'
 import { RecipeBody } from '../random/random'
 import { BookSelector } from './book-selector'
-import { RecipeItem } from './recipe-item'
+import { RecipeList } from './recipe-list'
 
 export type FireRecipesProps = {
   setError: (error: string | null) => void
@@ -25,7 +25,6 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError, setAdd
   if (!user) return null
 
   const dispatch = useAppDispatch()
-  const allRecipes = useAppSelector((state) => fromRecipeBooks.selectRecipes(state, selectedBookId ?? ''))
 
   const refreshRecipes = async () => {
     setError(null)
@@ -74,11 +73,7 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError, setAdd
           ↺
         </button>
       </h2>
-      <ul className="cards">
-        {allRecipes.map((recipe) => (
-          <RecipeItem key={recipe.id} setError={setError} bookId={selectedBookId ?? ''} recipe={recipe} />
-        ))}
-      </ul>{' '}
+      <RecipeList setError={setError} selectedBookId={selectedBookId} />
     </div>
   )
 }
