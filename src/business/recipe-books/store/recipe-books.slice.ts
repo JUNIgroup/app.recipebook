@@ -5,28 +5,27 @@ import { createSlice } from '@reduxjs/toolkit'
 import { actionError } from '../../helper/redux/redux-action-helper'
 import { Recipe, RecipeBook } from '../model'
 import { fullRecipe, fullRecipeBook } from '../model/recipe-books.samples'
+import { BucketsState } from './builder/types'
 
-type RecipeBookBucket = {
-  entity: RecipeBook
-  recipes: {
-    ids: string[]
-    entities: Record<string, Recipe>
+export type RecipeBookStructure = {
+  bucket: RecipeBook
+  collections: {
+    recipes: Recipe
   }
 }
 
-export type RecipeBookBucketsState = {
-  ids: string[]
-  buckets: Record<string, RecipeBookBucket>
-}
+export type RecipeBooksState = BucketsState<RecipeBookStructure>
 
-const initialState: RecipeBookBucketsState = {
+const initialState: RecipeBooksState = {
   ids: [fullRecipeBook.id],
   buckets: {
     [fullRecipeBook.id]: {
       entity: fullRecipeBook,
-      recipes: {
-        ids: [fullRecipe.id],
-        entities: { [fullRecipe.id]: fullRecipe },
+      collections: {
+        recipes: {
+          ids: [fullRecipe.id],
+          entities: { [fullRecipe.id]: fullRecipe },
+        },
       },
     },
   },
@@ -51,9 +50,11 @@ const bucketSlice = createSlice({
       state.ids.push(id)
       state.buckets[id] = {
         entity: document,
-        recipes: {
-          ids: [],
-          entities: {},
+        collections: {
+          recipes: {
+            ids: [],
+            entities: {},
+          },
         },
       }
     },
@@ -110,7 +111,7 @@ const bucketSlice = createSlice({
         return
       }
 
-      const collection = bucket[collectionName]
+      const collection = bucket.collections[collectionName]
       if (collection.entities[id]) {
         actionError(action, 'document id already used')
         return
@@ -140,7 +141,7 @@ const bucketSlice = createSlice({
         return
       }
 
-      const collection = bucket[collectionName]
+      const collection = bucket.collections[collectionName]
       if (!collection.entities[id]) {
         actionError(action, 'document id is unknown')
         return
@@ -168,7 +169,7 @@ const bucketSlice = createSlice({
         return
       }
 
-      const collection = bucket[collectionName]
+      const collection = bucket.collections[collectionName]
       if (!collection.entities[id]) {
         actionError(action, 'document id is unknown')
         return

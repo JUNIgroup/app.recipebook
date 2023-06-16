@@ -1,49 +1,23 @@
-import { createSelector } from '@reduxjs/toolkit'
-import { RootState } from '../../app.store'
-import { byText } from '../../helper/redux/redux-selector-helper'
-import { Recipe, RecipeBook } from '../model'
+import { byString } from './builder/orders'
+import {
+  createSelectAllBucketDocuments,
+  createSelectAllBucketDocumentsSorted,
+  createSelectBucketDocumentById,
+  createSelectAllCollectionDocuments,
+  createSelectAllCollectionDocumentsSorted,
+  createSelectCollectionDocumentById,
+} from './builder/selectors'
+import { RecipeBooksState } from './recipe-books.slice'
 
-type PartialRootState = Pick<RootState, 'recipeBooks'>
-
-type Collection = 'recipes'
-
-const emptyCollection = Object.freeze({ ids: [] as string[], entities: {} as Record<string, never> })
-
+type PartialRootState = { recipeBooks: RecipeBooksState }
 const selectRoot = (state: PartialRootState) => state.recipeBooks
-const selectCollection = (collection: Collection) => (state: PartialRootState, bucketId: string) =>
-  selectRoot(state).buckets[bucketId]?.[collection] ?? emptyCollection
-const idParameter = (_state: PartialRootState, id: string) => id
 
-export const selectAllBucketDocuments = createSelector(
-  selectRoot, //
-  (state) => state.ids.map((id) => state.buckets[id].entity),
-)
+const byTitle = byString<{ title: string }>((book) => book.title)
 
-export const selectAllBucketDocumentsSortedByString = (extractor: (doc: RecipeBook) => string) =>
-  createSelector(
-    selectRoot, //
-    (state) => state.ids.map((id) => state.buckets[id].entity).sort(byText((entity) => extractor(entity))),
-  )
+export const selectRecipeBooks = createSelectAllBucketDocuments(selectRoot)
+export const selectRecipeBooksSortedByTitle = createSelectAllBucketDocumentsSorted(selectRoot, byTitle)
+export const selectRecipeBookById = createSelectBucketDocumentById(selectRoot)
 
-export const selectBucketDocumentById = createSelector(
-  [selectRoot, idParameter], //
-  (state, id) => state.buckets[id]?.entity ?? null,
-)
-
-export const selectCollectionDocuments = (collection: Collection) =>
-  createSelector(
-    selectCollection(collection), //
-    ({ ids, entities }) => ids.map((id) => entities[id]),
-  )
-
-export const selectCollectionDocumentsSortedByString = (collection: Collection, extractor: (doc: Recipe) => string) =>
-  createSelector(
-    selectCollection(collection), //
-    ({ ids, entities }) => ids.map((id) => entities[id]).sort(byText((entity) => extractor(entity))),
-  )
-
-export const selectCollectionDocumentById = (collection: Collection) =>
-  createSelector(
-    [selectCollection(collection), idParameter], //
-    ({ entities }, id) => entities[id] ?? null,
-  )
+export const selectRecipes = createSelectAllCollectionDocuments(selectRoot, 'recipes')
+export const selectRecipesSortedByTitle = createSelectAllCollectionDocumentsSorted(selectRoot, 'recipes', byTitle)
+export const selectRecipeById = createSelectCollectionDocumentById(selectRoot, 'recipes')

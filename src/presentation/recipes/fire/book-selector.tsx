@@ -3,7 +3,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
-import { MouseEventHandler, ReactEventHandler, useRef } from 'react'
+import React, { MouseEventHandler, ReactEventHandler, useRef } from 'react'
 import { ulid } from 'ulid'
 import * as fromAuth from '../../../business/auth'
 import { RecipeBook } from '../../../business/recipe-books/model'
@@ -22,7 +22,7 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
 
   const dispatch = useAppDispatch()
   const selectedBook = useAppSelector((state) => fromRecipeBooks.selectRecipeBookById(state, selectedBookId ?? ''))
-  const allBooks = useAppSelector(fromRecipeBooks.selectAllRecipeBooksSortedByTitle)
+  const allBooks = useAppSelector(fromRecipeBooks.selectRecipeBooksSortedByTitle)
   const inputRef = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -46,7 +46,6 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
         rev: 0,
         title,
         subtitle: `created at ${new Date().toLocaleString()}`,
-        recipes: [],
       }
       await dispatch(fromRecipeBooks.addRecipeBook(book))
       // eslint-disable-next-line no-console

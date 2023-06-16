@@ -25,9 +25,7 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError, setAdd
   if (!user) return null
 
   const dispatch = useAppDispatch()
-  const allRecipes = useAppSelector((state) =>
-    fromRecipeBooks.selectAllRecipesFromRecipeBook(state, selectedBookId ?? ''),
-  )
+  const allRecipes = useAppSelector((state) => fromRecipeBooks.selectRecipes(state, selectedBookId ?? ''))
 
   const refreshRecipes = async () => {
     setError(null)
