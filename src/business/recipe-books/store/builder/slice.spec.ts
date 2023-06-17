@@ -1,6 +1,8 @@
 import { Mock } from 'vitest'
 import { BreakfastStructure } from './builder.samples'
-import { BucketsSlice, CollectionActionCreator, createBucketSlice, OnActionError } from './slice'
+import { BucketsSlice, CollectionActionCreator } from './slice.types'
+import { OnActionError } from './types'
+import { createBucketSlice } from './slice'
 
 describe('createBucketSlice', () => {
   it('should create a bucket slice', () => {

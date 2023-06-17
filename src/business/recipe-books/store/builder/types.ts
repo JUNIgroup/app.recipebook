@@ -1,3 +1,4 @@
+import { Action } from '@reduxjs/toolkit'
 import { BucketStructure, Doc, ID } from '../../database/database-types'
 
 export type BucketsState<T extends BucketStructure> = {
@@ -20,3 +21,5 @@ export type BucketCollectionState<T extends Doc> = {
     [id: ID]: T
   }
 }
+
+export type OnActionError = (action: Action, message: string) => void
