@@ -12,19 +12,19 @@ export function refreshBucketDocuments(): AppThunk<Promise<void>> {
 
 export function createBucket(recipeBook: RecipeBook): AppThunk<Promise<void>> {
   return async (dispatch) => {
-    dispatch(actions.addBucketDocument({ document: recipeBook }))
+    dispatch(actions.addRecipeBook({ document: recipeBook }))
   }
 }
 
 export function updateBucketDocument(recipeBook: RecipeBook): AppThunk<Promise<void>> {
   return async (dispatch) => {
-    dispatch(actions.updateBucketDocument({ document: recipeBook }))
+    dispatch(actions.updateRecipeBook({ document: recipeBook }))
   }
 }
 
 export function deleteBucket(bucketId: string): AppThunk<Promise<void>> {
   return async (dispatch) => {
-    dispatch(actions.deleteBucketDocument({ bucketId }))
+    dispatch(actions.deleteRecipeBook({ bucketId }))
   }
 }
 
@@ -41,7 +41,7 @@ export function addCollectionDocument(
   document: Recipe,
 ): AppThunk<Promise<void>> {
   return async (dispatch) => {
-    dispatch(actions.addCollectionDocument({ bucketId, collection, document }))
+    dispatch(actions.addRecipe({ bucketId, document }))
   }
 }
 
@@ -51,7 +51,7 @@ export function updateCollectionDocument(
   document: Recipe,
 ): AppThunk<Promise<void>> {
   return async (dispatch) => {
-    dispatch(actions.updateCollectionDocument({ bucketId, collection, document }))
+    dispatch(actions.updateRecipe({ bucketId, document }))
   }
 }
 
@@ -61,6 +61,6 @@ export function deleteCollectionDocument(
   id: string,
 ): AppThunk<Promise<void>> {
   return async (dispatch) => {
-    dispatch(actions.deleteCollectionDocument({ bucketId, collection, id }))
+    dispatch(actions.deleteRecipe({ bucketId, id }))
   }
 }

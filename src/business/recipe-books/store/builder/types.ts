@@ -10,7 +10,7 @@ export type BucketsState<T extends BucketStructure> = {
 export type BucketState<T extends BucketStructure> = {
   entity: T['bucket']
   collections: {
-    [name in keyof T['collections']]: BucketCollectionState<T['collections'][name]>
+    [name in keyof T['collections']]?: BucketCollectionState<T['collections'][name]>
   }
 }
 
