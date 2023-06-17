@@ -27,10 +27,10 @@ export type BucketSliceOptions<T extends BucketStructure> = {
  * @param options additional options
  * @returns a new buckets slice
  */
-export function createBucketSlice<T extends BucketStructure, BN extends BucketName>(
+export function createBucketSlice<BN extends BucketName, T extends BucketStructure>(
   sliceName: BN,
   options: BucketSliceOptions<T>,
-): BucketsSlice<T, BN> {
+): BucketsSlice<BN, T> {
   type State = BucketsState<T>
 
   const { onActionError, initialState = { ids: [], buckets: {} } } = options
@@ -171,7 +171,7 @@ export function createBucketSlice<T extends BucketStructure, BN extends BucketNa
     reducer,
     bucketActions,
     collectionActions<CN extends keyof T['collections'] & CollectionName>(collectionName: CN) {
-      const actionsForCollection: CollectionActionCreator<T, BN, CN> = {
+      const actionsForCollection: CollectionActionCreator<BN, T, CN> = {
         addCollectionDocument: withCollectionName(collectionName, addCollectionDocument),
         updateCollectionDocument: withCollectionName(collectionName, updateCollectionDocument),
         deleteCollectionDocument: withCollectionName(collectionName, deleteCollectionDocument),

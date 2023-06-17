@@ -8,7 +8,7 @@ describe('createBucketSlice', () => {
   it('should create a bucket slice', () => {
     // act
     const onActionError = () => {}
-    const slice = createBucketSlice<BreakfastStructure, 'breakfasts'>('breakfasts', { onActionError })
+    const slice = createBucketSlice<'breakfasts', BreakfastStructure>('breakfasts', { onActionError })
 
     // assert
     expect(slice).toContainKeys(['name', 'getInitialState', 'reducer', 'bucketActions', 'collectionActions'])
@@ -17,7 +17,7 @@ describe('createBucketSlice', () => {
   it('should create a bucket slice with the correct name', () => {
     // act
     const onActionError = () => {}
-    const slice = createBucketSlice<BreakfastStructure, 'breakfasts'>('breakfasts', { onActionError })
+    const slice = createBucketSlice<'breakfasts', BreakfastStructure>('breakfasts', { onActionError })
 
     // assert
     expect(slice.name).toBe('breakfasts')
@@ -26,7 +26,7 @@ describe('createBucketSlice', () => {
   it('should create a bucket slice with the empty initial state', () => {
     // act
     const onActionError = () => {}
-    const { getInitialState } = createBucketSlice<BreakfastStructure, 'breakfasts'>('breakfasts', { onActionError })
+    const { getInitialState } = createBucketSlice<'breakfasts', BreakfastStructure>('breakfasts', { onActionError })
 
     // assert
     expect(getInitialState()).toEqual({
@@ -47,7 +47,7 @@ describe('createBucketSlice', () => {
         },
       },
     }
-    const { getInitialState } = createBucketSlice<BreakfastStructure, 'breakfasts'>('breakfasts', {
+    const { getInitialState } = createBucketSlice<'breakfasts', BreakfastStructure>('breakfasts', {
       onActionError,
       initialState,
     })
@@ -59,14 +59,14 @@ describe('createBucketSlice', () => {
   it('should create a bucket slice with the correct reducer', () => {
     // act
     const onActionError = () => {}
-    const { reducer } = createBucketSlice<BreakfastStructure, 'breakfasts'>('breakfasts', { onActionError })
+    const { reducer } = createBucketSlice<'breakfasts', BreakfastStructure>('breakfasts', { onActionError })
 
     // assert
     expect(reducer).toBeInstanceOf(Function)
   })
 
   describe('bucketActions', () => {
-    let slice: BucketsSlice<BreakfastStructure, 'breakfasts'>
+    let slice: BucketsSlice<'breakfasts', BreakfastStructure>
     let onActionError: Mock<Parameters<OnActionError>>
 
     beforeEach(() => {
@@ -417,10 +417,10 @@ describe('createBucketSlice', () => {
   })
 
   describe('collectionActions', () => {
-    let slice: BucketsSlice<BreakfastStructure, 'breakfasts'>
+    let slice: BucketsSlice<'breakfasts', BreakfastStructure>
     let onActionError: Mock<Parameters<OnActionError>>
-    let drinksActions: CollectionActionCreator<BreakfastStructure, 'breakfasts', 'drinks'>
-    let foodsActions: CollectionActionCreator<BreakfastStructure, 'breakfasts', 'foods'>
+    let drinksActions: CollectionActionCreator<'breakfasts', BreakfastStructure, 'drinks'>
+    let foodsActions: CollectionActionCreator<'breakfasts', BreakfastStructure, 'foods'>
 
     beforeEach(() => {
       onActionError = vitest.fn()

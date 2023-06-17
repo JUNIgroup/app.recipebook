@@ -30,7 +30,7 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError, setAdd
     setError(null)
     if (selectedBookId == null) return
     try {
-      await dispatch(fromRecipeBooks.refreshRecipes(selectedBookId))
+      await dispatch(fromRecipeBooks.refreshRecipes({ recipeBookId: selectedBookId }))
       // eslint-disable-next-line no-console
       console.log('Recipes fetched')
     } catch (err) {
@@ -51,7 +51,7 @@ export const FireRecipesColumn: React.FC<FireRecipesProps> = ({ setError, setAdd
         rev: 0,
       }
       try {
-        await dispatch(fromRecipeBooks.addRecipe(selectedBookId, recipe))
+        await dispatch(fromRecipeBooks.addRecipe({ recipeBookId: selectedBookId, recipe }))
 
         // eslint-disable-next-line no-console
         console.log('Document added with ID: ', recipe.id)

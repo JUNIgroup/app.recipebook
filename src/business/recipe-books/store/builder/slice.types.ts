@@ -56,9 +56,9 @@ export type BucketActionCreator<T extends BucketStructure> = {
  * Action creators for the types of actions which act directly on bucket collections and their documents.
  */
 export type CollectionActionCreator<
-  T extends BucketStructure,
   BN extends BucketName,
-  CN extends keyof T['collections'] & CollectionName,
+  T extends BucketStructure,
+  CN extends keyof T['collections'],
 > = {
   /**
    * Calling this redux#ActionCreator will return the "addCollectionDocument" redux#Action with the given document as payload.
@@ -121,7 +121,7 @@ export type CollectionActionCreator<
   >
 }
 
-export type BucketsSlice<T extends BucketStructure, BN extends BucketName> = {
+export type BucketsSlice<BN extends BucketName, T extends BucketStructure> = {
   /**
    * The name of the slice.
    *
@@ -152,5 +152,5 @@ export type BucketsSlice<T extends BucketStructure, BN extends BucketName> = {
    */
   collectionActions<CN extends keyof T['collections'] & CollectionName>(
     collectionName: CN,
-  ): CollectionActionCreator<T, BN, CN>
+  ): CollectionActionCreator<BN, T, CN>
 }

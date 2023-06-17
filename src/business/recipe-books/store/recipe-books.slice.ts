@@ -49,4 +49,4 @@ const actions = {
 }
 
 // Extract the action creators object and the reducer
-export { reducer, actions }
+export { reducer, actions, bucketActions, recipeActions }

@@ -40,17 +40,17 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
   const createBook = async (title: string) => {
     setError(null)
     try {
-      const book: RecipeBook = {
+      const recipeBook: RecipeBook = {
         id: ulid(),
         version: 1,
         rev: 0,
         title,
         subtitle: `created at ${new Date().toLocaleString()}`,
       }
-      await dispatch(fromRecipeBooks.addRecipeBook(book))
+      await dispatch(fromRecipeBooks.addRecipeBook({ recipeBook }))
       // eslint-disable-next-line no-console
       console.log(`Book created: ${title}`)
-      return book
+      return recipeBook
     } catch (err) {
       setError((err as Error).message)
       return null
@@ -60,7 +60,7 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
   const deleteBook = async (book: RecipeBook) => {
     setError(null)
     try {
-      await dispatch(fromRecipeBooks.deleteRecipeBook(book.id))
+      await dispatch(fromRecipeBooks.deleteRecipeBook({ recipeBookId: book.id }))
       // eslint-disable-next-line no-console
       console.log(`Book deleted: ${book.title}`)
     } catch (err) {

@@ -1,66 +1,75 @@
-import { AppThunk } from '../../app.store'
+import { ID } from '../database/database-types'
 import { Recipe, RecipeBook } from '../model'
-import { actions } from './recipe-books.slice'
+import {
+  createAddBucket,
+  createAddCollectionDocument,
+  createDeleteBucket,
+  createDeleteCollectionDocument,
+  createRefreshBucketDocuments,
+  createRefreshCollectionDocuments,
+  createUpdateBucketDocument,
+  createUpdateCollectionDocument,
+} from './builder/thunks'
+import { bucketActions, recipeActions } from './recipe-books.slice'
 
-type Collection = 'recipes'
+const prepareRecipeBook = (p: { recipeBook: RecipeBook }) => ({ document: p.recipeBook })
+const prepareRecipeBookId = (p: { recipeBookId: ID }) => ({ bucketId: p.recipeBookId })
+const prepareRecipe = (p: { recipeBookId: ID; recipe: Recipe }) => ({ bucketId: p.recipeBookId, document: p.recipe })
+const prepareRecipeId = (p: { recipeBookId: ID; recipeId: ID }) => ({ bucketId: p.recipeBookId, id: p.recipeId })
 
-export function refreshBucketDocuments(): AppThunk<Promise<void>> {
-  return async () => {
-    // not implemented yet
-  }
-}
+/**
+ * Refresh all recipe books but not the recipes.
+ */
+export const refreshRecipeBooks = createRefreshBucketDocuments(bucketActions)
 
-export function createBucket(recipeBook: RecipeBook): AppThunk<Promise<void>> {
-  return async (dispatch) => {
-    dispatch(actions.addRecipeBook({ document: recipeBook }))
-  }
-}
+/**
+ * Add a new recipe book to the database.
+ *
+ * @param recipeBook the recipe book to add
+ */
+export const addRecipeBook = createAddBucket(bucketActions, prepareRecipeBook)
 
-export function updateBucketDocument(recipeBook: RecipeBook): AppThunk<Promise<void>> {
-  return async (dispatch) => {
-    dispatch(actions.updateRecipeBook({ document: recipeBook }))
-  }
-}
+/**
+ * Update an existing recipe book in the database.
+ *
+ * @param recipeBook the recipe book to update
+ */
+export const updateRecipeBook = createUpdateBucketDocument(bucketActions, prepareRecipeBook)
 
-export function deleteBucket(bucketId: string): AppThunk<Promise<void>> {
-  return async (dispatch) => {
-    dispatch(actions.deleteRecipeBook({ bucketId }))
-  }
-}
+/**
+ * Delete an existing recipe book from the database.
+ *
+ * @param recipeBookId the id of the recipe book to delete
+ */
+export const deleteRecipeBook = createDeleteBucket(bucketActions, prepareRecipeBookId)
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function refreshCollectionDocuments(bucketId: string, collection: Collection): AppThunk<Promise<void>> {
-  return async () => {
-    // not implemented yet
-  }
-}
+/**
+ * Refresh all recipes of the specified recipe book.
+ *
+ * @param recipeBookId the ID of the recipe book, which recipes should be refreshed
+ */
+export const refreshRecipes = createRefreshCollectionDocuments(recipeActions, prepareRecipeBookId)
 
-export function addCollectionDocument(
-  bucketId: string,
-  collection: Collection,
-  document: Recipe,
-): AppThunk<Promise<void>> {
-  return async (dispatch) => {
-    dispatch(actions.addRecipe({ bucketId, document }))
-  }
-}
+/**
+ * Add a new recipe in the specified recipe book to the database.
+ *
+ * @param recipeBookId the ID of the recipe book
+ * @param recipe the recipe to add
+ */
+export const addRecipe = createAddCollectionDocument(recipeActions, prepareRecipe)
 
-export function updateCollectionDocument(
-  bucketId: string,
-  collection: Collection,
-  document: Recipe,
-): AppThunk<Promise<void>> {
-  return async (dispatch) => {
-    dispatch(actions.updateRecipe({ bucketId, document }))
-  }
-}
+/**
+ * Update an existing recipe in the specified recipe book in the database.
+ *
+ * @param recipeBookId the ID of the recipe book
+ * @param recipe the recipe to update
+ */
+export const updateRecipe = createUpdateCollectionDocument(recipeActions, prepareRecipe)
 
-export function deleteCollectionDocument(
-  bucketId: string,
-  collection: Collection,
-  id: string,
-): AppThunk<Promise<void>> {
-  return async (dispatch) => {
-    dispatch(actions.deleteRecipe({ bucketId, id }))
-  }
-}
+/**
+ * Delete an existing recipe from the specified recipe book in the database.
+ *
+ * @param recipeBookId the ID of the recipe book
+ * @param id the ID of the recipe to delete
+ */
+export const deleteRecipe = createDeleteCollectionDocument(recipeActions, prepareRecipeId)
