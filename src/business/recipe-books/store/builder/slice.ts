@@ -1,12 +1,12 @@
 /* eslint-disable no-param-reassign */
 
-import { ActionCreatorWithPayload, PayloadAction, createAction, createSlice } from '@reduxjs/toolkit'
+import { PayloadAction, createSlice } from '@reduxjs/toolkit'
 import { WritableDraft, castDraft } from '../../../../utilities/redux/draft'
-import { BucketName, BucketStructure, CollectionName, Doc, ID } from '../../database/database-types'
-import { BucketsSlice, CollectionActionCreator } from './slice.types'
+import { BucketName, BucketStructure, ID } from '../../database/database-types'
+import { BucketsActionCreator, BucketsSlice } from './slice.types'
 import { BucketCollectionState, BucketsState, OnActionError } from './types'
 
-export type BucketSliceOptions<T extends BucketStructure> = {
+export type BucketsSliceOptions<T extends BucketStructure> = {
   /**
    * A callback that is called, if an action is ignored because of an error.
    */
@@ -27,9 +27,9 @@ export type BucketSliceOptions<T extends BucketStructure> = {
  * @param options additional options
  * @returns a new buckets slice
  */
-export function createBucketSlice<BN extends BucketName, T extends BucketStructure>(
+export function createBucketsSlice<BN extends BucketName, T extends BucketStructure>(
   sliceName: BN,
-  options: BucketSliceOptions<T>,
+  options: BucketsSliceOptions<T>,
 ): BucketsSlice<BN, T> {
   type State = BucketsState<T>
 
@@ -79,9 +79,9 @@ export function createBucketSlice<BN extends BucketName, T extends BucketStructu
         delete state.buckets[bucketId]
       },
 
-      addCollectionDocument<CN extends keyof T['collections'], D extends T['collections'][CN]>(
+      addCollectionDocument<CN extends keyof T['collections']>(
         state: WritableDraft<State>,
-        action: PayloadAction<{ bucketId: ID; collectionName: CN; document: D }>,
+        action: PayloadAction<{ bucketId: ID; collectionName: CN; document: T['collections'][CN] }>,
       ) {
         const { bucketId, collectionName, document } = action.payload
         const { id } = document
@@ -91,7 +91,10 @@ export function createBucketSlice<BN extends BucketName, T extends BucketStructu
           return
         }
 
-        const collections = state.buckets[bucketId].collections as Record<CN, WritableDraft<BucketCollectionState<D>>>
+        const collections = state.buckets[bucketId].collections as Record<
+          CN,
+          WritableDraft<BucketCollectionState<T['collections'][CN]>>
+        >
         const collection = collections[collectionName]
         if (collection == null) {
           collections[collectionName] = castDraft({
@@ -110,9 +113,9 @@ export function createBucketSlice<BN extends BucketName, T extends BucketStructu
         collection.entities[id] = castDraft(document)
       },
 
-      updateCollectionDocument<CN extends keyof T['collections'], D extends Doc>(
+      updateCollectionDocument<CN extends keyof T['collections']>(
         state: WritableDraft<State>,
-        action: PayloadAction<{ bucketId: ID; collectionName: CN; document: D }>,
+        action: PayloadAction<{ bucketId: ID; collectionName: CN; document: T['collections'][CN] }>,
       ) {
         const { bucketId, collectionName, document } = action.payload
         const { id } = document
@@ -122,7 +125,10 @@ export function createBucketSlice<BN extends BucketName, T extends BucketStructu
           return
         }
 
-        const collections = state.buckets[bucketId].collections as Record<CN, WritableDraft<BucketCollectionState<D>>>
+        const collections = state.buckets[bucketId].collections as Record<
+          CN,
+          WritableDraft<BucketCollectionState<T['collections'][CN]>>
+        >
         const collection = collections[collectionName]
         if (collection == null || !collection.entities[id]) {
           onActionError(action, `document id '${id}' does not exist`)
@@ -132,7 +138,7 @@ export function createBucketSlice<BN extends BucketName, T extends BucketStructu
         collection.entities[id] = castDraft(document)
       },
 
-      deleteCollectionDocument<CN extends keyof T['collections'], D extends Doc>(
+      deleteCollectionDocument<CN extends keyof T['collections']>(
         state: WritableDraft<State>,
         action: PayloadAction<{ bucketId: ID; collectionName: CN; id: ID }>,
       ) {
@@ -143,7 +149,10 @@ export function createBucketSlice<BN extends BucketName, T extends BucketStructu
           return
         }
 
-        const collections = state.buckets[bucketId].collections as Record<CN, WritableDraft<BucketCollectionState<D>>>
+        const collections = state.buckets[bucketId].collections as Record<
+          CN,
+          WritableDraft<BucketCollectionState<never>>
+        >
         const collection = collections[collectionName]
         if (collection == null || !collection.entities[id]) {
           onActionError(action, `document id '${id}' does not exist`)
@@ -162,32 +171,6 @@ export function createBucketSlice<BN extends BucketName, T extends BucketStructu
       },
     },
   })
-
   const { getInitialState, reducer, actions } = slice
-  const { addCollectionDocument, updateCollectionDocument, deleteCollectionDocument, ...bucketActions } = actions
-  return {
-    name: sliceName,
-    getInitialState,
-    reducer,
-    bucketActions,
-    collectionActions<CN extends keyof T['collections'] & CollectionName>(collectionName: CN) {
-      const actionsForCollection: CollectionActionCreator<BN, T, CN> = {
-        addCollectionDocument: withCollectionName(collectionName, addCollectionDocument),
-        updateCollectionDocument: withCollectionName(collectionName, updateCollectionDocument),
-        deleteCollectionDocument: withCollectionName(collectionName, deleteCollectionDocument),
-      }
-      return actionsForCollection
-    },
-  }
-}
-
-function withCollectionName<
-  T extends string,
-  CN extends string,
-  P extends { collectionName: CN },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  A extends ActionCreatorWithPayload<any, T>,
->(collectionName: CN, actionCreator: A) {
-  type PA = (payload: Omit<P, 'collectionName'>) => { payload: P }
-  return createAction<PA, T>(actionCreator.type, (payload) => ({ payload: { ...payload, collectionName } as P }))
+  return { name: sliceName, getInitialState, reducer, actions: actions as BucketsActionCreator<T> }
 }

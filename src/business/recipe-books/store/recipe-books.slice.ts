@@ -3,7 +3,7 @@
 import { actionError } from '../../helper/redux/redux-action-helper'
 import { Recipe, RecipeBook } from '../model'
 import { fullRecipe, fullRecipeBook } from '../model/recipe-books.samples'
-import { createBucketSlice } from './builder/slice'
+import { createBucketsSlice } from './builder/slice'
 import { BucketsState } from './builder/types'
 
 export type RecipeBookStructure = {
@@ -30,23 +30,9 @@ const initialState: RecipeBooksState = {
   },
 }
 
-const bucketSlice = createBucketSlice('recipeBooks', {
+const bucketSlice = createBucketsSlice('recipeBooks', {
   onActionError: (action, error) => actionError(action, error),
   initialState,
 })
 
-const { reducer, bucketActions, collectionActions } = bucketSlice
-const { addBucket, updateBucketDocument, deleteBucket } = bucketActions
-const recipeActions = collectionActions('recipes')
-
-const actions = {
-  addRecipeBook: addBucket,
-  updateRecipeBook: updateBucketDocument,
-  deleteRecipeBook: deleteBucket,
-  addRecipe: recipeActions.addCollectionDocument,
-  updateRecipe: recipeActions.updateCollectionDocument,
-  deleteRecipe: recipeActions.deleteCollectionDocument,
-}
-
-// Extract the action creators object and the reducer
-export { reducer, actions, bucketActions, recipeActions }
+export const { reducer, actions } = bucketSlice

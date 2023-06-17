@@ -1,6 +1,6 @@
 import { AnyAction, ThunkAction } from '@reduxjs/toolkit'
 import { BucketStructure, ID } from '../../database/database-types'
-import { BucketActionCreator, CollectionActionCreator } from './slice.types'
+import { BucketsActionCreator } from './slice.types'
 
 type Services = Record<string, unknown>
 
@@ -15,12 +15,12 @@ type ThunkActionCreatorWithPayload<P, R = Promise<void>> = (payload: P) => Thunk
  *
  * The thunk action returns a promise that resolves when the action is completed.
  *
- * @param _bucketActions access to the sync bucket actions of the slice
+ * @param _actions access to the sync bucket actions of the slice
  * @returns the action creator
  */
 export function createRefreshBucketDocuments<T extends BucketStructure>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _bucketActions: BucketActionCreator<T>,
+  actions: BucketsActionCreator<T>,
 ): ThunkActionCreator {
   return () => async () => {
     // not implemented yet
@@ -34,16 +34,16 @@ export function createRefreshBucketDocuments<T extends BucketStructure>(
  *
  * The thunk action returns a promise that resolves when the action is completed.
  *
- * @param bucketActions access to the sync bucket actions of the slice
+ * @param actions access to the sync bucket actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 export function createAddBucket<T extends BucketStructure, P>(
-  bucketActions: BucketActionCreator<T>,
+  actions: BucketsActionCreator<T>,
   prepare: (payload: P) => { document: T['bucket'] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
-    dispatch(bucketActions.addBucket(prepare(payload)))
+    dispatch(actions.addBucket(prepare(payload)))
   }
 }
 
@@ -54,16 +54,16 @@ export function createAddBucket<T extends BucketStructure, P>(
  *
  * The thunk action returns a promise that resolves when the action is completed.
  *
- * @param bucketActions access to the sync bucket actions of the slice
+ * @param actions access to the sync bucket actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 export function createUpdateBucketDocument<T extends BucketStructure, P>(
-  bucketActions: BucketActionCreator<T>,
+  actions: BucketsActionCreator<T>,
   prepare: (payload: P) => { document: T['bucket'] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
-    dispatch(bucketActions.updateBucketDocument(prepare(payload)))
+    dispatch(actions.updateBucketDocument(prepare(payload)))
   }
 }
 
@@ -74,29 +74,29 @@ export function createUpdateBucketDocument<T extends BucketStructure, P>(
  *
  * The thunk action returns a promise that resolves when the action is completed.
  *
- * @param bucketActions access to the sync bucket actions of the slice
+ * @param actions access to the sync bucket actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 export function createDeleteBucket<T extends BucketStructure, P>(
-  bucketActions: BucketActionCreator<T>,
+  actions: BucketsActionCreator<T>,
   prepare: (payload: P) => { bucketId: ID },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
-    dispatch(bucketActions.deleteBucket(prepare(payload)))
+    dispatch(actions.deleteBucket(prepare(payload)))
   }
 }
 
 /**
  * Returns a action creator that creates a async thunk action to refresh all collection documents of a bucket.
  *
- * @param collectionActions access to the sync collection actions of the slice
+ * @param actions access to the sync collection actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export function createRefreshCollectionDocuments<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  collectionActions: CollectionActionCreator<string, T, CN>,
+  actions: BucketsActionCreator<T>,
   prepare: (payload: P) => { bucketId: ID },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload: P) => async () => {
@@ -108,47 +108,47 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
 /**
  * Returns a action creator that creates a async thunk action to add a new collection document.
  *
- * @param collectionActions access to the sync collection actions of the slice
+ * @param actions access to the sync collection actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 export function createAddCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  collectionActions: CollectionActionCreator<string, T, CN>,
-  prepare: (payload: P) => { bucketId: ID; document: T['collections'][CN] },
+  actions: BucketsActionCreator<T>,
+  prepare: (payload: P) => { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
-    dispatch(collectionActions.addCollectionDocument(prepare(payload)))
+    dispatch(actions.addCollectionDocument(prepare(payload)))
   }
 }
 
 /**
  * Returns a action creator that creates a async thunk action to update a collection document.
  *
- * @param collectionActions access to the sync collection actions of the slice
+ * @param actions access to the sync collection actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 export function createUpdateCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  collectionActions: CollectionActionCreator<string, T, CN>,
-  prepare: (payload: P) => { bucketId: ID; document: T['collections'][CN] },
+  actions: BucketsActionCreator<T>,
+  prepare: (payload: P) => { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
-    dispatch(collectionActions.updateCollectionDocument(prepare(payload)))
+    dispatch(actions.updateCollectionDocument(prepare(payload)))
   }
 }
 
 /**
  * Returns a action creator that creates a async thunk action to delete a collection document.
  *
- * @param collectionActions access to the sync collection actions of the slice
+ * @param actions access to the sync collection actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 export function createDeleteCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  collectionActions: CollectionActionCreator<string, T, CN>,
-  prepare: (payload: P) => { bucketId: ID; id: ID },
+  actions: BucketsActionCreator<T>,
+  prepare: (payload: P) => { bucketId: ID; collectionName: CN; id: ID },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
-    dispatch(collectionActions.deleteCollectionDocument(prepare(payload)))
+    dispatch(actions.deleteCollectionDocument(prepare(payload)))
   }
 }

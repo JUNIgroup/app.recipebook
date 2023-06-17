@@ -1,13 +1,11 @@
-/* eslint-disable no-param-reassign */
-
 import { PayloadAction, Reducer } from '@reduxjs/toolkit'
-import { BucketName, BucketStructure, CollectionName, ID } from '../../database/database-types'
+import { BucketName, BucketStructure, ID } from '../../database/database-types'
 import { BucketsState } from './types'
 
 /**
- * Action creators for the types of actions which act directly on buckets and bucket document.
+ * Action creators functions.
  */
-export type BucketActionCreator<T extends BucketStructure> = {
+export type BucketsActionCreator<T extends BucketStructure> = {
   /**
    * Calling this redux#ActionCreator will return the "addBucket" redux#Action with the given document as payload.
    *
@@ -18,7 +16,7 @@ export type BucketActionCreator<T extends BucketStructure> = {
    * @param document the bucket document
    * @returns the "addBucket" redux#Action with the given document as payload
    */
-  addBucket: (payload: { document: T['bucket'] }) => PayloadAction<{ document: T['bucket'] }>
+  addBucket: <Payload = { document: T['bucket'] }>(payload: Payload) => PayloadAction<Payload>
 
   /**
    * Calling this redux#ActionCreator will return the "updateBucketDocument" redux#Action with the given document as payload.
@@ -30,7 +28,7 @@ export type BucketActionCreator<T extends BucketStructure> = {
    * @param document the new bucket document
    * @returns the "updateBucketDocument" redux#Action with the given document as payload
    */
-  updateBucketDocument: (payload: { document: T['bucket'] }) => PayloadAction<{ document: T['bucket'] }>
+  updateBucketDocument: <Payload = { document: T['bucket'] }>(payload: Payload) => PayloadAction<Payload>
 
   /**
    * Calling this redux#ActionCreator will return the "deleteBucket" redux#Action with the given id as payload.
@@ -42,24 +40,8 @@ export type BucketActionCreator<T extends BucketStructure> = {
    * @param bucketId the id of the bucket to delete
    * @returns the "deleteBucket" redux#Action with the given id as payload
    */
-  deleteBucket: (payload: { bucketId: ID }) => PayloadAction<{ bucketId: ID }>
+  deleteBucket: <Payload = { bucketId: ID }>(payload: Payload) => PayloadAction<Payload>
 
-  /**
-   * Calling this redux#ActionCreator will return the "clear" redux#Action without payload.
-   *
-   * The "clear" action will remove all buckets and collections.
-   */
-  clear(): PayloadAction<void>
-}
-
-/**
- * Action creators for the types of actions which act directly on bucket collections and their documents.
- */
-export type CollectionActionCreator<
-  BN extends BucketName,
-  T extends BucketStructure,
-  CN extends keyof T['collections'],
-> = {
   /**
    * Calling this redux#ActionCreator will return the "addCollectionDocument" redux#Action with the given document as payload.
    *
@@ -71,14 +53,12 @@ export type CollectionActionCreator<
    * @param document the collection document
    * @returns the "addCollectionDocument" redux#Action with the given document as payload
    */
-  addCollectionDocument: (payload: { bucketId: ID; document: T['collections'][CN] }) => PayloadAction<
-    {
-      bucketId: ID
-      collectionName: CN
-      document: T['collections'][CN]
-    },
-    `${BN}/addCollectionDocument`
-  >
+  addCollectionDocument: <
+    CN extends keyof T['collections'],
+    Payload = { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
+  >(
+    payload: Payload,
+  ) => PayloadAction<Payload>
 
   /**
    * Calling this redux#ActionCreator will return the "updateCollectionDocument" redux#Action with the given document as payload.
@@ -91,14 +71,12 @@ export type CollectionActionCreator<
    * @param document the new collection document
    * @returns the "updateCollectionDocument" redux#Action with the given document as payload
    */
-  updateCollectionDocument: (payload: { bucketId: ID; document: T['collections'][CN] }) => PayloadAction<
-    {
-      bucketId: ID
-      collectionName: CN
-      document: T['collections'][CN]
-    },
-    `${BN}/updateCollectionDocument`
-  >
+  updateCollectionDocument: <
+    CN extends keyof T['collections'],
+    Payload = { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
+  >(
+    payload: Payload,
+  ) => PayloadAction<Payload>
 
   /**
    * Calling this redux#ActionCreator will return the "deleteCollectionDocument" redux#Action with the given id as payload.
@@ -111,14 +89,16 @@ export type CollectionActionCreator<
    * @param id the id of the document to delete
    * @returns the "deleteCollectionDocument" redux#Action with the given id as payload
    */
-  deleteCollectionDocument: (payload: { bucketId: ID; id: ID }) => PayloadAction<
-    {
-      bucketId: ID
-      collectionName: CN
-      id: ID
-    },
-    `${BN}/deleteCollectionDocument`
-  >
+  deleteCollectionDocument: <CN extends keyof T['collections'], Payload = { bucketId: ID; collectionName: CN; id: ID }>(
+    payload: Payload,
+  ) => PayloadAction<Payload>
+
+  /**
+   * Calling this redux#ActionCreator will return the "clear" redux#Action without payload.
+   *
+   * The "clear" action will remove all buckets and collections.
+   */
+  clear(): PayloadAction<void>
 }
 
 export type BucketsSlice<BN extends BucketName, T extends BucketStructure> = {
@@ -143,14 +123,7 @@ export type BucketsSlice<BN extends BucketName, T extends BucketStructure> = {
   readonly reducer: Reducer<BucketsState<T>>
 
   /**
-   * Action creators for the types of actions that act directly on buckets and bucket document.
+   * Action creators.
    */
-  readonly bucketActions: BucketActionCreator<T>
-
-  /**
-   * A factory for the action creators of the given collection.
-   */
-  collectionActions<CN extends keyof T['collections'] & CollectionName>(
-    collectionName: CN,
-  ): CollectionActionCreator<BN, T, CN>
+  readonly actions: BucketsActionCreator<T>
 }
