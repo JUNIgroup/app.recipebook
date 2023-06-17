@@ -4,7 +4,7 @@ import type { AuthService } from './auth/service/auth-service'
 import { authReducer } from './auth/store/auth.slice'
 import { dbReducer } from './db/store/db.slice'
 import { recipesReducer } from './recipes/store/recipe.slice'
-import { recipeBooksReducer } from './recipe-books/store/recipe-books.reducer'
+import { recipeBooksReducer } from './recipe-books/store'
 
 export type Services = {
   storage: Storage
