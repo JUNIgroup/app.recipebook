@@ -69,7 +69,7 @@ export class FirestoreRestService implements FirestoreService {
     return `${await options.apiEndpoint}/projects/${options.projectId}/databases/${options.databaseId}/documents`
   }
 
-  readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<ReadDoc> {
+  readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<ReadDoc[]> {
     return new Observable((subscriber) => {
       const abortController = new AbortController()
       this.getDocsQuery(subscriber, abortController, collectionPath, after)
@@ -81,7 +81,7 @@ export class FirestoreRestService implements FirestoreService {
    * @see https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/runQuery
    */
   private async getDocsQuery(
-    subscriber: Subscriber<ReadDoc>,
+    subscriber: Subscriber<ReadDoc[]>,
     abortController: AbortController,
     collectionPath: string[],
     after?: EpochTimestamp,
@@ -106,9 +106,8 @@ export class FirestoreRestService implements FirestoreService {
         },
       }
       const data = await this.fetch<QueryResponseData>('POST', url, payload, { signal: abortController.signal })
-      data.forEach((item) => {
-        if (item.document) subscriber.next(convertDocumentToResult(item.document))
-      })
+      const results = data.filter((item) => item.document).map((item) => convertDocumentToResult(item.document))
+      if (results.length > 0) subscriber.next(results)
       if (data[data.length - 1].done) subscriber.complete()
     } catch (error) {
       subscriber.error(error)

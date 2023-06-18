@@ -1,14 +1,24 @@
-import { Observable, defer, filter, of } from 'rxjs'
+import { Observable, bufferCount, defer, filter, of } from 'rxjs'
 import { FirestoreService, ReadDoc } from './firestore-service.api'
 
 export class FirestoreMockService implements FirestoreService {
   mockData: Map<string, Record<string, ReadDoc>> = new Map()
 
-  readDocs(collectionPath: string[], after?: number | undefined): Observable<ReadDoc> {
+  /**
+   * Number of documents, `readDocs` returns in each batch.
+   *
+   * @default all documents in one batch
+   */
+  readDocsBatchSize?: number
+
+  readDocs(collectionPath: string[], after?: number | undefined): Observable<ReadDoc[]> {
     return defer(() => {
       const record = this.getRecord(collectionPath)
-      const docs = Object.values(record)
-      return of(...docs).pipe(filter((doc) => !after || doc.lastUpdate > after))
+      const docs = Object.values(record).sort((a, b) => a.lastUpdate - b.lastUpdate)
+      return of(...docs).pipe(
+        filter((doc) => !after || doc.lastUpdate > after),
+        bufferCount(this.readDocsBatchSize ?? docs.length),
+      )
     })
   }
 

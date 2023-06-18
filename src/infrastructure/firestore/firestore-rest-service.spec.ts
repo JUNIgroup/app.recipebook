@@ -10,10 +10,6 @@ import { FirestoreOptions, FirestoreRestService } from './firestore-rest-service
 const emulatorAvailable = await isEmulatorAvailable()
 const firestoreEmulator = emulatorAvailable?.firestore
 
-function byNumber<T>(extractor: (value: T) => number) {
-  return (a: T, b: T) => extractor(a) - extractor(b)
-}
-
 describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
   const { host: firestoreHost = '', port: firestorePort = 0 } = firestoreEmulator ?? {}
 
@@ -136,7 +132,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         const result = await collectFrom(db.readDocs(path, after))
 
         // assert
-        expect(result).toEqual([
+        expect(result.flat()).toEqual([
           {
             lastUpdate: requestTime.getTime(),
             doc: {
@@ -187,8 +183,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         const results = await collectFrom(db.readDocs(path))
 
         // assert
-        results.sort(byNumber((result) => result.lastUpdate))
-        expect(results).toEqual([
+        expect(results.flat()).toEqual([
           {
             lastUpdate: requestTime1.getTime(),
             doc: { foo: randomString1, bar: 1 },
@@ -254,8 +249,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         const results = await collectFrom(db.readDocs(path, requestTime2.getTime()))
 
         // assert
-        results.sort(byNumber((result) => result.lastUpdate))
-        expect(results).toEqual([
+        expect(results.flat()).toEqual([
           {
             lastUpdate: requestTime1update.getTime(),
             doc: { foo: randomString1update, bar: 1 },
@@ -414,14 +408,14 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         await db.writeDoc([...path, 'foo'], doc1)
         await db.writeDoc([...path, 'bar'], doc2)
         const results1 = await collectFrom(db.readDocs(path))
-        const totalLastUpdate = results1[1].lastUpdate
+        const totalLastUpdate = results1[0][1].lastUpdate
 
         await db.writeDoc([...path, 'foo'], doc1update)
         await db.writeDoc([...path, 'baz'], doc3)
         const results2 = await collectFrom(db.readDocs(path, totalLastUpdate))
 
         // assert
-        expect(results1, 'before timestamp').toEqual([
+        expect(results1.flat(), 'before timestamp').toEqual([
           {
             lastUpdate: expect.any(Number),
             doc: { foo: doc1.foo, bar: doc1.bar },
@@ -431,7 +425,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
             doc: { foo: doc2.foo, bar: doc2.bar },
           },
         ])
-        expect(results2, 'after timestamp').toEqual([
+        expect(results2.flat(), 'after timestamp').toEqual([
           {
             lastUpdate: expect.any(Number),
             doc: { foo: doc1update.foo, bar: doc1update.bar },
@@ -499,7 +493,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
       const result = await collectFrom(db.readDocs(path, after))
 
       // assert
-      expect(result).toEqual([
+      expect(result.flat()).toEqual([
         {
           lastUpdate: requestTime.getTime(),
           doc: {

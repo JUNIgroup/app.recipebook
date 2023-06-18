@@ -25,11 +25,14 @@ export interface FirestoreService {
   /**
    * Read documents from the database.
    *
+   * - The documents are returned in the order of their last update.
+   * - The documents are returned in batches.
+   *
    * @param collectionPath the path to the collection to read from. Mast have an odd number of elements.
    * @param after (optional) only read documents that have been updated after this timestamp.
    * @returns an observable that emits the documents in the collection.
    */
-  readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<ReadDoc>
+  readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<Array<ReadDoc>>
 
   /**
    * Read a single document from the database.

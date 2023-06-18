@@ -1,4 +1,4 @@
-import { lastValueFrom, map, max } from 'rxjs'
+import { lastValueFrom, mergeMap } from 'rxjs'
 import { collectFrom } from '../../../../infrastructure/database/helpers/collect-from'
 import { FirestoreOptions, FirestoreRestService } from '../../../../infrastructure/firestore/firestore-rest-service'
 import { isEmulatorAvailable } from '../../../../utilities/firebase/emulator-utils'
@@ -140,7 +140,7 @@ describe('FirestoreDatabase', () => {
           const result = await collectFrom(db.getDocs(path))
 
           // assert
-          expect(result).toEqual([
+          expect(result.flat()).toEqual([
             {
               lastUpdate: expect.any(Number),
               doc: { id: 'foo', rev: 1, content: { bar: 'baz' } },
@@ -158,7 +158,7 @@ describe('FirestoreDatabase', () => {
           const result = await collectFrom(db.getDocs(path))
 
           // assert
-          expect(result).toEqual([
+          expect(result.flat()).toEqual([
             {
               lastUpdate: expect.any(Number),
               doc: { id: 'foo', rev: 1, content: { bar: 'baz' } },
@@ -180,8 +180,7 @@ describe('FirestoreDatabase', () => {
           const result = await collectFrom(db.getDocs(path))
 
           // assert
-          result.sort(byNumber((doc) => doc.lastUpdate))
-          expect(result).toEqual([
+          expect(result.flat()).toEqual([
             {
               lastUpdate: expect.any(Number),
               doc: { id: 'foo', rev: 1, content: { bar: 'baz' } },
@@ -211,8 +210,7 @@ describe('FirestoreDatabase', () => {
           const result = await collectFrom(db.getDocs(path))
 
           // assert
-          result.sort(byNumber((doc) => doc.lastUpdate))
-          expect(result).toEqual([
+          expect(result.flat()).toEqual([
             {
               lastUpdate: expect.any(Number),
               doc: { id: 'foo', rev: 1, content: { bar: 'baz' } },
@@ -236,11 +234,8 @@ describe('FirestoreDatabase', () => {
           await firestoreService.writeDoc([path.bucket, doc1.id], doc1)
           await firestoreService.writeDoc([path.bucket, doc2.id], doc2)
 
-          const lastUpdate = await lastValueFrom(
-            firestoreService.readDocs([path.bucket]).pipe(
-              map((doc) => doc.lastUpdate),
-              max(),
-            ),
+          const { lastUpdate } = await lastValueFrom(
+            firestoreService.readDocs([path.bucket]).pipe(mergeMap((batch) => batch)),
           )
           await delay(10)
 
@@ -253,8 +248,7 @@ describe('FirestoreDatabase', () => {
           const result = await collectFrom(db.getDocs(path, lastUpdate))
 
           // assert
-          result.sort(byNumber((doc) => doc.lastUpdate))
-          expect(result).toEqual([
+          expect(result.flat()).toEqual([
             {
               lastUpdate: expect.any(Number),
               doc: { id: 'bar', rev: 3, content: { baz: 'foo-update' } },
@@ -274,11 +268,8 @@ describe('FirestoreDatabase', () => {
           await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc1.id], doc1)
           await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc2.id], doc2)
 
-          const lastUpdate = await lastValueFrom(
-            firestoreService.readDocs([path.bucket, path.bucketId, path.collection]).pipe(
-              map((doc) => doc.lastUpdate),
-              max(),
-            ),
+          const { lastUpdate } = await lastValueFrom(
+            firestoreService.readDocs([path.bucket, path.bucketId, path.collection]).pipe(mergeMap((batch) => batch)),
           )
           await delay(10)
 
@@ -291,8 +282,7 @@ describe('FirestoreDatabase', () => {
           const result = await collectFrom(db.getDocs(path, lastUpdate))
 
           // assert
-          result.sort(byNumber((doc) => doc.lastUpdate))
-          expect(result).toEqual([
+          expect(result.flat()).toEqual([
             {
               lastUpdate: expect.any(Number),
               doc: { id: 'bar', rev: 3, content: { baz: 'foo-update' } },
@@ -515,7 +505,7 @@ describe('FirestoreDatabase', () => {
 
           // assert
           const documents = await collectFrom(firestoreService.readDocs([path.bucket]))
-          expect(documents).toEqual([
+          expect(documents.flat()).toEqual([
             {
               lastUpdate: expect.any(Number),
               doc: { id: 'bar', rev: 2, content: { baz: 'foo' } },
@@ -536,7 +526,7 @@ describe('FirestoreDatabase', () => {
 
           // assert
           const documents = await collectFrom(firestoreService.readDocs([path.bucket, path.bucketId, path.collection]))
-          expect(documents).toEqual([
+          expect(documents.flat()).toEqual([
             {
               lastUpdate: expect.any(Number),
               doc: { id: 'bar', rev: 2, content: { baz: 'foo' } },
@@ -547,10 +537,6 @@ describe('FirestoreDatabase', () => {
     }),
   )
 })
-
-function byNumber<T>(extractor: (value: T) => number) {
-  return (a: T, b: T) => extractor(a) - extractor(b)
-}
 
 function delay(timeInMs: number): Promise<void> {
   return new Promise((resolve) => {

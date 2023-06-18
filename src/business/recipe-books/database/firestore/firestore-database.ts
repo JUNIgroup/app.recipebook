@@ -15,17 +15,16 @@ export class FirestoreDatabase implements Database {
     this.log = logger('business:FirestoreDatabase')
   }
 
-  getDocs(path: CollectionPath, after?: EpochTimestamp): Observable<Result<Doc>> {
+  getDocs(path: CollectionPath, after?: EpochTimestamp): Observable<Array<Result<Doc>>> {
     const time0 = Date.now()
     const operation = encodeTime(time0, 10)
-    const count = 0
     this.log.info(`${operation} getDocs of ${asLogPath(path)}${after ? ` after ${new Date(after)}` : ''}`)
 
     const parentPath = asParentPath(path)
     return this.firestoreService.readDocs(parentPath, after).pipe(
-      map((readDoc) => readDoc as Result<Doc>),
+      map((readDocs) => readDocs as Array<Result<Doc>>),
       tap({
-        next: (result) => this.log.details(`${operation} [${count}]`, result),
+        next: (results) => this.log.details(`${operation}`, results),
         complete: () => this.log.details(`${operation} took ${(Date.now() - time0) / 1000}ms`),
       }),
     )

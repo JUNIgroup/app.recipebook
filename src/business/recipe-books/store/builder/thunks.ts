@@ -1,8 +1,7 @@
 import { AnyAction, ThunkAction } from '@reduxjs/toolkit'
-import { SchedulerLike, bufferTime, map, tap } from 'rxjs'
 import { Log } from '../../../../utilities/logger'
 import { CollectionPath, Database } from '../../database/database'
-import { BucketName, BucketStructure, ID, CollectionName } from '../../database/database-types'
+import { BucketName, BucketStructure, CollectionName, ID } from '../../database/database-types'
 import { BucketsActionCreator } from './slice.types'
 
 type Services = {
@@ -17,7 +16,6 @@ type ThunkActionCreatorWithPayload<P, R = Promise<void>> = (payload: P) => Thunk
 export type ThunkContext<T extends BucketStructure> = {
   sliceName: BucketName
   actions: BucketsActionCreator<T>
-  scheduler?: SchedulerLike
 }
 
 /**
@@ -33,7 +31,6 @@ export type ThunkContext<T extends BucketStructure> = {
 export function createRefreshBucketDocuments<T extends BucketStructure>({
   sliceName,
   actions,
-  scheduler,
 }: ThunkContext<T>): ThunkActionCreator {
   const collectionPath: CollectionPath = { bucket: sliceName }
   return () => async (dispatch, _, extra) => {
@@ -45,21 +42,16 @@ export function createRefreshBucketDocuments<T extends BucketStructure>({
 
     let lastUpdate: number | undefined // Number.NEGATIVE_INFINITY
     await new Promise<void>((resolve, reject) => {
-      database
-        .getDocs(collectionPath)
-        .pipe(
-          tap((result) => log.details(`${task}/${result.doc.id}: `, result.lastUpdate)),
-          tap((result) => {
-            lastUpdate = Math.max(result.lastUpdate, lastUpdate ?? Number.NEGATIVE_INFINITY)
-          }),
-          map((result) => result.doc),
-          bufferTime(10, scheduler),
-        )
-        .subscribe({
-          next: (documents) => dispatch(actions.upsertBuckets({ documents })),
-          complete: resolve,
-          error: reject,
-        })
+      database.getDocs(collectionPath).subscribe({
+        next: (results) => {
+          results.forEach((result) => log.details(`${task}/${result.doc.id}: `, result.lastUpdate))
+          lastUpdate = results[results.length - 1].lastUpdate
+          const documents = results.map((result) => result.doc)
+          dispatch(actions.upsertBuckets({ documents }))
+        },
+        complete: resolve,
+        error: reject,
+      })
     })
     log.details(`${task} done: ${lastUpdate}`)
   }
@@ -166,7 +158,7 @@ export function createDeleteBucket<T extends BucketStructure, P>(
  * @returns the action creator
  */
 export function createRefreshCollectionDocuments<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  { sliceName, actions, scheduler }: ThunkContext<T>,
+  { sliceName, actions }: ThunkContext<T>,
   prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload: P) => async (dispatch, _, extra) => {
@@ -181,21 +173,16 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
 
     let lastUpdate: number | undefined // Number.NEGATIVE_INFINITY
     await new Promise<void>((resolve, reject) => {
-      database
-        .getDocs(collectionPath)
-        .pipe(
-          tap((result) => log.details(`${task}/${result.doc.id}: `, result.lastUpdate)),
-          tap((result) => {
-            lastUpdate = Math.max(result.lastUpdate, lastUpdate ?? Number.NEGATIVE_INFINITY)
-          }),
-          map((result) => result.doc),
-          bufferTime(10, scheduler),
-        )
-        .subscribe({
-          next: (documents) => dispatch(actions.upsertCollection({ bucketId, collectionName, documents })),
-          complete: resolve,
-          error: reject,
-        })
+      database.getDocs(collectionPath).subscribe({
+        next: (results) => {
+          results.forEach((result) => log.details(`${task}/${result.doc.id}: `, result.lastUpdate))
+          lastUpdate = results[results.length - 1].lastUpdate
+          const documents = results.map((result) => result.doc)
+          dispatch(actions.upsertCollection({ bucketId, collectionName, documents }))
+        },
+        complete: resolve,
+        error: reject,
+      })
     })
     log.details(`${task} done: ${lastUpdate}`)
   }
