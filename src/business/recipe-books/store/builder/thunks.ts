@@ -1,12 +1,24 @@
 import { AnyAction, ThunkAction } from '@reduxjs/toolkit'
-import { BucketStructure, ID } from '../../database/database-types'
+import { SchedulerLike } from 'rxjs'
+import { Log } from '../../../../utilities/logger'
+import { Database } from '../../database/database'
+import { BucketName, BucketStructure, ID } from '../../database/database-types'
 import { BucketsActionCreator } from './slice.types'
 
-type Services = Record<string, unknown>
+type Services = {
+  database: Database
+  thunkLogs: Record<string, Log>
+}
 
 type ThunkActionCreator<R = Promise<void>> = () => ThunkAction<R, unknown, Services, AnyAction>
 
 type ThunkActionCreatorWithPayload<P, R = Promise<void>> = (payload: P) => ThunkAction<R, unknown, Services, AnyAction>
+
+export type ThunkContext<T extends BucketStructure> = {
+  sliceName: BucketName
+  actions: BucketsActionCreator<T>
+  scheduler?: SchedulerLike
+}
 
 /**
  * Returns a action creator that creates a async thunk action to refresh all bucket documents.
@@ -20,7 +32,7 @@ type ThunkActionCreatorWithPayload<P, R = Promise<void>> = (payload: P) => Thunk
  */
 export function createRefreshBucketDocuments<T extends BucketStructure>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  actions: BucketsActionCreator<T>,
+  ctx: ThunkContext<T>,
 ): ThunkActionCreator {
   return () => async () => {
     // not implemented yet
@@ -39,7 +51,7 @@ export function createRefreshBucketDocuments<T extends BucketStructure>(
  * @returns the action creator
  */
 export function createAddBucket<T extends BucketStructure, P>(
-  actions: BucketsActionCreator<T>,
+  { actions }: ThunkContext<T>,
   prepare: (payload: P) => { document: T['bucket'] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
@@ -59,7 +71,7 @@ export function createAddBucket<T extends BucketStructure, P>(
  * @returns the action creator
  */
 export function createUpdateBucketDocument<T extends BucketStructure, P>(
-  actions: BucketsActionCreator<T>,
+  { actions }: ThunkContext<T>,
   prepare: (payload: P) => { document: T['bucket'] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
@@ -79,7 +91,7 @@ export function createUpdateBucketDocument<T extends BucketStructure, P>(
  * @returns the action creator
  */
 export function createDeleteBucket<T extends BucketStructure, P>(
-  actions: BucketsActionCreator<T>,
+  { actions }: ThunkContext<T>,
   prepare: (payload: P) => { bucketId: ID },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
@@ -91,15 +103,15 @@ export function createDeleteBucket<T extends BucketStructure, P>(
  * Returns a action creator that creates a async thunk action to refresh all collection documents of a bucket.
  *
  * @param actions access to the sync collection actions of the slice
- * @param prepare a function to convert the domain specific payload to the generic action payload
+ * @param _prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export function createRefreshCollectionDocuments<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  actions: BucketsActionCreator<T>,
-  prepare: (payload: P) => { bucketId: ID },
+  { actions }: ThunkContext<T>,
+  _prepare: (payload: P) => { bucketId: ID },
 ): ThunkActionCreatorWithPayload<P> {
-  return (payload: P) => async () => {
+  return (_payload: P) => async () => {
     // not implemented yet
   }
 }
@@ -113,7 +125,7 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
  * @returns the action creator
  */
 export function createAddCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  actions: BucketsActionCreator<T>,
+  { actions }: ThunkContext<T>,
   prepare: (payload: P) => { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
@@ -129,7 +141,7 @@ export function createAddCollectionDocument<T extends BucketStructure, CN extend
  * @returns the action creator
  */
 export function createUpdateCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  actions: BucketsActionCreator<T>,
+  { actions }: ThunkContext<T>,
   prepare: (payload: P) => { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {
@@ -145,7 +157,7 @@ export function createUpdateCollectionDocument<T extends BucketStructure, CN ext
  * @returns the action creator
  */
 export function createDeleteCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  actions: BucketsActionCreator<T>,
+  { actions }: ThunkContext<T>,
   prepare: (payload: P) => { bucketId: ID; collectionName: CN; id: ID },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch) => {

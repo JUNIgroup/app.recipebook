@@ -25,7 +25,7 @@ export type FirestoreOptions = {
    *
    * @example `https://firestore.googleapis.com/v1`
    */
-  apiEndpoint: string
+  apiEndpoint: string | Promise<string>
 
   /**
    * The API key to access the Firestore REST API.
@@ -48,7 +48,7 @@ export type FirestoreOptions = {
  */
 export class FirestoreRestService implements FirestoreService {
   private readonly log: Log
-  private readonly endpoint: string
+  private readonly endpoint: Promise<string>
   private readonly namePrefix: string
   private readonly keyParam: string
 
@@ -60,9 +60,13 @@ export class FirestoreRestService implements FirestoreService {
    */
   constructor(logger: Logger<'infra'>, options: FirestoreOptions) {
     this.log = logger('infra:FirestoreRestService')
-    this.endpoint = `${options.apiEndpoint}/projects/${options.projectId}/databases/${options.databaseId}/documents`
+    this.endpoint = FirestoreRestService.buildEndpoint(options)
     this.namePrefix = `projects/${options.projectId}/databases/${options.databaseId}/documents`
     this.keyParam = `key=${options.apiKey}`
+  }
+
+  private static async buildEndpoint(options: FirestoreOptions): Promise<string> {
+    return `${await options.apiEndpoint}/projects/${options.projectId}/databases/${options.databaseId}/documents`
   }
 
   readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<ReadDoc> {
@@ -83,7 +87,7 @@ export class FirestoreRestService implements FirestoreService {
     after?: EpochTimestamp,
   ) {
     try {
-      const parent = this.createUrl(collectionPath.slice(0, -1))
+      const parent = await this.createUrl(collectionPath.slice(0, -1))
       const url = `${parent}:runQuery?${this.keyParam}`
       const where = after
         ? {
@@ -119,7 +123,7 @@ export class FirestoreRestService implements FirestoreService {
    * @see https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/get
    */
   async readDoc(docPath: string[]): Promise<ReadDoc> {
-    const url = this.createUrl(docPath)
+    const url = await this.createUrl(docPath)
     const data = await this.fetch<FirestoreDocumentWithLastUpdate>('GET', url, undefined)
     if (!data.fields) throw new FirestoreRestError(`Document ${docPath.join('/')} not found.`)
     return convertDocumentToResult(data)
@@ -136,7 +140,7 @@ export class FirestoreRestService implements FirestoreService {
    */
   async writeDoc(docPath: string[], doc: object): Promise<void> {
     const name = this.createName(docPath)
-    const url = `${this.endpoint}:commit?${this.keyParam}`
+    const url = `${await this.endpoint}:commit?${this.keyParam}`
     const payload = {
       writes: [
         {
@@ -159,7 +163,7 @@ export class FirestoreRestService implements FirestoreService {
    * @see https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/delete
    */
   async delDoc(docPath: string[]): Promise<void> {
-    const url = this.createUrl(docPath)
+    const url = await this.createUrl(docPath)
     await this.fetch('DELETE', url, undefined)
   }
 
@@ -167,8 +171,8 @@ export class FirestoreRestService implements FirestoreService {
     return `${this.namePrefix}/${path.join('/')}`
   }
 
-  private createUrl(path: string[]): string {
-    return path.length === 0 ? this.endpoint : `${this.endpoint}/${path.join('/')}`
+  private async createUrl(path: string[]): Promise<string> {
+    return path.length === 0 ? this.endpoint : `${await this.endpoint}/${path.join('/')}`
   }
 
   private async fetch<T>(

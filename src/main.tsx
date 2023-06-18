@@ -12,7 +12,13 @@ import { RestAuthService } from './infrastructure/firebase/rest-auth-service'
 import { App } from './presentation/app'
 import { createConsoleLogger, createDebugObserver } from './utilities/logger'
 
+import { FirestoreDatabase } from './business/recipe-books/database/firestore/firestore-database'
+import { FirestoreService } from './business/recipe-books/database/firestore/firestore-service.api'
 import './index.scss'
+import {
+  createFirestoreRestServiceForEmulator,
+  createFirestoreRestServiceForRemote,
+} from './infrastructure/firestore/firestore-rest-factory'
 
 type LogScope = 'app' | 'utils' | 'infra' | 'business' | 'ui'
 
@@ -24,8 +30,7 @@ if (import.meta.env.DEV) {
 }
 
 const storage = localStorage
-// const firebaseService = new FirebaseService()
-// const authServiceOld = new FirebaseAuthService(firebaseService)
+
 const restAuthService = import.meta.env.VITE_FIREBASE__USE_EMULATOR
   ? RestAuthService.forEmulator(logger)
   : RestAuthService.forRemote(logger, import.meta.env.VITE_FIREBASE__API_KEY)
@@ -33,12 +38,26 @@ const authService = new FirebaseRestAuthService(restAuthService, logger, {
   permanent: storagePersistence(IDB_ID, storage),
   temporary: memoryPersistence(),
 })
+
 const dbService = new IdbService(indexedDB, IDB_ID, dbVersion, dbUpgrades, logger)
+
+const firestoreOptions = {
+  apiKey: import.meta.env.VITE_FIREBASE__API_KEY,
+  projectId: import.meta.env.VITE_FIREBASE__PROJECT_ID,
+  databaseId: '(default)',
+}
+
+const firestoreService: FirestoreService = import.meta.env.VITE_FIREBASE__USE_EMULATOR
+  ? createFirestoreRestServiceForEmulator(logger, firestoreOptions)
+  : createFirestoreRestServiceForRemote(logger, firestoreOptions)
+const database = new FirestoreDatabase(logger, firestoreService)
 
 const store = createStore({
   storage,
   authService,
   dbService,
+  database,
+  logger,
 })
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(

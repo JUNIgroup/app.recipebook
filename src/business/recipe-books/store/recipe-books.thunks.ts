@@ -10,7 +10,7 @@ import {
   createUpdateBucketDocument,
   createUpdateCollectionDocument,
 } from './builder/thunks'
-import { actions } from './recipe-books.slice'
+import { sliceName, actions } from './recipe-books.slice'
 
 const prepareRecipeBook = (p: { recipeBook: RecipeBook }) => ({ document: p.recipeBook })
 const prepareRecipeBookId = (p: { recipeBookId: ID }) => ({ bucketId: p.recipeBookId })
@@ -25,38 +25,43 @@ const prepareRecipeId = (p: { recipeBookId: ID; recipeId: ID }) => ({
   id: p.recipeId,
 })
 
+const context = {
+  sliceName,
+  actions,
+}
+
 /**
  * Refresh all recipe books but not the recipes.
  */
-export const refreshRecipeBooks = createRefreshBucketDocuments(actions)
+export const refreshRecipeBooks = createRefreshBucketDocuments(context)
 
 /**
  * Add a new recipe book to the database.
  *
  * @param recipeBook the recipe book to add
  */
-export const addRecipeBook = createAddBucket(actions, prepareRecipeBook)
+export const addRecipeBook = createAddBucket(context, prepareRecipeBook)
 
 /**
  * Update an existing recipe book in the database.
  *
  * @param recipeBook the recipe book to update
  */
-export const updateRecipeBook = createUpdateBucketDocument(actions, prepareRecipeBook)
+export const updateRecipeBook = createUpdateBucketDocument(context, prepareRecipeBook)
 
 /**
  * Delete an existing recipe book from the database.
  *
  * @param recipeBookId the id of the recipe book to delete
  */
-export const deleteRecipeBook = createDeleteBucket(actions, prepareRecipeBookId)
+export const deleteRecipeBook = createDeleteBucket(context, prepareRecipeBookId)
 
 /**
  * Refresh all recipes of the specified recipe book.
  *
  * @param recipeBookId the ID of the recipe book, which recipes should be refreshed
  */
-export const refreshRecipes = createRefreshCollectionDocuments(actions, prepareRecipeBookId)
+export const refreshRecipes = createRefreshCollectionDocuments(context, prepareRecipeBookId)
 
 /**
  * Add a new recipe in the specified recipe book to the database.
@@ -64,7 +69,7 @@ export const refreshRecipes = createRefreshCollectionDocuments(actions, prepareR
  * @param recipeBookId the ID of the recipe book
  * @param recipe the recipe to add
  */
-export const addRecipe = createAddCollectionDocument(actions, prepareRecipe)
+export const addRecipe = createAddCollectionDocument(context, prepareRecipe)
 
 /**
  * Update an existing recipe in the specified recipe book in the database.
@@ -72,7 +77,7 @@ export const addRecipe = createAddCollectionDocument(actions, prepareRecipe)
  * @param recipeBookId the ID of the recipe book
  * @param recipe the recipe to update
  */
-export const updateRecipe = createUpdateCollectionDocument(actions, prepareRecipe)
+export const updateRecipe = createUpdateCollectionDocument(context, prepareRecipe)
 
 /**
  * Delete an existing recipe from the specified recipe book in the database.
@@ -80,4 +85,4 @@ export const updateRecipe = createUpdateCollectionDocument(actions, prepareRecip
  * @param recipeBookId the ID of the recipe book
  * @param id the ID of the recipe to delete
  */
-export const deleteRecipe = createDeleteCollectionDocument(actions, prepareRecipeId)
+export const deleteRecipe = createDeleteCollectionDocument(context, prepareRecipeId)

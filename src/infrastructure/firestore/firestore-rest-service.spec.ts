@@ -53,6 +53,10 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
     `${PREFIX}-Delete`,
     `${PREFIX}-Delete/d1/Col-Sub1`,
     `${PREFIX}-Delete/d1/Col-Sub1/d2/Col-Sub2`,
+    `${PREFIX}-Delayed-readDocs`,
+    `${PREFIX}-Delayed-readDoc`,
+    `${PREFIX}-Delayed-writeDoc`,
+    `${PREFIX}-Delayed-delDoc`,
   ]
 
   let logger: Logger<'infra'>
@@ -462,6 +466,110 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         const documents = await testHelper.listDocuments(path.slice(0, -1).join('/'))
         expect(documents).toEqual({})
       })
+    })
+  })
+
+  describe('service with delayed api endpoint', () => {
+    let db: FirestoreRestService
+
+    beforeEach(() => {
+      const delayedApiEndpoint = new Promise<string>((resolve) => {
+        setTimeout(() => resolve(options.apiEndpoint), 10)
+      })
+      db = new FirestoreRestService(logger, {
+        ...options,
+        apiEndpoint: delayedApiEndpoint,
+      })
+    })
+
+    it(`should be 'readDocs' successful`, async () => {
+      // arrange
+      const path = [`${PREFIX}-Delayed-readDocs`]
+      const after = undefined
+      const randomString = ulid()
+      const requestTime = new Date()
+      await testHelper.patchDocument(`${PREFIX}-Delayed-readDocs/doc-id`, {
+        fields: {
+          foo: { stringValue: randomString },
+          __lastUpdate: { timestampValue: requestTime.toISOString() },
+        },
+      })
+
+      // act
+      const result = await collectFrom(db.readDocs(path, after))
+
+      // assert
+      expect(result).toEqual([
+        {
+          lastUpdate: requestTime.getTime(),
+          doc: {
+            foo: randomString,
+          },
+        },
+      ])
+    })
+
+    it(`should be 'readDoc' successful`, async () => {
+      // arrange
+      const path = [`${PREFIX}-Delayed-readDoc`, `doc-id`]
+      const randomString = ulid()
+      const requestTime = new Date()
+      await testHelper.patchDocument(`${PREFIX}-Delayed-readDoc/doc-id`, {
+        fields: {
+          foo: { stringValue: randomString },
+          __lastUpdate: { timestampValue: requestTime.toISOString() },
+        },
+      })
+
+      // act
+      const result = db.readDoc(path)
+
+      // assert
+      await expect(result).resolves.toEqual({
+        lastUpdate: requestTime.getTime(),
+        doc: {
+          foo: randomString,
+        },
+      })
+    })
+
+    it(`should be 'writeDoc' successful`, async () => {
+      // arrange
+      const path = [`${PREFIX}-Delayed-writeDoc`, `doc-id`]
+      const doc = {
+        foo: ulid(),
+      }
+
+      // act
+      await db.writeDoc(path, doc)
+
+      // assert
+      const document = await testHelper.getDocument(`${PREFIX}-Delayed-writeDoc/doc-id`)
+      expect(document).toEqual({
+        name: expect.stringMatching(/.*\/doc-id/),
+        fields: {
+          foo: { stringValue: doc.foo },
+          __lastUpdate: { timestampValue: expect.any(String) },
+        },
+        createTime: expect.any(String),
+        updateTime: expect.any(String),
+      })
+    })
+
+    it(`should be 'delDoc' successful`, async () => {
+      // arrange
+      const path = [`${PREFIX}-Delayed-delDoc`, `doc-id`]
+      const doc = {
+        foo: ulid(),
+      }
+      await db.writeDoc(path, doc)
+
+      // act
+      await db.delDoc(path)
+
+      // assert
+      const documents = await testHelper.listDocuments(`${PREFIX}-Delayed-delDoc`)
+      expect(documents).toEqual({})
     })
   })
 })
