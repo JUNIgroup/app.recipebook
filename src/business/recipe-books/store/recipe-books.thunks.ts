@@ -14,6 +14,10 @@ import { sliceName, actions } from './recipe-books.slice'
 
 const prepareRecipeBook = (p: { recipeBook: RecipeBook }) => ({ document: p.recipeBook })
 const prepareRecipeBookId = (p: { recipeBookId: ID }) => ({ bucketId: p.recipeBookId })
+const prepareRecipeCollection = (p: { recipeBookId: ID }) => ({
+  bucketId: p.recipeBookId,
+  collectionName: 'recipes' as const,
+})
 const prepareRecipe = (p: { recipeBookId: ID; recipe: Recipe }) => ({
   bucketId: p.recipeBookId,
   collectionName: 'recipes' as const,
@@ -61,7 +65,7 @@ export const deleteRecipeBook = createDeleteBucket(context, prepareRecipeBookId)
  *
  * @param recipeBookId the ID of the recipe book, which recipes should be refreshed
  */
-export const refreshRecipes = createRefreshCollectionDocuments(context, prepareRecipeBookId)
+export const refreshRecipes = createRefreshCollectionDocuments(context, prepareRecipeCollection)
 
 /**
  * Add a new recipe in the specified recipe book to the database.

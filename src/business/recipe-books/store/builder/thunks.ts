@@ -1,8 +1,8 @@
 import { AnyAction, ThunkAction } from '@reduxjs/toolkit'
-import { SchedulerLike } from 'rxjs'
+import { SchedulerLike, bufferTime, map, tap } from 'rxjs'
 import { Log } from '../../../../utilities/logger'
-import { Database } from '../../database/database'
-import { BucketName, BucketStructure, ID } from '../../database/database-types'
+import { CollectionPath, Database } from '../../database/database'
+import { BucketName, BucketStructure, ID, CollectionName } from '../../database/database-types'
 import { BucketsActionCreator } from './slice.types'
 
 type Services = {
@@ -30,12 +30,38 @@ export type ThunkContext<T extends BucketStructure> = {
  * @param _actions access to the sync bucket actions of the slice
  * @returns the action creator
  */
-export function createRefreshBucketDocuments<T extends BucketStructure>(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ctx: ThunkContext<T>,
-): ThunkActionCreator {
-  return () => async () => {
-    // not implemented yet
+export function createRefreshBucketDocuments<T extends BucketStructure>({
+  sliceName,
+  actions,
+  scheduler,
+}: ThunkContext<T>): ThunkActionCreator {
+  const collectionPath: CollectionPath = { bucket: sliceName }
+  return () => async (dispatch, _, extra) => {
+    const { thunkLogs, database } = extra
+    const log = thunkLogs[sliceName]
+
+    const task = `refresh: ${sliceName}`
+    log.details(task)
+
+    let lastUpdate: number | undefined // Number.NEGATIVE_INFINITY
+    await new Promise<void>((resolve, reject) => {
+      database
+        .getDocs(collectionPath)
+        .pipe(
+          tap((result) => log.details(`${task}/${result.doc.id}: `, result.lastUpdate)),
+          tap((result) => {
+            lastUpdate = Math.max(result.lastUpdate, lastUpdate ?? Number.NEGATIVE_INFINITY)
+          }),
+          map((result) => result.doc),
+          bufferTime(10, scheduler),
+        )
+        .subscribe({
+          next: (documents) => dispatch(actions.upsertBuckets({ documents })),
+          complete: resolve,
+          error: reject,
+        })
+    })
+    log.details(`${task} done: ${lastUpdate}`)
   }
 }
 
@@ -51,11 +77,22 @@ export function createRefreshBucketDocuments<T extends BucketStructure>(
  * @returns the action creator
  */
 export function createAddBucket<T extends BucketStructure, P>(
-  { actions }: ThunkContext<T>,
+  { sliceName, actions }: ThunkContext<T>,
   prepare: (payload: P) => { document: T['bucket'] },
 ): ThunkActionCreatorWithPayload<P> {
-  return (payload) => async (dispatch) => {
-    dispatch(actions.addBucket(prepare(payload)))
+  const collectionPath: CollectionPath = { bucket: sliceName }
+  return (payload) => async (dispatch, _, extra) => {
+    const { thunkLogs, database } = extra
+    const log = thunkLogs[sliceName]
+
+    const { document } = prepare(payload)
+    const task = `add ${sliceName}/${document.id}: `
+
+    log.details(task, document)
+    const result = await database.putDoc(collectionPath, document)
+    log.details(task, result.lastUpdate)
+
+    dispatch(actions.upsertBuckets({ documents: [result.doc] }))
   }
 }
 
@@ -71,11 +108,22 @@ export function createAddBucket<T extends BucketStructure, P>(
  * @returns the action creator
  */
 export function createUpdateBucketDocument<T extends BucketStructure, P>(
-  { actions }: ThunkContext<T>,
+  { sliceName, actions }: ThunkContext<T>,
   prepare: (payload: P) => { document: T['bucket'] },
 ): ThunkActionCreatorWithPayload<P> {
-  return (payload) => async (dispatch) => {
-    dispatch(actions.updateBucketDocument(prepare(payload)))
+  const collectionPath: CollectionPath = { bucket: sliceName }
+  return (payload) => async (dispatch, _, extra) => {
+    const { thunkLogs, database } = extra
+    const log = thunkLogs[sliceName]
+
+    const { document } = prepare(payload)
+    const task = `update ${sliceName}/${document.id}: `
+
+    log.details(task, document)
+    const result = await database.putDoc(collectionPath, document)
+    log.details(task, result.lastUpdate)
+
+    dispatch(actions.upsertBuckets({ documents: [result.doc] }))
   }
 }
 
@@ -91,11 +139,22 @@ export function createUpdateBucketDocument<T extends BucketStructure, P>(
  * @returns the action creator
  */
 export function createDeleteBucket<T extends BucketStructure, P>(
-  { actions }: ThunkContext<T>,
+  { sliceName, actions }: ThunkContext<T>,
   prepare: (payload: P) => { bucketId: ID },
 ): ThunkActionCreatorWithPayload<P> {
-  return (payload) => async (dispatch) => {
-    dispatch(actions.deleteBucket(prepare(payload)))
+  const collectionPath: CollectionPath = { bucket: sliceName }
+  return (payload) => async (dispatch, _, extra) => {
+    const { thunkLogs, database } = extra
+    const log = thunkLogs[sliceName]
+
+    const { bucketId } = prepare(payload)
+    const task = `delete ${sliceName}/${bucketId}`
+
+    log.details(task)
+    await database.delDoc(collectionPath, { id: bucketId, rev: 0 })
+    log.details(task)
+
+    dispatch(actions.deleteBucket({ bucketId }))
   }
 }
 
@@ -106,16 +165,41 @@ export function createDeleteBucket<T extends BucketStructure, P>(
  * @param _prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 export function createRefreshCollectionDocuments<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  { actions }: ThunkContext<T>,
-  _prepare: (payload: P) => { bucketId: ID },
+  { sliceName, actions, scheduler }: ThunkContext<T>,
+  prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName },
 ): ThunkActionCreatorWithPayload<P> {
-  return (_payload: P) => async () => {
-    // not implemented yet
+  return (payload: P) => async (dispatch, _, extra) => {
+    const { thunkLogs, database } = extra
+    const log = thunkLogs[sliceName]
+
+    const { bucketId, collectionName } = prepare(payload)
+    const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
+
+    const task = `refresh: ${sliceName}/${bucketId}/${collectionName}`
+    log.details(task)
+
+    let lastUpdate: number | undefined // Number.NEGATIVE_INFINITY
+    await new Promise<void>((resolve, reject) => {
+      database
+        .getDocs(collectionPath)
+        .pipe(
+          tap((result) => log.details(`${task}/${result.doc.id}: `, result.lastUpdate)),
+          tap((result) => {
+            lastUpdate = Math.max(result.lastUpdate, lastUpdate ?? Number.NEGATIVE_INFINITY)
+          }),
+          map((result) => result.doc),
+          bufferTime(10, scheduler),
+        )
+        .subscribe({
+          next: (documents) => dispatch(actions.upsertCollection({ bucketId, collectionName, documents })),
+          complete: resolve,
+          error: reject,
+        })
+    })
+    log.details(`${task} done: ${lastUpdate}`)
   }
 }
-/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /**
  * Returns a action creator that creates a async thunk action to add a new collection document.
@@ -125,11 +209,22 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
  * @returns the action creator
  */
 export function createAddCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  { actions }: ThunkContext<T>,
-  prepare: (payload: P) => { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
+  { sliceName, actions }: ThunkContext<T>,
+  prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName; document: T['collections'][CN] },
 ): ThunkActionCreatorWithPayload<P> {
-  return (payload) => async (dispatch) => {
-    dispatch(actions.addCollectionDocument(prepare(payload)))
+  return (payload) => async (dispatch, _, extra) => {
+    const { thunkLogs, database } = extra
+    const log = thunkLogs[sliceName]
+
+    const { bucketId, collectionName, document } = prepare(payload)
+    const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
+    const task = `add ${sliceName}/${document.id}: `
+
+    log.details(task, document)
+    const result = await database.putDoc(collectionPath, document)
+    log.details(task, result.lastUpdate)
+
+    dispatch(actions.upsertCollection({ bucketId, collectionName, documents: [result.doc] }))
   }
 }
 
@@ -141,11 +236,22 @@ export function createAddCollectionDocument<T extends BucketStructure, CN extend
  * @returns the action creator
  */
 export function createUpdateCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  { actions }: ThunkContext<T>,
-  prepare: (payload: P) => { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
+  { sliceName, actions }: ThunkContext<T>,
+  prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName; document: T['collections'][CN] },
 ): ThunkActionCreatorWithPayload<P> {
-  return (payload) => async (dispatch) => {
-    dispatch(actions.updateCollectionDocument(prepare(payload)))
+  return (payload) => async (dispatch, _, extra) => {
+    const { thunkLogs, database } = extra
+    const log = thunkLogs[sliceName]
+
+    const { bucketId, collectionName, document } = prepare(payload)
+    const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
+    const task = `update ${sliceName}/${document.id}: `
+
+    log.details(task, document)
+    const result = await database.putDoc(collectionPath, document)
+    log.details(task, result.lastUpdate)
+
+    dispatch(actions.upsertCollection({ bucketId, collectionName, documents: [result.doc] }))
   }
 }
 
@@ -157,10 +263,21 @@ export function createUpdateCollectionDocument<T extends BucketStructure, CN ext
  * @returns the action creator
  */
 export function createDeleteCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  { actions }: ThunkContext<T>,
-  prepare: (payload: P) => { bucketId: ID; collectionName: CN; id: ID },
+  { sliceName, actions }: ThunkContext<T>,
+  prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName; id: ID },
 ): ThunkActionCreatorWithPayload<P> {
-  return (payload) => async (dispatch) => {
-    dispatch(actions.deleteCollectionDocument(prepare(payload)))
+  return (payload) => async (dispatch, _, extra) => {
+    const { thunkLogs, database } = extra
+    const log = thunkLogs[sliceName]
+
+    const { bucketId, collectionName, id } = prepare(payload)
+    const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
+    const task = `delete ${sliceName}/${bucketId}/${collectionName}/${id}`
+
+    log.details(task)
+    await database.delDoc(collectionPath, { id, rev: 0 })
+    log.details(task)
+
+    dispatch(actions.deleteCollectionDocument({ bucketId, collectionName, id }))
   }
 }
