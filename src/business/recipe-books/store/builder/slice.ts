@@ -67,6 +67,22 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
         state.buckets[id].entity = castDraft(document)
       },
 
+      upsertBuckets(state, action: PayloadAction<{ documents: T['bucket'][] }>) {
+        function upsert(document: T['bucket']) {
+          const { id } = document
+          if (state.buckets[id]) {
+            state.buckets[id].entity = castDraft(document)
+          } else {
+            state.ids.push(id)
+            state.buckets[id] = castDraft({
+              entity: document,
+              collections: {},
+            })
+          }
+        }
+        action.payload.documents.forEach(upsert)
+      },
+
       deleteBucket(state, action: PayloadAction<{ bucketId: ID }>) {
         const { bucketId } = action.payload
 
@@ -136,6 +152,44 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
         }
 
         collection.entities[id] = castDraft(document)
+      },
+
+      upsertCollection<CN extends keyof T['collections']>(
+        state: WritableDraft<State>,
+        action: PayloadAction<{ bucketId: ID; collectionName: CN; documents: T['collections'][CN][] }>,
+      ) {
+        const { bucketId, collectionName, documents } = action.payload
+
+        if (!state.buckets[bucketId]) {
+          onActionError(action, `bucket id '${bucketId}' does not exist`)
+          return
+        }
+
+        if (documents.length === 0) return
+
+        const collections = state.buckets[bucketId].collections as Record<
+          CN,
+          WritableDraft<BucketCollectionState<T['collections'][CN]>>
+        >
+        let collection = collections[collectionName]
+        if (collection == null) {
+          collection = castDraft({
+            ids: [],
+            entities: {},
+          })
+          collections[collectionName] = collection
+        }
+
+        function upsert(document: T['collections'][CN]) {
+          const { id } = document
+          if (collection.entities[id]) {
+            collection.entities[id] = castDraft(document)
+          } else {
+            collection.ids.push(id)
+            collection.entities[id] = castDraft(document)
+          }
+        }
+        documents.forEach(upsert)
       },
 
       deleteCollectionDocument<CN extends keyof T['collections']>(

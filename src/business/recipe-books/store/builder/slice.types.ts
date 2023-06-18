@@ -31,6 +31,18 @@ export type BucketsActionCreator<T extends BucketStructure> = {
   updateBucketDocument: <Payload = { document: T['bucket'] }>(payload: Payload) => PayloadAction<Payload>
 
   /**
+   * Calling this redux#ActionCreator will return the "upsertBucket" redux#Action with the given document as payload.
+   *
+   * The "upsertBucket" action will create a new bucket, if necessary and set the given bucket document.
+   * - If the bucket id already exists, the action will update the bucket document of an existing bucket.
+   * - If the bucket id does not exist, the action will create a new bucket and set the given bucket document.
+   *
+   * @param payload the bucket document to set, includes the bucket id
+   * @returns the "upsertBucket" redux#Action with the given document as payload
+   */
+  upsertBuckets: <Payload = { documents: T['bucket'][] }>(payload: Payload) => PayloadAction<Payload>
+
+  /**
    * Calling this redux#ActionCreator will return the "deleteBucket" redux#Action with the given id as payload.
    *
    * The "deleteBucket" action will remove the bucket include the bucket document and all collections.
@@ -50,6 +62,7 @@ export type BucketsActionCreator<T extends BucketStructure> = {
    * If the document id already exists in that collection, the action will be ignored.
    *
    * @param bucketId the id of the bucket, which collection should be updated
+   * @param collectionName the name of the collection to update
    * @param document the collection document
    * @returns the "addCollectionDocument" redux#Action with the given document as payload
    */
@@ -68,12 +81,30 @@ export type BucketsActionCreator<T extends BucketStructure> = {
    * If the document id does not exist in that collection, the action will be ignored.
    *
    * @param bucketId the id of the bucket, which collection should be updated
+   * @param collectionName the name of the collection to update
    * @param document the new collection document
    * @returns the "updateCollectionDocument" redux#Action with the given document as payload
    */
   updateCollectionDocument: <
     CN extends keyof T['collections'],
     Payload = { bucketId: ID; collectionName: CN; document: T['collections'][CN] },
+  >(
+    payload: Payload,
+  ) => PayloadAction<Payload>
+
+  /**
+   * Calling this redux#ActionCreator will return the "upsertCollection" redux#Action with the given documents as payload.
+   *
+   * The "upsertCollection" action will create a new collection, if necessary and insert or update the given collection documents.
+   *
+   * @param bucketId the id of the bucket, which collection should be updated
+   * @param collectionName the name of the collection to update
+   * @param documents the collection documents to insert or update
+   * @returns the "upsertCollection" redux#Action with the given documents as payload
+   */
+  upsertCollection: <
+    CN extends keyof T['collections'],
+    Payload = { bucketId: ID; collectionName: CN; documents: T['collections'][CN][] },
   >(
     payload: Payload,
   ) => PayloadAction<Payload>
