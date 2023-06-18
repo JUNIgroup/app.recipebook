@@ -35,4 +35,4 @@ const bucketSlice = createBucketsSlice('recipeBooks', {
   initialState,
 })
 
-export const { reducer, actions } = bucketSlice
+export const { sliceName, reducer, actions } = bucketSlice

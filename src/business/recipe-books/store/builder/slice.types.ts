@@ -139,7 +139,7 @@ export type BucketsSlice<BN extends BucketName, T extends BucketStructure> = {
    * It's used as the name of the slice in the redux store.
    * It's also used as prefix for the action types.
    */
-  readonly name: BN
+  readonly sliceName: BN
 
   /**
    * Provides access to the initial state value given to the slice.

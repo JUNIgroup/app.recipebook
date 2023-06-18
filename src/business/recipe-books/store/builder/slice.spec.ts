@@ -11,7 +11,7 @@ describe('createBucketSlice', () => {
     const slice = createBucketsSlice<'breakfasts', BreakfastStructure>('breakfasts', { onActionError })
 
     // assert
-    expect(slice).toContainKeys(['name', 'getInitialState', 'reducer', 'actions'])
+    expect(slice).toContainKeys(['sliceName', 'getInitialState', 'reducer', 'actions'])
   })
 
   it('should create a bucket slice with the correct name', () => {
@@ -20,7 +20,7 @@ describe('createBucketSlice', () => {
     const slice = createBucketsSlice<'breakfasts', BreakfastStructure>('breakfasts', { onActionError })
 
     // assert
-    expect(slice.name).toBe('breakfasts')
+    expect(slice.sliceName).toBe('breakfasts')
   })
 
   it('should create a bucket slice with the empty initial state', () => {
@@ -94,7 +94,7 @@ describe('createBucketSlice', () => {
 
       // assert
       expect(actionCreator).toBeInstanceOf(Function)
-      expect(actionCreator).toContainEntry(['type', `${slice.name}/${actionName}`])
+      expect(actionCreator).toContainEntry(['type', `${slice.sliceName}/${actionName}`])
     })
 
     describe('addBucket', () => {

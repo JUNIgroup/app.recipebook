@@ -226,5 +226,5 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
     },
   })
   const { getInitialState, reducer, actions } = slice
-  return { name: sliceName, getInitialState, reducer, actions: actions as BucketsActionCreator<T> }
+  return { sliceName, getInitialState, reducer, actions: actions as BucketsActionCreator<T> }
 }
