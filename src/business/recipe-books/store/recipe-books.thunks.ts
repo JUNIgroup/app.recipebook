@@ -7,6 +7,7 @@ import {
   createRefreshBucketDocuments,
   createRefreshCollectionDocuments,
 } from './builder/thunks'
+import { selectRoot } from './recipe-books.selectors'
 import { actions, sliceName } from './recipe-books.slice'
 
 const prepareRecipeBook = (p: { recipeBook: RecipeBook }) => ({
@@ -32,7 +33,7 @@ const context = {
 /**
  * Refresh all recipe books but not the recipes.
  */
-export const refreshRecipeBooks = createRefreshBucketDocuments(context)
+export const refreshRecipeBooks = createRefreshBucketDocuments(selectRoot, context)
 
 /**
  * Add a new recipe book to the database.
@@ -72,7 +73,7 @@ export const deleteRecipeBook = createPushBucketDocument(
  *
  * @param recipeBookId the ID of the recipe book, which recipes should be refreshed
  */
-export const refreshRecipes = createRefreshCollectionDocuments(context, prepareRecipeCollection)
+export const refreshRecipes = createRefreshCollectionDocuments(selectRoot, context, prepareRecipeCollection)
 
 /**
  * Add a new recipe in the specified recipe book to the database.

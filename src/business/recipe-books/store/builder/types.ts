@@ -3,6 +3,7 @@ import { BucketStructure, Doc, ID } from '../../database/database-types'
 
 export type BucketsState<T extends BucketStructure> = {
   ids: ID[]
+  lastUpdate?: number
   buckets: {
     [id: ID]: BucketState<T>
   }
@@ -17,6 +18,7 @@ export type BucketState<T extends BucketStructure> = {
 
 export type BucketCollectionState<T extends Doc> = {
   ids: ID[]
+  lastUpdate?: number
   entities: {
     [id: ID]: T
   }

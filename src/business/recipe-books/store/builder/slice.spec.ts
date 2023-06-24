@@ -368,6 +368,35 @@ describe('createBucketSlice', () => {
         // assert
         expect(state1).toEqual(expectedState)
       })
+
+      it('should update lastUpdate if given', () => {
+        // arrange
+        const { reducer, actions, getInitialState } = slice
+        const state0 = getInitialState()
+
+        const document = { id: 'b0001', rev: 0, time: '08:00' }
+        const action1 = actions.upsertBuckets({ documents: [document] })
+        const state1 = reducer(state0, action1)
+
+        const action2 = actions.upsertBuckets({ lastUpdate: 987654321 })
+
+        const expectedState = {
+          ids: ['b0001'],
+          lastUpdate: 987654321,
+          buckets: {
+            b0001: {
+              entity: { id: 'b0001', rev: 0, time: '08:00' },
+              collections: {},
+            },
+          },
+        }
+
+        // act
+        const state2 = reducer(state1, action2)
+
+        // assert
+        expect(state2).toEqual(expectedState)
+      })
     })
 
     describe('upsertCollection', () => {
@@ -967,6 +996,43 @@ describe('createBucketSlice', () => {
 
         // assert
         expect(state3).toEqual(expectedState)
+      })
+
+      it('should update lastUpdate if given', () => {
+        // arrange
+        const { reducer, actions, getInitialState } = slice
+        const state0 = getInitialState()
+
+        const bucketAction = actions.upsertBuckets({ documents: [{ id: 'b0001', rev: 0, time: '08:00' }] })
+        const state1 = reducer(state0, bucketAction)
+
+        const collectionAction = actions.upsertCollection({
+          bucketId: 'b0001',
+          collectionName: 'drinks',
+          lastUpdate: 987654321,
+        })
+
+        const expectedState = {
+          ids: ['b0001'],
+          buckets: {
+            b0001: {
+              entity: { id: 'b0001', rev: 0, time: '08:00' },
+              collections: {
+                drinks: {
+                  ids: [],
+                  lastUpdate: 987654321,
+                  entities: {},
+                },
+              },
+            },
+          },
+        }
+
+        // act
+        const state2 = reducer(state1, collectionAction)
+
+        // assert
+        expect(state2).toEqual(expectedState)
       })
     })
 

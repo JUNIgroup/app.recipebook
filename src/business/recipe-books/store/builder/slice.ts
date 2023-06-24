@@ -39,8 +39,8 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
     name: sliceName,
     initialState,
     reducers: {
-      upsertBuckets(state, action: PayloadAction<{ documents: T['bucket'][]; deleted: ID[] }>) {
-        const { documents = [], deleted = [] } = action.payload
+      upsertBuckets(state, action: PayloadAction<{ documents: T['bucket'][]; deleted: ID[]; lastUpdate?: number }>) {
+        const { documents = [], deleted = [], lastUpdate } = action.payload
 
         // insert / update
         documents.forEach((document) => {
@@ -62,13 +62,22 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
           state.ids = state.ids.filter((id) => !found.includes(id))
           found.forEach((id) => delete state.buckets[id])
         }
+
+        // last update
+        if (lastUpdate != null) state.lastUpdate = lastUpdate
       },
 
       upsertCollection<CN extends keyof T['collections']>(
         state: WritableDraft<State>,
-        action: PayloadAction<{ bucketId: ID; collectionName: CN; documents: T['collections'][CN][]; deleted: ID[] }>,
+        action: PayloadAction<{
+          bucketId: ID
+          collectionName: CN
+          documents: T['collections'][CN][]
+          deleted: ID[]
+          lastUpdate?: number
+        }>,
       ) {
-        const { bucketId, collectionName, documents = [], deleted = [] } = action.payload
+        const { bucketId, collectionName, documents = [], deleted = [], lastUpdate } = action.payload
 
         if (!state.buckets[bucketId]) {
           onActionError(action, `bucket id '${bucketId}' does not exist`)
@@ -80,7 +89,8 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
           WritableDraft<BucketCollectionState<T['collections'][CN]>>
         >
         let collection = collections[collectionName]
-        if (documents.length === 0 && (collection == null || collection.ids.length == null)) return
+        if (documents.length === 0 && lastUpdate == null && (collection == null || collection.ids.length == null))
+          return
 
         if (collection == null) {
           collection = castDraft({
@@ -103,6 +113,9 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
           collection.ids = collection.ids.filter((id) => !found.includes(id))
           found.forEach((id) => delete collection.entities[id])
         }
+
+        // last update
+        if (lastUpdate != null) collection.lastUpdate = lastUpdate
       },
 
       clear(state) {

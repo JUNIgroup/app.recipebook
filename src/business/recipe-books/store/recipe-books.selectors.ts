@@ -10,7 +10,7 @@ import {
 import { RecipeBooksState } from './recipe-books.slice'
 
 type PartialRootState = { recipeBooks: RecipeBooksState }
-const selectRoot = (state: PartialRootState) => state.recipeBooks
+export const selectRoot = (state: PartialRootState) => state.recipeBooks
 
 const byTitle = byString<{ title: string }>((book) => book.title)
 

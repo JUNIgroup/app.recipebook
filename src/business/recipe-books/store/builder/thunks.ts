@@ -2,6 +2,7 @@ import { AnyAction, ThunkAction } from '@reduxjs/toolkit'
 import { Log } from '../../../../utilities/logger'
 import { CollectionPath, Database } from '../../database/database'
 import { BucketName, BucketStructure, CollectionName, Doc, ID } from '../../database/database-types'
+import { RootSelector } from './selectors'
 import { BucketsActionCreator } from './slice.types'
 
 type Services = {
@@ -29,21 +30,22 @@ export type ThunkContext<T extends BucketStructure> = {
  * @param actions access to the sync bucket actions of the slice
  * @returns the action creator
  */
-export function createRefreshBucketDocuments<T extends BucketStructure>({
-  sliceName,
-  actions,
-}: ThunkContext<T>): ThunkActionCreator {
+export function createRefreshBucketDocuments<T extends BucketStructure, S>(
+  rootSelector: RootSelector<T, S>,
+  { sliceName, actions }: ThunkContext<T>,
+): ThunkActionCreator {
   const collectionPath: CollectionPath = { bucket: sliceName }
-  return () => async (dispatch, _, extra) => {
+  return () => async (dispatch, getState, extra) => {
     const { thunkLogs, database } = extra
     const log = thunkLogs[sliceName]
-
     const task = `refresh: ${sliceName}`
-    log.details(task)
 
-    let lastUpdate: number | undefined // Number.NEGATIVE_INFINITY
+    const rootState = rootSelector(getState() as S)
+    let { lastUpdate } = rootState
+    log.details(`${task} after: ${lastUpdate}`)
+
     await new Promise<void>((resolve, reject) => {
-      database.getDocs(collectionPath).subscribe({
+      database.getDocs(collectionPath, lastUpdate).subscribe({
         next: (results) => {
           const documents: Doc[] = []
           const deleted: ID[] = []
@@ -56,7 +58,7 @@ export function createRefreshBucketDocuments<T extends BucketStructure>({
               documents.push(result.doc)
             }
           })
-          dispatch(actions.upsertBuckets({ documents, deleted }))
+          dispatch(actions.upsertBuckets({ documents, deleted, lastUpdate }))
         },
         complete: resolve,
         error: reject,
@@ -106,23 +108,26 @@ export function createPushBucketDocument<T extends BucketStructure, P>(
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
-export function createRefreshCollectionDocuments<T extends BucketStructure, CN extends keyof T['collections'], P>(
+export function createRefreshCollectionDocuments<T extends BucketStructure, CN extends keyof T['collections'], P, S>(
+  rootSelector: RootSelector<T, S>,
   { sliceName, actions }: ThunkContext<T>,
   prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName },
 ): ThunkActionCreatorWithPayload<P> {
-  return (payload: P) => async (dispatch, _, extra) => {
+  return (payload: P) => async (dispatch, getState, extra) => {
     const { thunkLogs, database } = extra
     const log = thunkLogs[sliceName]
 
     const { bucketId, collectionName } = prepare(payload)
     const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
 
-    const task = `refresh: ${sliceName}/${bucketId}/${collectionName}`
-    log.details(task)
+    const rootState = rootSelector(getState() as S)
+    let { lastUpdate } = rootState.buckets[bucketId]?.collections?.[collectionName] ?? {}
 
-    let lastUpdate: number | undefined
+    const task = `refresh: ${sliceName}/${bucketId}/${collectionName}`
+    log.details(`${task} after: ${lastUpdate}`)
+
     await new Promise<void>((resolve, reject) => {
-      database.getDocs(collectionPath).subscribe({
+      database.getDocs(collectionPath, lastUpdate).subscribe({
         next: (results) => {
           const documents: Doc[] = []
           const deleted: ID[] = []
@@ -135,7 +140,7 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
               documents.push(result.doc)
             }
           })
-          dispatch(actions.upsertCollection({ bucketId, collectionName, documents, deleted }))
+          dispatch(actions.upsertCollection({ bucketId, collectionName, documents, deleted, lastUpdate }))
         },
         complete: resolve,
         error: reject,
