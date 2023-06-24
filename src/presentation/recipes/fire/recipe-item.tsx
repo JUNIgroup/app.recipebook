@@ -20,7 +20,7 @@ export const RecipeItem: React.FC<RecipeItemProps> = ({ setError, bookId, recipe
   const removeRecipe = async () => {
     setError(null)
     try {
-      await dispatch(fromRecipeBooks.deleteRecipe({ recipeBookId: bookId, recipeId: recipe.id }))
+      await dispatch(fromRecipeBooks.deleteRecipe({ recipeBookId: bookId, recipe }))
       // eslint-disable-next-line no-console
       console.log('Recipe removed')
     } catch (err) {

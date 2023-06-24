@@ -41,6 +41,7 @@ export type EpochTimestamp = number
 export interface Doc {
   id: ID
   rev: number
+  __deleted?: boolean
 }
 
 /**

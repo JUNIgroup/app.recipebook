@@ -154,18 +154,6 @@ export class FirestoreRestService implements FirestoreService {
     await this.fetch('POST', url, payload)
   }
 
-  /**
-   * Delete a document from the database.
-   *
-   * @param docPath the path of the document to delete
-   *
-   * @see https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/delete
-   */
-  async delDoc(docPath: string[]): Promise<void> {
-    const url = await this.createUrl(docPath)
-    await this.fetch('DELETE', url, undefined)
-  }
-
   private createName(path: string[]): string {
     return `${this.namePrefix}/${path.join('/')}`
   }

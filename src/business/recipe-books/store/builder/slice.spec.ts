@@ -76,14 +76,8 @@ describe('createBucketSlice', () => {
 
     it.each`
       actionName
-      ${'addBucket'}
-      ${'updateBucketDocument'}
       ${'upsertBuckets'}
-      ${'deleteBucket'}
-      ${'addCollectionDocument'}
-      ${'updateCollectionDocument'}
       ${'upsertCollection'}
-      ${'deleteCollectionDocument'}
       ${'clear'}
     `('should have action creator $actionName with matching type', ({ actionName }) => {
       // arrange
@@ -97,168 +91,21 @@ describe('createBucketSlice', () => {
       expect(actionCreator).toContainEntry(['type', `${slice.sliceName}/${actionName}`])
     })
 
-    describe('addBucket', () => {
-      it('should add first bucket', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const document = { id: 'b0001', rev: 0, time: '08:00' }
-        const action = actions.addBucket({ document })
-
-        const expectedState = {
-          ids: ['b0001'],
-          buckets: {
-            b0001: {
-              entity: { id: 'b0001', rev: 0, time: '08:00' },
-              collections: {},
-            },
-          },
-        }
-
-        // act
-        const state1 = reducer(state0, action)
-
-        // assert
-        expect(state1).toEqual(expectedState)
-      })
-
-      it('should add next bucket', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const document1 = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.addBucket({ document: document1 })
-        const state1 = reducer(state0, action1)
-
-        const document2 = { id: 'b0002', rev: 0, time: '09:00' }
-        const action2 = actions.addBucket({ document: document2 })
-
-        const expectedState = {
-          ids: ['b0001', 'b0002'],
-          buckets: {
-            b0001: {
-              entity: { id: 'b0001', rev: 0, time: '08:00' },
-              collections: {},
-            },
-            b0002: {
-              entity: { id: 'b0002', rev: 0, time: '09:00' },
-              collections: {},
-            },
-          },
-        }
-
-        // act
-        const state2 = reducer(state1, action2)
-
-        // assert
-        expect(state2).toEqual(expectedState)
-      })
-
-      it('should skip if document id is already used', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const document = { id: 'b0001', rev: 0, time: '08:00' }
-        const action = actions.addBucket({ document })
-        const state1 = reducer(state0, action)
-
-        // act
-        const state2 = reducer(state1, action)
-
-        // assert
-        expect(state2).toBe(state1)
-      })
-
-      it('should log error if document id is already used', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const document = { id: 'b0001', rev: 0, time: '08:00' }
-        const action = actions.addBucket({ document })
-        const state1 = reducer(state0, action)
-
-        // act
-        reducer(state1, action)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action, "document id 'b0001' already used")
-      })
-    })
-
-    describe('updateBucketDocument', () => {
-      it('should update document of an existing bucket', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const document = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [document] })
-        const state1 = reducer(state0, action1)
-
-        const documentUpdate = { ...document, rev: 1, time: '08:10' }
-        const action2 = actions.updateBucketDocument({ document: documentUpdate })
-
-        const expectedState = {
-          ids: ['b0001'],
-          buckets: {
-            b0001: {
-              entity: { id: 'b0001', rev: 1, time: '08:10' },
-              collections: {},
-            },
-          },
-        }
-
-        // act
-        const state2 = reducer(state1, action2)
-
-        // assert
-        expect(state2).toEqual(expectedState)
-      })
-
-      it('should skip if document id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const document = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [document] })
-        const state1 = reducer(state0, action1)
-
-        const documentUpdate = { ...document, id: 'b-unknown', rev: 1, time: '08:10' }
-        const action2 = actions.updateBucketDocument({ document: documentUpdate })
-
-        // act
-        const state2 = reducer(state1, action2)
-
-        // assert
-        expect(state2).toBe(state1)
-      })
-
-      it('should log error if document id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const document = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [document] })
-        const state1 = reducer(state0, action1)
-
-        const documentUpdate = { ...document, id: 'b-unknown', rev: 1, time: '08:10' }
-        const action2 = actions.updateBucketDocument({ document: documentUpdate })
-
-        // act
-        reducer(state1, action2)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action2, "document id 'b-unknown' does not exist")
-      })
-    })
-
     describe('upsertBuckets', () => {
+      it('should change nothing', () => {
+        // arrange
+        const { reducer, actions, getInitialState } = slice
+        const state0 = getInitialState()
+
+        const action = actions.upsertBuckets({})
+
+        // act
+        const state1 = reducer(state0, action)
+
+        // assert
+        expect(state1).toBe(state0)
+      })
+
       it('should add first bucket', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
@@ -372,10 +219,8 @@ describe('createBucketSlice', () => {
         // assert
         expect(state1).toEqual(expectedState)
       })
-    })
 
-    describe('deleteBucket', () => {
-      it('should delete last existing bucket', () => {
+      it('should delete last bucket', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
@@ -384,7 +229,7 @@ describe('createBucketSlice', () => {
         const action1 = actions.upsertBuckets({ documents: [document] })
         const state1 = reducer(state0, action1)
 
-        const action2 = actions.deleteBucket({ bucketId: 'b0001' })
+        const action2 = actions.upsertBuckets({ deleted: ['b0001'] })
 
         const expectedState = {
           ids: [],
@@ -398,20 +243,17 @@ describe('createBucketSlice', () => {
         expect(state2).toEqual(expectedState)
       })
 
-      it('should delete one of many existing buckets', () => {
+      it('should delete one of many buckets', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
 
         const document1 = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.addBucket({ document: document1 })
+        const document2 = { id: 'b0002', rev: 0, time: '09:00' }
+        const action1 = actions.upsertBuckets({ documents: [document1, document2] })
         const state1 = reducer(state0, action1)
 
-        const document2 = { id: 'b0002', rev: 0, time: '09:00' }
-        const action2 = actions.addBucket({ document: document2 })
-        const state2 = reducer(state1, action2)
-
-        const action3 = actions.deleteBucket({ bucketId: 'b0001' })
+        const action2 = actions.upsertBuckets({ deleted: ['b0001'] })
 
         const expectedState = {
           ids: ['b0002'],
@@ -424,13 +266,37 @@ describe('createBucketSlice', () => {
         }
 
         // act
-        const state3 = reducer(state2, action3)
+        const state2 = reducer(state1, action2)
 
         // assert
-        expect(state3).toEqual(expectedState)
+        expect(state2).toEqual(expectedState)
       })
 
-      it('should skip if document id is unknown', () => {
+      it('should delete all buckets', () => {
+        // arrange
+        const { reducer, actions, getInitialState } = slice
+        const state0 = getInitialState()
+
+        const document1 = { id: 'b0001', rev: 0, time: '08:00' }
+        const document2 = { id: 'b0002', rev: 0, time: '09:00' }
+        const action1 = actions.upsertBuckets({ documents: [document1, document2] })
+        const state1 = reducer(state0, action1)
+
+        const action2 = actions.upsertBuckets({ deleted: ['b0001', 'b0002'] })
+
+        const expectedState = {
+          ids: [],
+          buckets: {},
+        }
+
+        // act
+        const state2 = reducer(state1, action2)
+
+        // assert
+        expect(state2).toEqual(expectedState)
+      })
+
+      it('should skip delete unknown bucket (no change)', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
@@ -439,7 +305,7 @@ describe('createBucketSlice', () => {
         const action1 = actions.upsertBuckets({ documents: [document] })
         const state1 = reducer(state0, action1)
 
-        const action2 = actions.deleteBucket({ bucketId: 'b-unknown' })
+        const action2 = actions.upsertBuckets({ deleted: ['b-unknown'] })
 
         // act
         const state2 = reducer(state1, action2)
@@ -448,55 +314,24 @@ describe('createBucketSlice', () => {
         expect(state2).toBe(state1)
       })
 
-      it('should log error if document id is unknown', () => {
+      it('should skip delete unknown bucket', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
 
-        const document = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [document] })
+        const document1 = { id: 'b0001', rev: 0, time: '08:00' }
+        const document2 = { id: 'b0002', rev: 0, time: '09:00' }
+        const action1 = actions.upsertBuckets({ documents: [document1, document2] })
         const state1 = reducer(state0, action1)
 
-        const action2 = actions.deleteBucket({ bucketId: 'b-unknown' })
-
-        // act
-        reducer(state1, action2)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action2, "document id 'b-unknown' does not exist")
-      })
-    })
-
-    describe('addCollectionDocument', () => {
-      it('should add first collection document', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.addCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
+        const action2 = actions.upsertBuckets({ deleted: ['b0001', 'b-unknown'] })
 
         const expectedState = {
-          ids: ['b0001'],
+          ids: ['b0002'],
           buckets: {
-            b0001: {
-              entity: { id: 'b0001', rev: 0, time: '08:00' },
-              collections: {
-                drinks: {
-                  ids: ['d0001'],
-                  entities: {
-                    d0001: { id: 'd0001', rev: 0, name: 'coffee' },
-                  },
-                },
-              },
+            b0002: {
+              entity: { id: 'b0002', rev: 0, time: '09:00' },
+              collections: {},
             },
           },
         }
@@ -508,409 +343,55 @@ describe('createBucketSlice', () => {
         expect(state2).toEqual(expectedState)
       })
 
-      it('should add next collection document', () => {
+      it('should delete added bucket', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
 
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument1 = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.addCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument1,
-        })
-        const state2 = reducer(state1, action2)
-
-        const collectionDocument2 = { id: 'd0002', rev: 0, name: 'tea' }
-        const action3 = actions.addCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument2,
-        })
+        const document1 = { id: 'b0001', rev: 0, time: '08:00' }
+        const document2 = { id: 'b0002', rev: 0, time: '09:00' }
+        const action1 = actions.upsertBuckets({ documents: [document1, document2], deleted: ['b0002'] })
 
         const expectedState = {
           ids: ['b0001'],
           buckets: {
             b0001: {
               entity: { id: 'b0001', rev: 0, time: '08:00' },
-              collections: {
-                drinks: {
-                  ids: ['d0001', 'd0002'],
-                  entities: {
-                    d0001: { id: 'd0001', rev: 0, name: 'coffee' },
-                    d0002: { id: 'd0002', rev: 0, name: 'tea' },
-                  },
-                },
-              },
+              collections: {},
             },
           },
         }
 
         // act
-        const state3 = reducer(state2, action3)
-
-        // assert
-        expect(state3).toEqual(expectedState)
-      })
-
-      it('should skip if bucket id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
         const state1 = reducer(state0, action1)
 
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.addCollectionDocument({
-          bucketId: 'b-unknown',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
-
-        // act
-        const state2 = reducer(state1, action2)
-
         // assert
-        expect(state2).toBe(state1)
-      })
-
-      it('should log error if bucket id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.addCollectionDocument({
-          bucketId: 'b-unknown',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
-
-        // act
-        reducer(state1, action2)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action2, "bucket id 'b-unknown' does not exist")
-      })
-
-      it('should skip if document id is already used', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.addCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
-        const state2 = reducer(state1, action2)
-
-        // act
-        const state3 = reducer(state2, action2)
-
-        // assert
-        expect(state3).toBe(state2)
-      })
-
-      it('should log error if document id is already used', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.addCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
-        const state2 = reducer(state1, action2)
-
-        // act
-        reducer(state2, action2)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action2, "document id 'd0001' already used")
-      })
-
-      it('should add documents in different collections', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument1 = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.addCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument1,
-        })
-        const state2 = reducer(state1, action2)
-
-        const collectionDocument2 = { id: 'f0001', rev: 0, name: 'bread' }
-        const action3 = actions.addCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'foods',
-          document: collectionDocument2,
-        })
-
-        const expectedState = {
-          ids: ['b0001'],
-          buckets: {
-            b0001: {
-              entity: { id: 'b0001', rev: 0, time: '08:00' },
-              collections: {
-                drinks: {
-                  ids: ['d0001'],
-                  entities: {
-                    d0001: { id: 'd0001', rev: 0, name: 'coffee' },
-                  },
-                },
-                foods: {
-                  ids: ['f0001'],
-                  entities: {
-                    f0001: { id: 'f0001', rev: 0, name: 'bread' },
-                  },
-                },
-              },
-            },
-          },
-        }
-
-        // act
-        const state3 = reducer(state2, action3)
-
-        // assert
-        expect(state3).toEqual(expectedState)
-      })
-    })
-
-    describe('updateCollectionDocument', () => {
-      it('should update an existing collection document', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.upsertCollection({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          documents: [collectionDocument],
-        })
-        const state2 = reducer(state1, action2)
-
-        const collectionDocumentUpdate = { ...collectionDocument, rev: 1, name: 'espresso' }
-        const action3 = actions.updateCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocumentUpdate,
-        })
-
-        const expectedState = {
-          ids: ['b0001'],
-          buckets: {
-            b0001: {
-              entity: { id: 'b0001', rev: 0, time: '08:00' },
-              collections: {
-                drinks: {
-                  ids: ['d0001'],
-                  entities: {
-                    d0001: { id: 'd0001', rev: 1, name: 'espresso' },
-                  },
-                },
-              },
-            },
-          },
-        }
-
-        // act
-        const state3 = reducer(state2, action3)
-
-        // assert
-        expect(state3).toEqual(expectedState)
-      })
-
-      it('should skip if bucket id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.updateCollectionDocument({
-          bucketId: 'b-unknown',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
-
-        // act
-        const state2 = reducer(state1, action2)
-
-        // assert
-        expect(state2).toBe(state1)
-      })
-
-      it('should log error if bucket id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.updateCollectionDocument({
-          bucketId: 'b-unknown',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
-
-        // act
-        reducer(state1, action2)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action2, "bucket id 'b-unknown' does not exist")
-      })
-
-      it('should skip if collection is empty', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.updateCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
-
-        // act
-        const state2 = reducer(state1, action2)
-
-        // assert
-        expect(state2).toBe(state1)
-      })
-
-      it('should log error if collection is empty', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.updateCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument,
-        })
-
-        // act
-        reducer(state1, action2)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action2, "document id 'd0001' does not exist")
-      })
-
-      it('should skip if document id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument2 = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.updateCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument2,
-        })
-        const state2 = reducer(state1, action2)
-
-        const collectionDocument3 = { id: 'd-unknown', rev: 0, name: 'espresso' }
-        const action3 = actions.updateCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument3,
-        })
-
-        // act
-        const state3 = reducer(state2, action3)
-
-        // assert
-        expect(state3).toBe(state2)
-      })
-
-      it('should log error if document id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const collectionDocument2 = { id: 'd0001', rev: 0, name: 'coffee' }
-        const action2 = actions.updateCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument2,
-        })
-        const state2 = reducer(state1, action2)
-
-        const collectionDocument3 = { id: 'd-unknown', rev: 0, name: 'espresso' }
-        const action3 = actions.updateCollectionDocument({
-          bucketId: 'b0001',
-          collectionName: 'drinks',
-          document: collectionDocument3,
-        })
-
-        // act
-        reducer(state2, action3)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action3, "document id 'd-unknown' does not exist")
+        expect(state1).toEqual(expectedState)
       })
     })
 
     describe('upsertCollection', () => {
+      it('should change nothing', () => {
+        // arrange
+        const { reducer, actions, getInitialState } = slice
+        const state0 = getInitialState()
+
+        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
+        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
+        const state1 = reducer(state0, action1)
+
+        const action2 = actions.upsertCollection({
+          bucketId: 'b0001',
+          collectionName: 'drinks',
+        })
+
+        // act
+        const state2 = reducer(state1, action2)
+
+        // assert
+        expect(state2).toBe(state1)
+      })
+
       it('should add first collection document', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
@@ -1083,7 +564,7 @@ describe('createBucketSlice', () => {
         expect(state2).toEqual(expectedState)
       })
 
-      it('should skip if bucket id is unknown', () => {
+      it('should skip if bucket id unknown', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
@@ -1097,6 +578,7 @@ describe('createBucketSlice', () => {
           bucketId: 'b-unknown',
           collectionName: 'drinks',
           documents: [collectionDocument],
+          deleted: ['d0002'],
         })
 
         // act
@@ -1204,10 +686,8 @@ describe('createBucketSlice', () => {
         // assert
         expect(state3).toEqual(expectedState)
       })
-    })
 
-    describe('deleteCollectionDocument', () => {
-      it('should delete last collection document of a collection with one document', () => {
+      it('should delete last collection document', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
@@ -1224,7 +704,11 @@ describe('createBucketSlice', () => {
         })
         const state2 = reducer(state1, collectionAction)
 
-        const action = actions.deleteCollectionDocument({ bucketId: 'b0001', collectionName: 'drinks', id: 'd0001' })
+        const action = actions.upsertCollection({
+          bucketId: 'b0001',
+          collectionName: 'drinks',
+          deleted: ['d0001'],
+        })
 
         const expectedState = {
           ids: ['b0001'],
@@ -1248,7 +732,7 @@ describe('createBucketSlice', () => {
         expect(state3).toEqual(expectedState)
       })
 
-      it('should delete one of many collection documents of a collection with many documents', () => {
+      it('should delete one of many collection documents', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
@@ -1266,7 +750,11 @@ describe('createBucketSlice', () => {
         })
         const state2 = reducer(state1, collectionAction2)
 
-        const action3 = actions.deleteCollectionDocument({ bucketId: 'b0001', collectionName: 'drinks', id: 'd0001' })
+        const action3 = actions.upsertCollection({
+          bucketId: 'b0001',
+          collectionName: 'drinks',
+          deleted: ['d0001'],
+        })
 
         const expectedState = {
           ids: ['b0001'],
@@ -1292,48 +780,50 @@ describe('createBucketSlice', () => {
         expect(state3).toEqual(expectedState)
       })
 
-      it('should skip if bucket id is unknown', () => {
+      it('should delete all collection documents', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
 
         const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
+        const bucketAction1 = actions.upsertBuckets({ documents: [bucketDocument] })
+        const state1 = reducer(state0, bucketAction1)
 
-        const action2 = actions.deleteCollectionDocument({
-          bucketId: 'b-unknown',
+        const collectionDocument1 = { id: 'd0001', rev: 0, name: 'coffee' }
+        const collectionDocument2 = { id: 'd0002', rev: 0, name: 'tea' }
+        const collectionAction2 = actions.upsertCollection({
+          bucketId: 'b0001',
           collectionName: 'drinks',
-          id: 'd0001',
+          documents: [collectionDocument1, collectionDocument2],
+        })
+        const state2 = reducer(state1, collectionAction2)
+
+        const action3 = actions.upsertCollection({
+          bucketId: 'b0001',
+          collectionName: 'drinks',
+          deleted: ['d0001', 'd0002'],
         })
 
-        // act
-        const state2 = reducer(state1, action2)
-
-        // assert
-        expect(state2).toBe(state1)
-      })
-
-      it('should log error if bucket id is unknown', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const action1 = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, action1)
-
-        const action2 = actions.deleteCollectionDocument({
-          bucketId: 'b-unknown',
-          collectionName: 'drinks',
-          id: 'd0001',
-        })
+        const expectedState = {
+          ids: ['b0001'],
+          buckets: {
+            b0001: {
+              entity: { id: 'b0001', rev: 0, time: '08:00' },
+              collections: {
+                drinks: {
+                  ids: [],
+                  entities: {},
+                },
+              },
+            },
+          },
+        }
 
         // act
-        reducer(state1, action2)
+        const state3 = reducer(state2, action3)
 
         // assert
-        expect(onActionError).toHaveBeenCalledWith(action2, "bucket id 'b-unknown' does not exist")
+        expect(state3).toEqual(expectedState)
       })
 
       it('should skip if collection is empty', () => {
@@ -1345,7 +835,11 @@ describe('createBucketSlice', () => {
         const bucketAction = actions.upsertBuckets({ documents: [bucketDocument] })
         const state1 = reducer(state0, bucketAction)
 
-        const action2 = actions.deleteCollectionDocument({ bucketId: 'b0001', collectionName: 'drinks', id: 'd0001' })
+        const action2 = actions.upsertBuckets({
+          bucketId: 'b0001',
+          collectionName: 'drinks',
+          documentIds: ['d0001'],
+        })
 
         // act
         const state2 = reducer(state1, action2)
@@ -1354,25 +848,7 @@ describe('createBucketSlice', () => {
         expect(state2).toBe(state1)
       })
 
-      it('should log error if collection is empty', () => {
-        // arrange
-        const { reducer, actions, getInitialState } = slice
-        const state0 = getInitialState()
-
-        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
-        const bucketAction = actions.upsertBuckets({ documents: [bucketDocument] })
-        const state1 = reducer(state0, bucketAction)
-
-        const action2 = actions.deleteCollectionDocument({ bucketId: 'b0001', collectionName: 'drinks', id: 'd0001' })
-
-        // act
-        reducer(state1, action2)
-
-        // assert
-        expect(onActionError).toHaveBeenCalledWith(action2, "document id 'd0001' does not exist")
-      })
-
-      it('should skip if document id is unknown', () => {
+      it('should skip delete unknown document (no change)', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
@@ -1389,10 +865,10 @@ describe('createBucketSlice', () => {
         })
         const state2 = reducer(state1, collectionAction)
 
-        const action3 = actions.deleteCollectionDocument({
+        const action3 = actions.upsertCollection({
           bucketId: 'b0001',
           collectionName: 'drinks',
-          id: 'd-unknown',
+          deleted: ['d-unknown'],
         })
 
         // act
@@ -1402,7 +878,7 @@ describe('createBucketSlice', () => {
         expect(state3).toBe(state2)
       })
 
-      it('should log error if document id is unknown', () => {
+      it('should skip delete unknown document', () => {
         // arrange
         const { reducer, actions, getInitialState } = slice
         const state0 = getInitialState()
@@ -1411,25 +887,86 @@ describe('createBucketSlice', () => {
         const bucketAction = actions.upsertBuckets({ documents: [bucketDocument] })
         const state1 = reducer(state0, bucketAction)
 
-        const collectionDocument = { id: 'd0001', rev: 0, name: 'coffee' }
+        const collectionDocument1 = { id: 'd0001', rev: 0, name: 'coffee' }
+        const collectionDocument2 = { id: 'd0002', rev: 0, name: 'tea' }
         const collectionAction = actions.upsertCollection({
           bucketId: 'b0001',
           collectionName: 'drinks',
-          documents: [collectionDocument],
+          documents: [collectionDocument1, collectionDocument2],
         })
         const state2 = reducer(state1, collectionAction)
 
-        const action3 = actions.deleteCollectionDocument({
+        const action3 = actions.upsertCollection({
           bucketId: 'b0001',
           collectionName: 'drinks',
-          id: 'd-unknown',
+          deleted: ['d-unknown', 'd0002'],
         })
 
+        const expectedState = {
+          ids: ['b0001'],
+          buckets: {
+            b0001: {
+              entity: bucketDocument,
+              collections: {
+                drinks: {
+                  ids: ['d0001'],
+                  entities: {
+                    d0001: { id: 'd0001', rev: 0, name: 'coffee' },
+                  },
+                },
+              },
+            },
+          },
+        }
+
         // act
-        reducer(state2, action3)
+        const state3 = reducer(state2, action3)
 
         // assert
-        expect(onActionError).toHaveBeenCalledWith(action3, "document id 'd-unknown' does not exist")
+        expect(state3).toEqual(expectedState)
+      })
+
+      it('should delete added document', () => {
+        // arrange
+        const { reducer, actions, getInitialState } = slice
+        const state0 = getInitialState()
+
+        const bucketDocument = { id: 'b0001', rev: 0, time: '08:00' }
+        const bucketAction = actions.upsertBuckets({ documents: [bucketDocument] })
+        const state1 = reducer(state0, bucketAction)
+
+        const collectionDocument1 = { id: 'd0001', rev: 0, name: 'coffee' }
+        const collectionDocument2 = { id: 'd0002', rev: 0, name: 'tea' }
+
+        const action2 = actions.upsertCollection({
+          bucketId: 'b0001',
+          collectionName: 'drinks',
+          documents: [collectionDocument1, collectionDocument2],
+          deleted: ['d0002'],
+        })
+
+        const expectedState = {
+          ids: ['b0001'],
+          buckets: {
+            b0001: {
+              entity: bucketDocument,
+              collections: {
+                drinks: {
+                  ids: ['d0001'],
+                  entities: {
+                    d0001: { id: 'd0001', rev: 0, name: 'coffee' },
+                  },
+                },
+              },
+            },
+          },
+        }
+
+        // act
+        const state3 = reducer(state1, action2)
+
+        // assert
+        expect(state3).toEqual(expectedState)
       })
     })
 
@@ -1489,7 +1026,7 @@ describe('createBucketSlice', () => {
         const action1 = actions.upsertBuckets({ documents: [bucketDocument1] })
         const state1 = reducer(state0, action1)
 
-        const action2 = actions.deleteBucket({ bucketId: 'b0001' })
+        const action2 = actions.upsertBuckets({ deleted: ['b0001'] })
         const state2 = reducer(state1, action2)
 
         const action3 = actions.clear()

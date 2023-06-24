@@ -1,4 +1,4 @@
-import { Observable, filter } from 'rxjs'
+import { Observable, map } from 'rxjs'
 import { Log, Logger } from '../../../../utilities/logger'
 import { CollectionPath, Database, Result } from '../database'
 import { DatabaseStructure, Doc, EpochTimestamp } from '../database-types'
@@ -28,14 +28,6 @@ export type Validators = {
    * If the document does not pass all validators, an error will be thrown.
    */
   put: Validator[]
-
-  /**
-   * Validators for documents deleted from the database.
-   *
-   * `delDoc` will validate the document, before it is deleted from the database.
-   * If the document does not pass all validators, an error will be thrown.
-   */
-  del: Validator[]
 }
 
 /**
@@ -52,7 +44,6 @@ export function createRecommendedValidators<T extends DatabaseStructure>(
     return {
       get: [databaseSchemaValidator(databaseSchemas)],
       put: [],
-      del: [],
     }
   }
 
@@ -61,7 +52,6 @@ export function createRecommendedValidators<T extends DatabaseStructure>(
   return {
     get: validators,
     put: validators,
-    del: validators,
   }
 }
 
@@ -76,21 +66,19 @@ export class ValidatingDatabase implements Database {
   private readonly log: Log
   private readonly getValidators: Validator[]
   private readonly putValidators: Validator[]
-  private readonly delValidators: Validator[]
 
   constructor(logger: Logger<'business'>, private readonly database: Database, validators: Partial<Validators> = {}) {
     this.log = logger('business:ValidatingDatabase')
     this.getValidators = validators.get ?? []
     this.putValidators = validators.put ?? []
-    this.delValidators = validators.del ?? []
   }
 
-  getDocs(path: CollectionPath, after?: EpochTimestamp): Observable<Result<Doc>> {
+  getDocs(path: CollectionPath, after?: EpochTimestamp): Observable<Array<Result<Doc>>> {
     const docs$ = this.database.getDocs(path, after)
     if (this.getValidators.length === 0) return docs$
     const isValidDoc = (doc: Doc) =>
       this.validateDoc('[getDocs] Ignore invalid document', this.getValidators, path, doc) === null
-    return docs$.pipe(filter(({ doc }) => isValidDoc(doc)))
+    return docs$.pipe(map((results) => results.filter(({ doc }) => isValidDoc(doc))))
   }
 
   async putDoc(path: CollectionPath, doc: Doc): Promise<Result<Doc>> {
@@ -104,14 +92,6 @@ export class ValidatingDatabase implements Database {
       throw new Error(`Can't handle written document: ${resultError}`)
     }
     return result
-  }
-
-  async delDoc(path: CollectionPath, doc: Doc): Promise<void> {
-    const error = this.validateDoc('[delDoc] Reject deleting of invalid document', this.delValidators, path, doc)
-    if (error) {
-      throw new Error(`Can't delete invalid document: ${error}`)
-    }
-    return this.database.delDoc(path, doc)
   }
 
   private validateDoc(logPrefix: string, validators: Validator[], path: CollectionPath, doc: Doc): null | string {

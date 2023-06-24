@@ -12,8 +12,9 @@ import {
 } from './builder/thunks'
 import { sliceName, actions } from './recipe-books.slice'
 
-const prepareRecipeBook = (p: { recipeBook: RecipeBook }) => ({ document: p.recipeBook })
-const prepareRecipeBookId = (p: { recipeBookId: ID }) => ({ bucketId: p.recipeBookId })
+const prepareRecipeBook = (p: { recipeBook: RecipeBook }) => ({
+  document: p.recipeBook,
+})
 const prepareRecipeCollection = (p: { recipeBookId: ID }) => ({
   bucketId: p.recipeBookId,
   collectionName: 'recipes' as const,
@@ -22,11 +23,6 @@ const prepareRecipe = (p: { recipeBookId: ID; recipe: Recipe }) => ({
   bucketId: p.recipeBookId,
   collectionName: 'recipes' as const,
   document: p.recipe,
-})
-const prepareRecipeId = (p: { recipeBookId: ID; recipeId: ID }) => ({
-  bucketId: p.recipeBookId,
-  collectionName: 'recipes' as const,
-  id: p.recipeId,
 })
 
 const context = {
@@ -58,7 +54,7 @@ export const updateRecipeBook = createUpdateBucketDocument(context, prepareRecip
  *
  * @param recipeBookId the id of the recipe book to delete
  */
-export const deleteRecipeBook = createDeleteBucket(context, prepareRecipeBookId)
+export const deleteRecipeBook = createDeleteBucket(context, prepareRecipeBook)
 
 /**
  * Refresh all recipes of the specified recipe book.
@@ -87,6 +83,6 @@ export const updateRecipe = createUpdateCollectionDocument(context, prepareRecip
  * Delete an existing recipe from the specified recipe book in the database.
  *
  * @param recipeBookId the ID of the recipe book
- * @param id the ID of the recipe to delete
+ * @param recipe the recipe to delete
  */
-export const deleteRecipe = createDeleteCollectionDocument(context, prepareRecipeId)
+export const deleteRecipe = createDeleteCollectionDocument(context, prepareRecipe)

@@ -49,10 +49,6 @@ function emulatorFirestoreService(): { firestoreService: FirestoreService; clear
       `${PREFIX}-put-return-sub/test/sub`,
       `${PREFIX}-put-return-update`,
       `${PREFIX}-put-return-update-sub/test/sub`,
-      `${PREFIX}-del`,
-      `${PREFIX}-del-sub/test/sub`,
-      `${PREFIX}-del-one`,
-      `${PREFIX}-del-one-sub/test/sub`,
     )
   }
   return { firestoreService, clearAll }
@@ -434,104 +430,6 @@ describe('FirestoreDatabase', () => {
           // assert
           const expected = await firestoreService.readDoc([path.bucket, path.bucketId, path.collection, doc.id])
           expect(result).toEqual(expected)
-        })
-      })
-
-      describe('.delDoc', () => {
-        it('should delete an existing bucket document', async () => {
-          // arrange
-          const path = { bucket: `${PREFIX}-del` }
-          const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          await firestoreService.writeDoc([path.bucket, doc.id], doc)
-
-          // act
-          await db.delDoc(path, doc)
-
-          // assert
-          const documents = await collectFrom(firestoreService.readDocs([path.bucket]))
-          expect(documents).toBeEmpty()
-        })
-
-        it('should delete an existing bucket collection document', async () => {
-          // arrange
-          const path = { bucket: `${PREFIX}-del-sub`, bucketId: 'test', collection: 'sub' }
-          const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc.id], doc)
-
-          // act
-          await db.delDoc(path, doc)
-
-          // assert
-          const documents = await collectFrom(firestoreService.readDocs([path.bucket, path.bucketId, path.collection]))
-          expect(documents).toBeEmpty()
-        })
-
-        it('should do nothing if the bucket document does not exist', async () => {
-          // arrange
-          const path = { bucket: `${PREFIX}-del` }
-          const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-
-          // act
-          await db.delDoc(path, doc)
-
-          // assert
-          const documents = await collectFrom(firestoreService.readDocs([path.bucket]))
-          expect(documents).toBeEmpty()
-        })
-
-        it('should do nothing if the bucket collection document does not exist', async () => {
-          // arrange
-          const path = { bucket: `${PREFIX}-del-sub`, bucketId: 'test', collection: 'sub' }
-          const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-
-          // act
-          await db.delDoc(path, doc)
-
-          // assert
-          const documents = await collectFrom(firestoreService.readDocs([path.bucket, path.bucketId, path.collection]))
-          expect(documents).toBeEmpty()
-        })
-
-        it('should not delete other bucket documents', async () => {
-          // arrange
-          const path = { bucket: `${PREFIX}-del-one` }
-          const doc1 = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          const doc2 = { id: 'bar', rev: 2, content: { baz: 'foo' } }
-          await firestoreService.writeDoc([path.bucket, doc1.id], doc1)
-          await firestoreService.writeDoc([path.bucket, doc2.id], doc2)
-
-          // act
-          await db.delDoc(path, doc1)
-
-          // assert
-          const documents = await collectFrom(firestoreService.readDocs([path.bucket]))
-          expect(documents.flat()).toEqual([
-            {
-              lastUpdate: expect.any(Number),
-              doc: { id: 'bar', rev: 2, content: { baz: 'foo' } },
-            },
-          ])
-        })
-
-        it('should not delete other bucket collection documents', async () => {
-          // arrange
-          const path = { bucket: `${PREFIX}-del-one-sub`, bucketId: 'test', collection: 'sub' }
-          const doc1 = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          const doc2 = { id: 'bar', rev: 2, content: { baz: 'foo' } }
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc1.id], doc1)
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc2.id], doc2)
-
-          // act
-          await db.delDoc(path, doc1)
-
-          // assert
-          const documents = await collectFrom(firestoreService.readDocs([path.bucket, path.bucketId, path.collection]))
-          expect(documents.flat()).toEqual([
-            {
-              lastUpdate: expect.any(Number),
-              doc: { id: 'bar', rev: 2, content: { baz: 'foo' } },
-            },
-          ])
         })
       })
     }),

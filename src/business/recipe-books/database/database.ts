@@ -26,5 +26,4 @@ export interface Result<T> {
 export interface Database {
   getDocs(path: CollectionPath, after?: EpochTimestamp): Observable<Array<Result<Doc>>>
   putDoc(path: CollectionPath, doc: Doc): Promise<Result<Doc>>
-  delDoc(path: CollectionPath, doc: Doc): Promise<void>
 }

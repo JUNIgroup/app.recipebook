@@ -51,14 +51,6 @@ describe('createRecommendedValidators', () => {
       // assert
       expect(namesOf(validators.put), 'put').toEqual([])
     })
-
-    it(`should return 'del' validators for production`, () => {
-      // act
-      const validators = createRecommendedValidators(databaseSchemas)
-
-      // assert
-      expect(namesOf(validators.del), 'del').toEqual([])
-    })
   })
 
   describe('in development mode', () => {
@@ -81,14 +73,6 @@ describe('createRecommendedValidators', () => {
       // assert
       expect(namesOf(validators.put), 'put').toEqual(['validateId', 'validateRevision', 'validateDatabaseSchema'])
     })
-
-    it(`should return 'del' validators for development`, () => {
-      // act
-      const validators = createRecommendedValidators(databaseSchemas)
-
-      // assert
-      expect(namesOf(validators.del), 'del').toEqual(['validateId', 'validateRevision', 'validateDatabaseSchema'])
-    })
   })
 })
 
@@ -101,7 +85,6 @@ describe('ValidatingDatabase', () => {
     innerDatabase = {
       getDocs: vi.fn(),
       putDoc: vi.fn(),
-      delDoc: vi.fn(),
     }
   })
 
@@ -155,6 +138,36 @@ describe('ValidatingDatabase', () => {
       expect(innerDatabase.getDocs).toHaveBeenCalledWith(path, after)
     })
 
+    it('should pass through empty results of the inner database if no validator is defined', async () => {
+      // arrange
+      const validators = { get: [] }
+      const db = new ValidatingDatabase(logger, innerDatabase, validators)
+      const path = { bucket: 'foo' }
+      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([]))
+
+      // act
+      const result = await collectFrom(db.getDocs(path))
+
+      // assert
+      expect(result.flat()).toEqual([])
+    })
+
+    it('should pass through empty results of the inner database if all validators pass', async () => {
+      // arrange
+      const validator1: Validator = () => null
+      const validator2: Validator = () => null
+      const validators = { get: [validator1, validator2] }
+      const db = new ValidatingDatabase(logger, innerDatabase, validators)
+      const path = { bucket: 'foo' }
+      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([]))
+
+      // act
+      const result = await collectFrom(db.getDocs(path))
+
+      // assert
+      expect(result.flat()).toEqual([])
+    })
+
     it('should pass through the result of the inner database if no validator is defined', async () => {
       // arrange
       const validators = { get: [] }
@@ -163,13 +176,13 @@ describe('ValidatingDatabase', () => {
       const result1: Result<Doc> = { lastUpdate: 1000, doc: { id: 'foo-1', rev: 0 } }
       const result2: Result<Doc> = { lastUpdate: 1200, doc: { id: 'foo-2', rev: 0 } }
       const result3: Result<Doc> = { lastUpdate: 1400, doc: { id: 'foo-3', rev: 0 } }
-      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of(result1, result2, result3))
+      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([result1], [result2, result3]))
 
       // act
       const result = await collectFrom(db.getDocs(path))
 
       // assert
-      expect(result).toEqual([result1, result2, result3])
+      expect(result.flat()).toEqual([result1, result2, result3])
     })
 
     it('should pass through the result of the inner database if all validators pass', async () => {
@@ -182,13 +195,13 @@ describe('ValidatingDatabase', () => {
       const result1: Result<Doc> = { lastUpdate: 1000, doc: { id: 'foo-1', rev: 0 } }
       const result2: Result<Doc> = { lastUpdate: 1200, doc: { id: 'foo-2', rev: 0 } }
       const result3: Result<Doc> = { lastUpdate: 1400, doc: { id: 'foo-3', rev: 0 } }
-      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of(result1, result2, result3))
+      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([result1], [result2, result3]))
 
       // act
       const result = await collectFrom(db.getDocs(path))
 
       // assert
-      expect(result).toEqual([result1, result2, result3])
+      expect(result.flat()).toEqual([result1, result2, result3])
     })
 
     it('should ignore results, which does not pass at least one validator', async () => {
@@ -201,13 +214,13 @@ describe('ValidatingDatabase', () => {
       const result1: Result<Doc> = { lastUpdate: 1000, doc: { id: 'foo-1', rev: 0 } }
       const result2: Result<Doc> = { lastUpdate: 1200, doc: { id: 'foo-2', rev: 0 } }
       const result3: Result<Doc> = { lastUpdate: 1400, doc: { id: 'foo-3', rev: 0 } }
-      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of(result1, result2, result3))
+      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([result1], [result2, result3]))
 
       // act
       const result = await collectFrom(db.getDocs(path))
 
       // assert
-      expect(result).toEqual([result3])
+      expect(result.flat()).toEqual([result3])
     })
 
     it('should log ignored results', async () => {
@@ -220,7 +233,7 @@ describe('ValidatingDatabase', () => {
       const result1: Result<Doc> = { lastUpdate: 1000, doc: { id: 'foo-1', rev: 0 } }
       const result2: Result<Doc> = { lastUpdate: 1200, doc: { id: 'foo-2', rev: 0 } }
       const result3: Result<Doc> = { lastUpdate: 1400, doc: { id: 'foo-3', rev: 0 } }
-      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of(result1, result2, result3))
+      vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([result1], [result2, result3]))
 
       // act
       await collectFrom(db.getDocs(path))
@@ -378,91 +391,6 @@ describe('ValidatingDatabase', () => {
       const logMessages = logger('business:ValidatingDatabase').messages
       expect(logMessages).toEqual([
         '[putDoc] Ignore invalid written document foo/foo-1: invalid Y',
-        '   {"id":"foo-1","rev":0}',
-      ])
-    })
-  })
-
-  describe('delDoc', () => {
-    it('should request inner database', async () => {
-      // arrange
-      const validators = { del: [] }
-      const db = new ValidatingDatabase(logger, innerDatabase, validators)
-      const path = { bucket: 'foo' }
-      const doc: Doc = { id: 'foo-1', rev: 0 }
-      vi.spyOn(innerDatabase, 'delDoc').mockResolvedValueOnce()
-
-      // act
-      await db.delDoc(path, doc)
-
-      // assert
-      expect(innerDatabase.delDoc).toHaveBeenCalledWith(path, doc)
-    })
-
-    it('should pass through the result of the inner database if no validator is defined', async () => {
-      // arrange
-      const validators = { del: [] }
-      const db = new ValidatingDatabase(logger, innerDatabase, validators)
-      const path = { bucket: 'foo' }
-      const doc: Doc = { id: 'foo-1', rev: 0 }
-      vi.spyOn(innerDatabase, 'delDoc').mockResolvedValueOnce()
-
-      // act
-      await db.delDoc(path, doc)
-
-      // assert
-      expect(innerDatabase.delDoc).toHaveBeenCalledWith(path, doc)
-    })
-
-    it('should pass through the result of the inner database if all validators pass', async () => {
-      // arrange
-      const delValidator1: Validator = () => null
-      const delValidator2: Validator = () => null
-      const validators = { del: [delValidator1, delValidator2] }
-      const db = new ValidatingDatabase(logger, innerDatabase, validators)
-      const path = { bucket: 'foo' }
-      const doc: Doc = { id: 'foo-1', rev: 0 }
-      vi.spyOn(innerDatabase, 'delDoc').mockResolvedValueOnce()
-
-      // act
-      await db.delDoc(path, doc)
-
-      // assert
-      expect(innerDatabase.delDoc).toHaveBeenCalledWith(path, doc)
-    })
-
-    it('should throw an error if at least one validator fails', async () => {
-      // arrange
-      const delValidator1: Validator = () => null
-      const delValidator2: Validator = () => 'invalid Z'
-      const validators = { del: [delValidator1, delValidator2] }
-      const db = new ValidatingDatabase(logger, innerDatabase, validators)
-      const path = { bucket: 'foo' }
-      const doc: Doc = { id: 'foo-1', rev: 0 }
-
-      // act
-      const result = db.delDoc(path, doc)
-
-      // assert
-      await expect(result).rejects.toThrow(`Can't delete invalid document: invalid Z`)
-    })
-
-    it('should log the error if at least one validator fails', async () => {
-      // arrange
-      const delValidator1: Validator = () => null
-      const delValidator2: Validator = () => 'invalid Z'
-      const validators = { del: [delValidator1, delValidator2] }
-      const db = new ValidatingDatabase(logger, innerDatabase, validators)
-      const path = { bucket: 'foo' }
-      const doc: Doc = { id: 'foo-1', rev: 0 }
-
-      // act
-      await db.delDoc(path, doc).catch(() => null)
-
-      // assert
-      const logMessages = logger('business:ValidatingDatabase').messages
-      expect(logMessages).toEqual([
-        '[delDoc] Reject deleting of invalid document foo/foo-1: invalid Z',
         '   {"id":"foo-1","rev":0}',
       ])
     })

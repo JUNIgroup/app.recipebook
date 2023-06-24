@@ -51,12 +51,4 @@ export interface FirestoreService {
    * @returns a promise that resolves when the document has been written.
    */
   writeDoc(docPath: string[], doc: object): Promise<void>
-
-  /**
-   * Delete a single document from the database.
-   *
-   * @param docPath the path of the document to delete. Must have an even number of elements.
-   * @returns a promise that resolves when the document has been deleted.
-   */
-  delDoc(docPath: string[]): Promise<void>
 }

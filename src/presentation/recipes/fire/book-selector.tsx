@@ -60,7 +60,7 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
   const deleteBook = async (book: RecipeBook) => {
     setError(null)
     try {
-      await dispatch(fromRecipeBooks.deleteRecipeBook({ recipeBookId: book.id }))
+      await dispatch(fromRecipeBooks.deleteRecipeBook({ recipeBook: book }))
       // eslint-disable-next-line no-console
       console.log(`Book deleted: ${book.title}`)
     } catch (err) {

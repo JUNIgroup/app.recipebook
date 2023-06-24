@@ -42,16 +42,6 @@ export class FirestoreDatabase implements Database {
     this.log.details(`${operation} took ${(Date.now() - time0) / 1000}ms`)
     return written as Result<Doc>
   }
-
-  async delDoc(path: CollectionPath, doc: Doc): Promise<void> {
-    const time0 = Date.now()
-    const operation = encodeTime(time0, 10)
-    this.log.info(`${operation} delete doc from ${asLogPath(path)}: ${doc.id}`)
-
-    const docPath = asDocPath(path, doc.id)
-    await this.firestoreService.delDoc(docPath)
-    this.log.details(`${operation} took ${(Date.now() - time0) / 1000}ms`)
-  }
 }
 
 function asLogPath(path: CollectionPath): string {

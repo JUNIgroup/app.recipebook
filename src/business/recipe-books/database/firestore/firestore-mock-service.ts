@@ -37,12 +37,6 @@ export class FirestoreMockService implements FirestoreService {
     record[docId] = { lastUpdate, doc }
   }
 
-  async delDoc(docPath: string[]): Promise<void> {
-    const { parentPath, docId } = splitDocPath(docPath)
-    const record = this.getRecord(parentPath)
-    delete record[docId]
-  }
-
   private getRecord(path: string[]): Record<string, ReadDoc> {
     const key = path.join('/')
     let record = this.mockData.get(key)

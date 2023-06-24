@@ -39,38 +39,13 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
     name: sliceName,
     initialState,
     reducers: {
-      addBucket(state, action: PayloadAction<{ document: T['bucket'] }>) {
-        const { document } = action.payload
-        const { id } = document
+      upsertBuckets(state, action: PayloadAction<{ documents: T['bucket'][]; deleted: ID[] }>) {
+        const { documents = [], deleted = [] } = action.payload
 
-        if (state.buckets[id]) {
-          onActionError(action, `document id '${id}' already used`)
-          return
-        }
-
-        state.ids.push(id)
-        state.buckets[id] = castDraft({
-          entity: document,
-          collections: {},
-        })
-      },
-
-      updateBucketDocument(state, action: PayloadAction<{ document: T['bucket'] }>) {
-        const { document } = action.payload
-        const { id } = document
-
-        if (!state.buckets[id]) {
-          onActionError(action, `document id '${id}' does not exist`)
-          return
-        }
-
-        state.buckets[id].entity = castDraft(document)
-      },
-
-      upsertBuckets(state, action: PayloadAction<{ documents: T['bucket'][] }>) {
-        function upsert(document: T['bucket']) {
+        // insert / update
+        documents.forEach((document) => {
           const { id } = document
-          if (state.buckets[id]) {
+          if (id in state.buckets) {
             state.buckets[id].entity = castDraft(document)
           } else {
             state.ids.push(id)
@@ -79,99 +54,34 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
               collections: {},
             })
           }
+        })
+
+        // delete
+        const found = deleted.filter((id) => id in state.buckets)
+        if (found.length > 0) {
+          state.ids = state.ids.filter((id) => !found.includes(id))
+          found.forEach((id) => delete state.buckets[id])
         }
-        action.payload.documents.forEach(upsert)
-      },
-
-      deleteBucket(state, action: PayloadAction<{ bucketId: ID }>) {
-        const { bucketId } = action.payload
-
-        if (!state.buckets[bucketId]) {
-          onActionError(action, `document id '${bucketId}' does not exist`)
-          return
-        }
-
-        state.ids = state.ids.filter((i) => i !== bucketId)
-        delete state.buckets[bucketId]
-      },
-
-      addCollectionDocument<CN extends keyof T['collections']>(
-        state: WritableDraft<State>,
-        action: PayloadAction<{ bucketId: ID; collectionName: CN; document: T['collections'][CN] }>,
-      ) {
-        const { bucketId, collectionName, document } = action.payload
-        const { id } = document
-
-        if (!state.buckets[bucketId]) {
-          onActionError(action, `bucket id '${bucketId}' does not exist`)
-          return
-        }
-
-        const collections = state.buckets[bucketId].collections as Record<
-          CN,
-          WritableDraft<BucketCollectionState<T['collections'][CN]>>
-        >
-        const collection = collections[collectionName]
-        if (collection == null) {
-          collections[collectionName] = castDraft({
-            ids: [id],
-            entities: { [id]: document },
-          })
-          return
-        }
-
-        if (collection.entities[id]) {
-          onActionError(action, `document id '${id}' already used`)
-          return
-        }
-
-        collection.ids.push(id)
-        collection.entities[id] = castDraft(document)
-      },
-
-      updateCollectionDocument<CN extends keyof T['collections']>(
-        state: WritableDraft<State>,
-        action: PayloadAction<{ bucketId: ID; collectionName: CN; document: T['collections'][CN] }>,
-      ) {
-        const { bucketId, collectionName, document } = action.payload
-        const { id } = document
-
-        if (!state.buckets[bucketId]) {
-          onActionError(action, `bucket id '${bucketId}' does not exist`)
-          return
-        }
-
-        const collections = state.buckets[bucketId].collections as Record<
-          CN,
-          WritableDraft<BucketCollectionState<T['collections'][CN]>>
-        >
-        const collection = collections[collectionName]
-        if (collection == null || !collection.entities[id]) {
-          onActionError(action, `document id '${id}' does not exist`)
-          return
-        }
-
-        collection.entities[id] = castDraft(document)
       },
 
       upsertCollection<CN extends keyof T['collections']>(
         state: WritableDraft<State>,
-        action: PayloadAction<{ bucketId: ID; collectionName: CN; documents: T['collections'][CN][] }>,
+        action: PayloadAction<{ bucketId: ID; collectionName: CN; documents: T['collections'][CN][]; deleted: ID[] }>,
       ) {
-        const { bucketId, collectionName, documents } = action.payload
+        const { bucketId, collectionName, documents = [], deleted = [] } = action.payload
 
         if (!state.buckets[bucketId]) {
           onActionError(action, `bucket id '${bucketId}' does not exist`)
           return
         }
-
-        if (documents.length === 0) return
 
         const collections = state.buckets[bucketId].collections as Record<
           CN,
           WritableDraft<BucketCollectionState<T['collections'][CN]>>
         >
         let collection = collections[collectionName]
+        if (documents.length === 0 && (collection == null || collection.ids.length == null)) return
+
         if (collection == null) {
           collection = castDraft({
             ids: [],
@@ -180,41 +90,19 @@ export function createBucketsSlice<BN extends BucketName, T extends BucketStruct
           collections[collectionName] = collection
         }
 
-        function upsert(document: T['collections'][CN]) {
+        // insert / update
+        documents.forEach((document) => {
           const { id } = document
-          if (collection.entities[id]) {
-            collection.entities[id] = castDraft(document)
-          } else {
-            collection.ids.push(id)
-            collection.entities[id] = castDraft(document)
-          }
+          if (!(id in collection.entities)) collection.ids.push(id)
+          collection.entities[id] = castDraft(document)
+        })
+
+        // delete
+        const found = deleted.filter((id) => id in collection.entities)
+        if (found.length > 0) {
+          collection.ids = collection.ids.filter((id) => !found.includes(id))
+          found.forEach((id) => delete collection.entities[id])
         }
-        documents.forEach(upsert)
-      },
-
-      deleteCollectionDocument<CN extends keyof T['collections']>(
-        state: WritableDraft<State>,
-        action: PayloadAction<{ bucketId: ID; collectionName: CN; id: ID }>,
-      ) {
-        const { bucketId, collectionName, id } = action.payload
-
-        if (!state.buckets[bucketId]) {
-          onActionError(action, `bucket id '${bucketId}' does not exist`)
-          return
-        }
-
-        const collections = state.buckets[bucketId].collections as Record<
-          CN,
-          WritableDraft<BucketCollectionState<never>>
-        >
-        const collection = collections[collectionName]
-        if (collection == null || !collection.entities[id]) {
-          onActionError(action, `document id '${id}' does not exist`)
-          return
-        }
-
-        collection.ids = collection.ids.filter((i) => i !== id)
-        delete collection.entities[id]
       },
 
       clear(state) {

@@ -1,7 +1,7 @@
 import { AnyAction, ThunkAction } from '@reduxjs/toolkit'
 import { Log } from '../../../../utilities/logger'
 import { CollectionPath, Database } from '../../database/database'
-import { BucketName, BucketStructure, CollectionName, ID } from '../../database/database-types'
+import { BucketName, BucketStructure, CollectionName, Doc, ID } from '../../database/database-types'
 import { BucketsActionCreator } from './slice.types'
 
 type Services = {
@@ -44,10 +44,19 @@ export function createRefreshBucketDocuments<T extends BucketStructure>({
     await new Promise<void>((resolve, reject) => {
       database.getDocs(collectionPath).subscribe({
         next: (results) => {
-          results.forEach((result) => log.details(`${task}/${result.doc.id}: `, result.lastUpdate))
-          lastUpdate = results[results.length - 1].lastUpdate
-          const documents = results.map((result) => result.doc)
-          dispatch(actions.upsertBuckets({ documents }))
+          const documents: Doc[] = []
+          const deleted: ID[] = []
+          results.forEach((result) => {
+            log.details(`${task}/${result.doc.id}: `, result.lastUpdate)
+            lastUpdate = result.lastUpdate
+            // eslint-disable-next-line no-underscore-dangle
+            if (result.doc.__deleted) {
+              deleted.push(result.doc.id)
+            } else {
+              documents.push(result.doc)
+            }
+          })
+          dispatch(actions.upsertBuckets({ documents, deleted }))
         },
         complete: resolve,
         error: reject,
@@ -132,21 +141,21 @@ export function createUpdateBucketDocument<T extends BucketStructure, P>(
  */
 export function createDeleteBucket<T extends BucketStructure, P>(
   { sliceName, actions }: ThunkContext<T>,
-  prepare: (payload: P) => { bucketId: ID },
+  prepare: (payload: P) => { document: T['bucket'] },
 ): ThunkActionCreatorWithPayload<P> {
   const collectionPath: CollectionPath = { bucket: sliceName }
   return (payload) => async (dispatch, _, extra) => {
     const { thunkLogs, database } = extra
     const log = thunkLogs[sliceName]
 
-    const { bucketId } = prepare(payload)
-    const task = `delete ${sliceName}/${bucketId}`
+    const { document } = prepare(payload)
+    const task = `delete ${sliceName}/${document.id}`
 
     log.details(task)
-    await database.delDoc(collectionPath, { id: bucketId, rev: 0 })
+    await database.putDoc(collectionPath, { ...document, __deleted: true })
     log.details(task)
 
-    dispatch(actions.deleteBucket({ bucketId }))
+    dispatch(actions.upsertBuckets({ deleted: [document.id] }))
   }
 }
 
@@ -175,10 +184,19 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
     await new Promise<void>((resolve, reject) => {
       database.getDocs(collectionPath).subscribe({
         next: (results) => {
-          results.forEach((result) => log.details(`${task}/${result.doc.id}: `, result.lastUpdate))
-          lastUpdate = results[results.length - 1].lastUpdate
-          const documents = results.map((result) => result.doc)
-          dispatch(actions.upsertCollection({ bucketId, collectionName, documents }))
+          const documents: Doc[] = []
+          const deleted: ID[] = []
+          results.forEach((result) => {
+            log.details(`${task}/${result.doc.id}: `, result.lastUpdate)
+            lastUpdate = result.lastUpdate
+            // eslint-disable-next-line no-underscore-dangle
+            if (result.doc.__deleted) {
+              deleted.push(result.doc.id)
+            } else {
+              documents.push(result.doc)
+            }
+          })
+          dispatch(actions.upsertCollection({ bucketId, collectionName, documents, deleted }))
         },
         complete: resolve,
         error: reject,
@@ -251,20 +269,20 @@ export function createUpdateCollectionDocument<T extends BucketStructure, CN ext
  */
 export function createDeleteCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
   { sliceName, actions }: ThunkContext<T>,
-  prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName; id: ID },
+  prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName; document: T['collections'][CN] },
 ): ThunkActionCreatorWithPayload<P> {
   return (payload) => async (dispatch, _, extra) => {
     const { thunkLogs, database } = extra
     const log = thunkLogs[sliceName]
 
-    const { bucketId, collectionName, id } = prepare(payload)
+    const { bucketId, collectionName, document } = prepare(payload)
     const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
-    const task = `delete ${sliceName}/${bucketId}/${collectionName}/${id}`
+    const task = `delete ${sliceName}/${bucketId}/${collectionName}/${document.id}`
 
     log.details(task)
-    await database.delDoc(collectionPath, { id, rev: 0 })
+    await database.putDoc(collectionPath, { ...document, __deleted: true })
     log.details(task)
 
-    dispatch(actions.deleteCollectionDocument({ bucketId, collectionName, id }))
+    dispatch(actions.upsertCollection({ bucketId, collectionName, deleted: [document.id] }))
   }
 }

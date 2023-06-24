@@ -46,13 +46,6 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
     `${PREFIX}-ReadWrite`,
     `${PREFIX}-ReadWrite/d1/Col-Sub1`,
     `${PREFIX}-ReadWrite/d1/Col-Sub1/d2/Col-Sub2`,
-    `${PREFIX}-Delete`,
-    `${PREFIX}-Delete/d1/Col-Sub1`,
-    `${PREFIX}-Delete/d1/Col-Sub1/d2/Col-Sub2`,
-    `${PREFIX}-Delayed-readDocs`,
-    `${PREFIX}-Delayed-readDoc`,
-    `${PREFIX}-Delayed-writeDoc`,
-    `${PREFIX}-Delayed-delDoc`,
   ]
 
   let logger: Logger<'infra'>
@@ -437,30 +430,6 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         ])
       })
     })
-
-    describe('.delDoc', () => {
-      it.each`
-        pathString
-        ${`${PREFIX}-Delete/doc-id-123`}
-        ${`${PREFIX}-Delete/d1/Col-Sub1/doc-id-123`}
-        ${`${PREFIX}-Delete/d1/Col-Sub1/d2/Col-Sub2/doc-id-123`}
-      `('should delete a document $pathString', async ({ pathString }) => {
-        // arrange
-        const path = pathString.split('/')
-        const doc = {
-          foo: ulid(),
-          bar: 1,
-        }
-        await db.writeDoc(path, doc)
-
-        // act
-        await db.delDoc(path)
-
-        // assert
-        const documents = await testHelper.listDocuments(path.slice(0, -1).join('/'))
-        expect(documents).toEqual({})
-      })
-    })
   })
 
   describe('service with delayed api endpoint', () => {
@@ -548,22 +517,6 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         createTime: expect.any(String),
         updateTime: expect.any(String),
       })
-    })
-
-    it(`should be 'delDoc' successful`, async () => {
-      // arrange
-      const path = [`${PREFIX}-Delayed-delDoc`, `doc-id`]
-      const doc = {
-        foo: ulid(),
-      }
-      await db.writeDoc(path, doc)
-
-      // act
-      await db.delDoc(path)
-
-      // assert
-      const documents = await testHelper.listDocuments(`${PREFIX}-Delayed-delDoc`)
-      expect(documents).toEqual({})
     })
   })
 })
