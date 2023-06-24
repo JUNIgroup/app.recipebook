@@ -1,24 +1,23 @@
 import { ID } from '../database/database-types'
 import { Recipe, RecipeBook } from '../model'
+import { checkNotDeleted, checkRevisionZero, increaseRevision, markDeleted } from './builder/prepare'
 import {
-  createAddBucket,
-  createAddCollectionDocument,
-  createDeleteBucket,
-  createDeleteCollectionDocument,
+  createPushBucketDocument,
+  createPushCollectionDocument,
   createRefreshBucketDocuments,
   createRefreshCollectionDocuments,
-  createUpdateBucketDocument,
-  createUpdateCollectionDocument,
 } from './builder/thunks'
-import { sliceName, actions } from './recipe-books.slice'
+import { actions, sliceName } from './recipe-books.slice'
 
 const prepareRecipeBook = (p: { recipeBook: RecipeBook }) => ({
   document: p.recipeBook,
 })
+
 const prepareRecipeCollection = (p: { recipeBookId: ID }) => ({
   bucketId: p.recipeBookId,
   collectionName: 'recipes' as const,
 })
+
 const prepareRecipe = (p: { recipeBookId: ID; recipe: Recipe }) => ({
   bucketId: p.recipeBookId,
   collectionName: 'recipes' as const,
@@ -40,21 +39,33 @@ export const refreshRecipeBooks = createRefreshBucketDocuments(context)
  *
  * @param recipeBook the recipe book to add
  */
-export const addRecipeBook = createAddBucket(context, prepareRecipeBook)
+export const addRecipeBook = createPushBucketDocument(
+  'add',
+  context,
+  checkRevisionZero(checkNotDeleted(prepareRecipeBook)),
+)
 
 /**
  * Update an existing recipe book in the database.
  *
  * @param recipeBook the recipe book to update
  */
-export const updateRecipeBook = createUpdateBucketDocument(context, prepareRecipeBook)
+export const updateRecipeBook = createPushBucketDocument(
+  'update',
+  context,
+  increaseRevision(checkNotDeleted(prepareRecipeBook)),
+)
 
 /**
  * Delete an existing recipe book from the database.
  *
  * @param recipeBookId the id of the recipe book to delete
  */
-export const deleteRecipeBook = createDeleteBucket(context, prepareRecipeBook)
+export const deleteRecipeBook = createPushBucketDocument(
+  'delete',
+  context,
+  increaseRevision(markDeleted(prepareRecipeBook)),
+)
 
 /**
  * Refresh all recipes of the specified recipe book.
@@ -69,7 +80,11 @@ export const refreshRecipes = createRefreshCollectionDocuments(context, prepareR
  * @param recipeBookId the ID of the recipe book
  * @param recipe the recipe to add
  */
-export const addRecipe = createAddCollectionDocument(context, prepareRecipe)
+export const addRecipe = createPushCollectionDocument(
+  'add', //
+  context,
+  checkRevisionZero(checkNotDeleted(prepareRecipe)),
+)
 
 /**
  * Update an existing recipe in the specified recipe book in the database.
@@ -77,7 +92,11 @@ export const addRecipe = createAddCollectionDocument(context, prepareRecipe)
  * @param recipeBookId the ID of the recipe book
  * @param recipe the recipe to update
  */
-export const updateRecipe = createUpdateCollectionDocument(context, prepareRecipe)
+export const updateRecipe = createPushCollectionDocument(
+  'update',
+  context,
+  increaseRevision(checkNotDeleted(prepareRecipe)),
+)
 
 /**
  * Delete an existing recipe from the specified recipe book in the database.
@@ -85,4 +104,8 @@ export const updateRecipe = createUpdateCollectionDocument(context, prepareRecip
  * @param recipeBookId the ID of the recipe book
  * @param recipe the recipe to delete
  */
-export const deleteRecipe = createDeleteCollectionDocument(context, prepareRecipe)
+export const deleteRecipe = createPushCollectionDocument(
+  'delete',
+  context,
+  increaseRevision(markDeleted(prepareRecipe)),
+)

@@ -25,7 +25,8 @@ export type ThunkContext<T extends BucketStructure> = {
  *
  * The thunk action returns a promise that resolves when the action is completed.
  *
- * @param _actions access to the sync bucket actions of the slice
+ * @param sliceName the name of the slice
+ * @param actions access to the sync bucket actions of the slice
  * @returns the action creator
  */
 export function createRefreshBucketDocuments<T extends BucketStructure>({
@@ -49,8 +50,7 @@ export function createRefreshBucketDocuments<T extends BucketStructure>({
           results.forEach((result) => {
             log.details(`${task}/${result.doc.id}: `, result.lastUpdate)
             lastUpdate = result.lastUpdate
-            // eslint-disable-next-line no-underscore-dangle
-            if (result.doc.__deleted) {
+            if (isDeleted(result.doc)) {
               deleted.push(result.doc.id)
             } else {
               documents.push(result.doc)
@@ -67,17 +67,18 @@ export function createRefreshBucketDocuments<T extends BucketStructure>({
 }
 
 /**
- * Returns a action creator that creates a async thunk action to add a new bucket.
- *
- * The thunk action will add a new bucket and set the given bucket document.
+ * Returns a action creator that creates a async thunk action to push a bucket document.
  *
  * The thunk action returns a promise that resolves when the action is completed.
  *
+ * @param operation the operation to log
+ * @param sliceName the name of the slice
  * @param actions access to the sync bucket actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
-export function createAddBucket<T extends BucketStructure, P>(
+export function createPushBucketDocument<T extends BucketStructure, P>(
+  operation: string,
   { sliceName, actions }: ThunkContext<T>,
   prepare: (payload: P) => { document: T['bucket'] },
 ): ThunkActionCreatorWithPayload<P> {
@@ -87,83 +88,22 @@ export function createAddBucket<T extends BucketStructure, P>(
     const log = thunkLogs[sliceName]
 
     const { document } = prepare(payload)
-    const task = `add ${sliceName}/${document.id}: `
+    const task = `${operation} ${sliceName}/${document.id}: `
 
     log.details(task, document)
     const result = await database.putDoc(collectionPath, document)
     log.details(task, result.lastUpdate)
 
-    dispatch(actions.upsertBuckets({ documents: [result.doc] }))
-  }
-}
-
-/**
- * Returns a action creator that creates a async thunk action to update a bucket document.
- *
- * The thunk action will update the bucket document of an existing bucket.
- *
- * The thunk action returns a promise that resolves when the action is completed.
- *
- * @param actions access to the sync bucket actions of the slice
- * @param prepare a function to convert the domain specific payload to the generic action payload
- * @returns the action creator
- */
-export function createUpdateBucketDocument<T extends BucketStructure, P>(
-  { sliceName, actions }: ThunkContext<T>,
-  prepare: (payload: P) => { document: T['bucket'] },
-): ThunkActionCreatorWithPayload<P> {
-  const collectionPath: CollectionPath = { bucket: sliceName }
-  return (payload) => async (dispatch, _, extra) => {
-    const { thunkLogs, database } = extra
-    const log = thunkLogs[sliceName]
-
-    const { document } = prepare(payload)
-    const task = `update ${sliceName}/${document.id}: `
-
-    log.details(task, document)
-    const result = await database.putDoc(collectionPath, document)
-    log.details(task, result.lastUpdate)
-
-    dispatch(actions.upsertBuckets({ documents: [result.doc] }))
-  }
-}
-
-/**
- * Returns a action creator that creates a async thunk action to delete a bucket.
- *
- * The thunk action will remove the bucket include the bucket document and all collections.
- *
- * The thunk action returns a promise that resolves when the action is completed.
- *
- * @param actions access to the sync bucket actions of the slice
- * @param prepare a function to convert the domain specific payload to the generic action payload
- * @returns the action creator
- */
-export function createDeleteBucket<T extends BucketStructure, P>(
-  { sliceName, actions }: ThunkContext<T>,
-  prepare: (payload: P) => { document: T['bucket'] },
-): ThunkActionCreatorWithPayload<P> {
-  const collectionPath: CollectionPath = { bucket: sliceName }
-  return (payload) => async (dispatch, _, extra) => {
-    const { thunkLogs, database } = extra
-    const log = thunkLogs[sliceName]
-
-    const { document } = prepare(payload)
-    const task = `delete ${sliceName}/${document.id}`
-
-    log.details(task)
-    await database.putDoc(collectionPath, { ...document, __deleted: true })
-    log.details(task)
-
-    dispatch(actions.upsertBuckets({ deleted: [document.id] }))
+    dispatch(actions.upsertBuckets(isDeleted(result.doc) ? { deleted: [result.doc.id] } : { documents: [result.doc] }))
   }
 }
 
 /**
  * Returns a action creator that creates a async thunk action to refresh all collection documents of a bucket.
  *
+ * @param sliceName the name of the slice
  * @param actions access to the sync collection actions of the slice
- * @param _prepare a function to convert the domain specific payload to the generic action payload
+ * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
 export function createRefreshCollectionDocuments<T extends BucketStructure, CN extends keyof T['collections'], P>(
@@ -180,7 +120,7 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
     const task = `refresh: ${sliceName}/${bucketId}/${collectionName}`
     log.details(task)
 
-    let lastUpdate: number | undefined // Number.NEGATIVE_INFINITY
+    let lastUpdate: number | undefined
     await new Promise<void>((resolve, reject) => {
       database.getDocs(collectionPath).subscribe({
         next: (results) => {
@@ -189,8 +129,7 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
           results.forEach((result) => {
             log.details(`${task}/${result.doc.id}: `, result.lastUpdate)
             lastUpdate = result.lastUpdate
-            // eslint-disable-next-line no-underscore-dangle
-            if (result.doc.__deleted) {
+            if (isDeleted(result.doc)) {
               deleted.push(result.doc.id)
             } else {
               documents.push(result.doc)
@@ -209,11 +148,14 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
 /**
  * Returns a action creator that creates a async thunk action to add a new collection document.
  *
+ * @param operation the operation to log
+ * @param sliceName the name of the slice
  * @param actions access to the sync collection actions of the slice
  * @param prepare a function to convert the domain specific payload to the generic action payload
  * @returns the action creator
  */
-export function createAddCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
+export function createPushCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
+  operation: string,
   { sliceName, actions }: ThunkContext<T>,
   prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName; document: T['collections'][CN] },
 ): ThunkActionCreatorWithPayload<P> {
@@ -223,66 +165,23 @@ export function createAddCollectionDocument<T extends BucketStructure, CN extend
 
     const { bucketId, collectionName, document } = prepare(payload)
     const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
-    const task = `add ${sliceName}/${document.id}: `
+    const task = `${operation} ${sliceName}/${document.id}: `
 
     log.details(task, document)
     const result = await database.putDoc(collectionPath, document)
     log.details(task, result.lastUpdate)
 
-    dispatch(actions.upsertCollection({ bucketId, collectionName, documents: [result.doc] }))
+    dispatch(
+      actions.upsertCollection(
+        isDeleted(result.doc)
+          ? { bucketId, collectionName, deleted: [result.doc.id] }
+          : { bucketId, collectionName, documents: [result.doc] },
+      ),
+    )
   }
 }
 
-/**
- * Returns a action creator that creates a async thunk action to update a collection document.
- *
- * @param actions access to the sync collection actions of the slice
- * @param prepare a function to convert the domain specific payload to the generic action payload
- * @returns the action creator
- */
-export function createUpdateCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  { sliceName, actions }: ThunkContext<T>,
-  prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName; document: T['collections'][CN] },
-): ThunkActionCreatorWithPayload<P> {
-  return (payload) => async (dispatch, _, extra) => {
-    const { thunkLogs, database } = extra
-    const log = thunkLogs[sliceName]
-
-    const { bucketId, collectionName, document } = prepare(payload)
-    const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
-    const task = `update ${sliceName}/${document.id}: `
-
-    log.details(task, document)
-    const result = await database.putDoc(collectionPath, document)
-    log.details(task, result.lastUpdate)
-
-    dispatch(actions.upsertCollection({ bucketId, collectionName, documents: [result.doc] }))
-  }
-}
-
-/**
- * Returns a action creator that creates a async thunk action to delete a collection document.
- *
- * @param actions access to the sync collection actions of the slice
- * @param prepare a function to convert the domain specific payload to the generic action payload
- * @returns the action creator
- */
-export function createDeleteCollectionDocument<T extends BucketStructure, CN extends keyof T['collections'], P>(
-  { sliceName, actions }: ThunkContext<T>,
-  prepare: (payload: P) => { bucketId: ID; collectionName: CN & CollectionName; document: T['collections'][CN] },
-): ThunkActionCreatorWithPayload<P> {
-  return (payload) => async (dispatch, _, extra) => {
-    const { thunkLogs, database } = extra
-    const log = thunkLogs[sliceName]
-
-    const { bucketId, collectionName, document } = prepare(payload)
-    const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
-    const task = `delete ${sliceName}/${bucketId}/${collectionName}/${document.id}`
-
-    log.details(task)
-    await database.putDoc(collectionPath, { ...document, __deleted: true })
-    log.details(task)
-
-    dispatch(actions.upsertCollection({ bucketId, collectionName, deleted: [document.id] }))
-  }
+function isDeleted(doc: Doc): boolean | undefined {
+  // eslint-disable-next-line no-underscore-dangle
+  return doc.__deleted
 }
