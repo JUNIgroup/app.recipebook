@@ -10,9 +10,11 @@ type Services = {
   thunkLogs: Record<string, Log>
 }
 
-type ThunkActionCreator<R = Promise<void>> = () => ThunkAction<R, unknown, Services, AnyAction>
+export type ThunkActionCreator<R = Promise<void>> = () => ThunkAction<R, unknown, Services, AnyAction>
 
-type ThunkActionCreatorWithPayload<P, R = Promise<void>> = (payload: P) => ThunkAction<R, unknown, Services, AnyAction>
+export type ThunkActionCreatorWithPayload<P, R = Promise<void>> = (
+  payload: P,
+) => ThunkAction<R, unknown, Services, AnyAction>
 
 export type ThunkContext<T extends BucketStructure> = {
   sliceName: BucketName
