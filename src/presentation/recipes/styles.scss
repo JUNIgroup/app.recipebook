@@ -35,31 +35,59 @@ h1 + .error {
   flex-flow: row nowrap;
   align-content: stretch;
   justify-content: start;
+  background-color: rebeccapurple;
+  column-gap: 3px;
 
   & > .column {
     flex: 1 1 100px;
+    background-color: white;
+    padding: 0.5rem;
 
     & > h2 {
       margin-top: 0;
-      text-align: center;
+      text-align: left;
+    }
+
+    & > .title {
+      display: flex;
+      flex-flow: row nowrap;
+      margin-top: 0;
+      height: 24px;
+      text-align: left;
+
+      & > .stretch {
+        flex: 1 1 auto;
+        overflow-x: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
     }
   }
 }
 
-ul {
+.column > .cards {
   display: flex;
-  flex-flow: column;
-  align-content: stretch;
-  justify-content: flex-end;
-  align-items: stretch;
+  flex-flow: column wrap;
+  row-gap: 3px;
+  padding: 0;
 }
 
-li {
+.card {
+  display: flex;
+  flex-flow: row nowrap;
   marker: none;
-  display: block;
-  text-align: left;
+  border: 1px solid darkgray;
+  border-radius: 5px;
+  padding: 0;
 
-  & > .subtitle {
+  .card-body {
+    display: block;
+    flex: 1 1 auto;
+    padding: 4px 8px;
+    text-align: left;
+  }
+
+  .card-subtitle {
     font-size: 0.8rem;
     font-weight: normal;
 
@@ -68,7 +96,60 @@ li {
     }
   }
 
-  & > button.icon:first-of-type {
-    float: right;
+  .card-actions {
+    display: flex;
+    flex-flow: column;
+    background-color: lightgray;
+  }
+}
+
+.dropdown {
+  .dropdown-button {
+    margin: auto 0;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid darkgray;
+    border-radius: 0;
+    height: 1em;
+    width: 100%;
+    text-align: left;
+    font-weight: bold;
+  }
+
+  .dropdown-button.empty {
+    font-weight: normal;
+    color: darkgray;
+  }
+
+  .dropdown-content {
+    display: flex;
+    flex-flow: column nowrap;
+    font-weight: normal;
+    font-size: medium;
+
+    & > h3 {
+      margin: 0 0 8px;
+      text-align: left;
+    }
+
+    .dropdown-choice {
+      display: flex;
+      flex-flow: row nowrap;
+      margin-top: 4px;
+    }
+
+    .dropdown-text {
+      display: block;
+      flex: 1 1 auto;
+    }
+  }
+}
+
+.clickable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background-color: #00000010;
   }
 }

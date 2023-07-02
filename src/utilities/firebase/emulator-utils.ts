@@ -1,4 +1,4 @@
-import { emulators } from '../../../../firebase.json'
+import { emulators } from '../../../firebase.json'
 import { emulatorDefaultPorts } from './emulator-default-ports'
 
 interface EmulatorStatus {

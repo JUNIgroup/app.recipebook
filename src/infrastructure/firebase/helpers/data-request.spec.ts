@@ -1,6 +1,6 @@
 import { boolean, Infer, number, object, optional, string } from 'superstruct'
 import { FakeLog } from '../../../utilities/logger/fake-logger.test-helper'
-import { defineGlobalFetchForTesting } from '../../query/fetch.test-helper'
+import { defineGlobalFetchForTesting } from '../../../utilities/query/fetch.test-helper'
 import { ValidateFunction } from '../../validation/index'
 import { createValidationFunction } from '../../validation/superstruct.extend'
 import { FirebaseError } from '../firebase-error'

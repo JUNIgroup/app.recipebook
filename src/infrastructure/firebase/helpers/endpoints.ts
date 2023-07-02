@@ -1,4 +1,4 @@
-import { isEmulatorAvailable } from './emulator-utils'
+import { isEmulatorAvailable } from '../../../utilities/firebase/emulator-utils'
 
 export interface AccountEndpoints {
   signUpWithPassword: string

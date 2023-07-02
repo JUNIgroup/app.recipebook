@@ -23,7 +23,7 @@
     "test:watch": "vitest",
     "test:watch:verbose": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "emulator": "firebase emulators:start --only auth",
+    "emulator": "firebase emulators:start --only auth,firestore",
     "lint": "npm run eslint && npm run prettier && npm run stylelint",
     "eslint": "eslint . --cache",
     "eslint:fix": "eslint . --cache --fix --ext .ts,.tsx",
