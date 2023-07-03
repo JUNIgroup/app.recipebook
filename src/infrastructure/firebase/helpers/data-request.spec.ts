@@ -505,7 +505,7 @@ describe('queryJson with fetchErrorHandler', () => {
   }
 
   afterEach(() => {
-    vi.mocked(global.fetch).mockRestore()
+    vi.mocked(globalThis.fetch).mockRestore()
   })
 
   it(`should return JSON from response`, async () => {

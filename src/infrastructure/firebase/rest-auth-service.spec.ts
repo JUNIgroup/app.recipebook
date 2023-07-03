@@ -7,9 +7,9 @@ import { ProfileUpdateParams } from './helpers/rest-types'
 import { memoryPersistence } from './persistence'
 import { AuthUser, OnUserChanged, RestAuthService, Unsubscribe } from './rest-auth-service'
 
-global.fetch = fetch
-global.Request = Request
-global.Response = Response
+globalThis.fetch = fetch
+globalThis.Request = Request
+globalThis.Response = Response
 
 const uid = new ShortUniqueId()
 const emulatorIsAvailable = await isEmulatorAvailable()

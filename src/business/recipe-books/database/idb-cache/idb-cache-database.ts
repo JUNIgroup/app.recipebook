@@ -15,15 +15,6 @@ type IdbCacheOptions = {
   indexedDB?: IDBFactory
 
   /**
-   * The indexedDB key range factory.
-   *
-   * This is useful for testing outside of a browser.
-   *
-   * @default globalThis.IDBKeyRange
-   */
-  IDBKeyRange?: typeof IDBKeyRange
-
-  /**
    * The name of the IDB store to use for the cache.
    */
   cacheName: string
@@ -89,8 +80,7 @@ export class IdbCacheDatabase implements Database {
     const parent = this.getParent(path)
     this.log.details(`${operationCode} getDocs (cache): ${parent}/*`)
 
-    const range = this.options.IDBKeyRange ?? globalThis.IDBKeyRange
-    const keyRange = createKeyRange(parent, after, range.bound)
+    const keyRange = createKeyRange(parent, after)
     return readIndex(storage, keyRange).pipe(
       map((entities) => entities.map(({ lastUpdate, doc }) => ({ lastUpdate, doc }))),
       tap((results) => this.log.details(`${operationCode} (cache): `, results)),

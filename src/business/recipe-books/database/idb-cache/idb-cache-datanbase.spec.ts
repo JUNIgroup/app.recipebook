@@ -7,6 +7,8 @@ import { CollectionPath, Database } from '../database'
 import { IdbCacheDatabase } from './idb-cache-database'
 import { IDBStorage } from './utils'
 
+globalThis.IDBKeyRange = IDBKeyRange
+
 describe('IdbCacheDatabase', () => {
   const operationCode = '«test»'
 
@@ -257,7 +259,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should return all bucket documents from cache in put order, if after is not specified', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const doc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const doc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
@@ -280,7 +282,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should return all bucket documents after given timestamp', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const doc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const doc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
@@ -306,7 +308,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should include deletions after given timestamp', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const doc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const doc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
@@ -335,7 +337,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should return all collection documents after given timestamp', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo', bucketId: 'foo-123', collection: 'bar' }
       const doc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const doc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
@@ -361,7 +363,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should return only requested collection documents', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const bucketPath: CollectionPath = { bucket: 'foo' }
       const collectionPath1: CollectionPath = { bucket: 'foo', bucketId: 'foo-123', collection: 'bar' }
       const collectionPath2: CollectionPath = { bucket: 'foo', bucketId: 'foo-123', collection: 'qux' }
@@ -404,7 +406,7 @@ describe('IdbCacheDatabase', () => {
       'should request documents from inner database with after $innerAfter, if after is $after and cache has $count elements',
       async ({ count, after, innerAfter }) => {
         // arrange
-        const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+        const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
         const collectionPath: CollectionPath = { bucket: 'foo' }
         for (let i = 0; i < count; i += 1) {
           // eslint-disable-next-line no-await-in-loop
@@ -422,7 +424,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should return inner database documents, after the cache documents', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const cacheDoc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const cacheDoc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
@@ -459,7 +461,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should inner database documents in cache for next request', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const cacheDoc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const cacheDoc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
