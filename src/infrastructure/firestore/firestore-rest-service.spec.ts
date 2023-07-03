@@ -48,6 +48,8 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
     `${PREFIX}-ReadWrite/d1/Col-Sub1/d2/Col-Sub2`,
   ]
 
+  const operationCode = '«test»'
+
   let logger: Logger<'infra'>
 
   beforeEach(() => {
@@ -96,7 +98,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         const path = pathString.split('/')
 
         // act
-        const result = await collectFrom(db.readDocs(path))
+        const result = await collectFrom(db.readDocs(operationCode, path))
 
         // assert
         expect(result).toBeEmpty()
@@ -122,7 +124,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         })
 
         // act
-        const result = await collectFrom(db.readDocs(path, after))
+        const result = await collectFrom(db.readDocs(operationCode, path, after))
 
         // assert
         expect(result.flat()).toEqual([
@@ -173,7 +175,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         })
 
         // act
-        const results = await collectFrom(db.readDocs(path))
+        const results = await collectFrom(db.readDocs(operationCode, path))
 
         // assert
         expect(results.flat()).toEqual([
@@ -239,7 +241,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         })
 
         // act
-        const results = await collectFrom(db.readDocs(path, requestTime2.getTime()))
+        const results = await collectFrom(db.readDocs(operationCode, path, requestTime2.getTime()))
 
         // assert
         expect(results.flat()).toEqual([
@@ -266,7 +268,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         const path = pathString.split('/')
 
         // act
-        const result = db.readDoc(path)
+        const result = db.readDoc(operationCode, path)
 
         // assert
         await expect(result).rejects.toThrow(FirestoreRestError)
@@ -293,7 +295,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         })
 
         // act
-        const result = db.readDoc(path)
+        const result = db.readDoc(operationCode, path)
 
         // assert
         await expect(result).resolves.toEqual({
@@ -322,7 +324,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
 
         // act
         const begin = new Date()
-        await db.writeDoc(path, doc)
+        await db.writeDoc(operationCode, path, doc)
         const end = new Date()
 
         // assert
@@ -354,7 +356,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
           foo: ulid(),
           bar: 1,
         }
-        await db.writeDoc(path, doc)
+        await db.writeDoc(operationCode, path, doc)
         const update = {
           ...doc,
           bar: 2,
@@ -362,7 +364,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
 
         // act
         const begin = new Date()
-        await db.writeDoc(path, update)
+        await db.writeDoc(operationCode, path, update)
         const end = new Date()
 
         // assert
@@ -398,14 +400,14 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         const doc3 = { foo: ulid(), bar: 3 }
 
         // act
-        await db.writeDoc([...path, 'foo'], doc1)
-        await db.writeDoc([...path, 'bar'], doc2)
-        const results1 = await collectFrom(db.readDocs(path))
+        await db.writeDoc(operationCode, [...path, 'foo'], doc1)
+        await db.writeDoc(operationCode, [...path, 'bar'], doc2)
+        const results1 = await collectFrom(db.readDocs(operationCode, path))
         const totalLastUpdate = results1[0][1].lastUpdate
 
-        await db.writeDoc([...path, 'foo'], doc1update)
-        await db.writeDoc([...path, 'baz'], doc3)
-        const results2 = await collectFrom(db.readDocs(path, totalLastUpdate))
+        await db.writeDoc(operationCode, [...path, 'foo'], doc1update)
+        await db.writeDoc(operationCode, [...path, 'baz'], doc3)
+        const results2 = await collectFrom(db.readDocs(operationCode, path, totalLastUpdate))
 
         // assert
         expect(results1.flat(), 'before timestamp').toEqual([
@@ -459,7 +461,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
       })
 
       // act
-      const result = await collectFrom(db.readDocs(path, after))
+      const result = await collectFrom(db.readDocs(operationCode, path, after))
 
       // assert
       expect(result.flat()).toEqual([
@@ -485,7 +487,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
       })
 
       // act
-      const result = db.readDoc(path)
+      const result = db.readDoc(operationCode, path)
 
       // assert
       await expect(result).resolves.toEqual({
@@ -504,7 +506,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
       }
 
       // act
-      await db.writeDoc(path, doc)
+      await db.writeDoc(operationCode, path, doc)
 
       // assert
       const document = await testHelper.getDocument(`${PREFIX}-Delayed-writeDoc/doc-id`)

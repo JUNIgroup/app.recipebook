@@ -1,6 +1,6 @@
 import { Observable, map } from 'rxjs'
 import { Log, Logger } from '../../../../utilities/logger'
-import { CollectionPath, Database, Result } from '../database'
+import { CollectionPath, Database, OperationCode, Result } from '../database'
 import { DatabaseStructure, Doc, EpochTimestamp } from '../database-types'
 import { DatabaseSchemas } from './schema'
 import { Validator, databaseSchemaValidator, idValidator, revisionValidator } from './validator'
@@ -73,34 +73,52 @@ export class ValidatingDatabase implements Database {
     this.putValidators = validators.put ?? []
   }
 
-  getDocs(path: CollectionPath, after?: EpochTimestamp): Observable<Array<Result<Doc>>> {
-    const docs$ = this.database.getDocs(path, after)
+  getDocs(operationCode: OperationCode, path: CollectionPath, after?: EpochTimestamp): Observable<Array<Result<Doc>>> {
+    const docs$ = this.database.getDocs(operationCode, path, after)
     if (this.getValidators.length === 0) return docs$
     const isValidDoc = (doc: Doc) =>
-      this.validateDoc('[getDocs] Ignore invalid document', this.getValidators, path, doc) === null
+      this.validateDoc(operationCode, '[getDocs] Ignore invalid document', this.getValidators, path, doc) === null
     return docs$.pipe(map((results) => results.filter(({ doc }) => isValidDoc(doc))))
   }
 
-  async putDoc(path: CollectionPath, doc: Doc): Promise<Result<Doc>> {
-    const payloadError = this.validateDoc('[putDoc] Reject writing of invalid document', this.putValidators, path, doc)
+  async putDoc(operationCode: OperationCode, path: CollectionPath, doc: Doc): Promise<Result<Doc>> {
+    const payloadError = this.validateDoc(
+      operationCode,
+      '[putDoc] Reject writing of invalid document',
+      this.putValidators,
+      path,
+      doc,
+    )
     if (payloadError) {
       throw new Error(`Can't write invalid document: ${payloadError}`)
     }
-    const result = this.database.putDoc(path, doc)
-    const resultError = this.validateDoc('[putDoc] Ignore invalid written document', this.getValidators, path, doc)
+    const result = this.database.putDoc(operationCode, path, doc)
+    const resultError = this.validateDoc(
+      operationCode,
+      '[putDoc] Ignore invalid written document',
+      this.getValidators,
+      path,
+      doc,
+    )
     if (resultError) {
       throw new Error(`Can't handle written document: ${resultError}`)
     }
     return result
   }
 
-  private validateDoc(logPrefix: string, validators: Validator[], path: CollectionPath, doc: Doc): null | string {
+  private validateDoc(
+    operationCode: OperationCode,
+    logPrefix: string,
+    validators: Validator[],
+    path: CollectionPath,
+    doc: Doc,
+  ): null | string {
     if (validators.length === 0) return null
     const totalError = validators.reduce<null | string>((error, validator) => error ?? validator(path, doc), null)
     if (totalError == null) return null
 
-    this.log.error(`${logPrefix} ${docPath(path, doc)}: ${totalError}`)
-    this.log.error(`   ${JSON.stringify(doc)}`)
+    this.log.error(`${operationCode} ${logPrefix} ${docPath(path, doc)}: ${totalError}`)
+    this.log.error(`${operationCode}    ${JSON.stringify(doc)}`)
     return totalError
   }
 }

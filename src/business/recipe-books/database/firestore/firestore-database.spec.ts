@@ -88,6 +88,8 @@ describe('FirestoreDatabase', () => {
 
   factories.forEach(({ factory, available }) =>
     describe.runIf(available)(`with ${factory.name}`, () => {
+      const operationCode = '«test»'
+
       let firestoreService: FirestoreService
       let clearAll: ClearAllFn
       let db: FirestoreDatabase
@@ -109,7 +111,7 @@ describe('FirestoreDatabase', () => {
           const path = { bucket: `${PREFIX}-empty` }
 
           // act
-          const result = await collectFrom(db.getDocs(path))
+          const result = await collectFrom(db.getDocs(operationCode, path))
 
           // assert
           expect(result).toBeEmpty()
@@ -120,7 +122,7 @@ describe('FirestoreDatabase', () => {
           const path = { bucket: `${PREFIX}-empty`, bucketId: 'test', collection: 'sub' }
 
           // act
-          const result = await collectFrom(db.getDocs(path))
+          const result = await collectFrom(db.getDocs(operationCode, path))
 
           // assert
           expect(result).toBeEmpty()
@@ -130,10 +132,10 @@ describe('FirestoreDatabase', () => {
           // arrange
           const path = { bucket: `${PREFIX}-one` }
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          await firestoreService.writeDoc([path.bucket, doc.id], doc)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc.id], doc)
 
           // act
-          const result = await collectFrom(db.getDocs(path))
+          const result = await collectFrom(db.getDocs(operationCode, path))
 
           // assert
           expect(result.flat()).toEqual([
@@ -148,10 +150,10 @@ describe('FirestoreDatabase', () => {
           // arrange
           const path = { bucket: `${PREFIX}-one-sub`, bucketId: 'test', collection: 'sub' }
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc.id], doc)
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc.id], doc)
 
           // act
-          const result = await collectFrom(db.getDocs(path))
+          const result = await collectFrom(db.getDocs(operationCode, path))
 
           // assert
           expect(result.flat()).toEqual([
@@ -168,12 +170,12 @@ describe('FirestoreDatabase', () => {
           const doc1 = { id: 'foo', rev: 1, content: { bar: 'baz' } }
           const doc2 = { id: 'bar', rev: 2, content: { baz: 'foo' } }
           const doc3 = { id: 'baz', rev: 3, content: { foo: 'bar' } }
-          await firestoreService.writeDoc([path.bucket, doc1.id], doc1)
-          await firestoreService.writeDoc([path.bucket, doc2.id], doc2)
-          await firestoreService.writeDoc([path.bucket, doc3.id], doc3)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc1.id], doc1)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc2.id], doc2)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc3.id], doc3)
 
           // act
-          const result = await collectFrom(db.getDocs(path))
+          const result = await collectFrom(db.getDocs(operationCode, path))
 
           // assert
           expect(result.flat()).toEqual([
@@ -198,12 +200,12 @@ describe('FirestoreDatabase', () => {
           const doc1 = { id: 'foo', rev: 1, content: { bar: 'baz' } }
           const doc2 = { id: 'bar', rev: 2, content: { baz: 'foo' } }
           const doc3 = { id: 'baz', rev: 3, content: { foo: 'bar' } }
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc1.id], doc1)
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc2.id], doc2)
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc3.id], doc3)
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc1.id], doc1)
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc2.id], doc2)
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc3.id], doc3)
 
           // act
-          const result = await collectFrom(db.getDocs(path))
+          const result = await collectFrom(db.getDocs(operationCode, path))
 
           // assert
           expect(result.flat()).toEqual([
@@ -227,21 +229,21 @@ describe('FirestoreDatabase', () => {
           const path = { bucket: `${PREFIX}-update` }
           const doc1 = { id: 'foo', rev: 1, content: { bar: 'baz' } }
           const doc2 = { id: 'bar', rev: 2, content: { baz: 'foo' } }
-          await firestoreService.writeDoc([path.bucket, doc1.id], doc1)
-          await firestoreService.writeDoc([path.bucket, doc2.id], doc2)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc1.id], doc1)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc2.id], doc2)
 
           const { lastUpdate } = await lastValueFrom(
-            firestoreService.readDocs([path.bucket]).pipe(mergeMap((batch) => batch)),
+            firestoreService.readDocs(operationCode, [path.bucket]).pipe(mergeMap((batch) => batch)),
           )
           await delay(10)
 
           const doc3 = { id: 'baz', rev: 3, content: { foo: 'bar' } }
           const update2 = { ...doc2, rev: 3, content: { baz: 'foo-update' } }
-          await firestoreService.writeDoc([path.bucket, update2.id], update2)
-          await firestoreService.writeDoc([path.bucket, doc3.id], doc3)
+          await firestoreService.writeDoc(operationCode, [path.bucket, update2.id], update2)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc3.id], doc3)
 
           // act
-          const result = await collectFrom(db.getDocs(path, lastUpdate))
+          const result = await collectFrom(db.getDocs(operationCode, path, lastUpdate))
 
           // assert
           expect(result.flat()).toEqual([
@@ -261,21 +263,27 @@ describe('FirestoreDatabase', () => {
           const path = { bucket: `${PREFIX}-update-sub`, bucketId: 'test', collection: 'sub' }
           const doc1 = { id: 'foo', rev: 1, content: { bar: 'baz' } }
           const doc2 = { id: 'bar', rev: 2, content: { baz: 'foo' } }
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc1.id], doc1)
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc2.id], doc2)
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc1.id], doc1)
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc2.id], doc2)
 
           const { lastUpdate } = await lastValueFrom(
-            firestoreService.readDocs([path.bucket, path.bucketId, path.collection]).pipe(mergeMap((batch) => batch)),
+            firestoreService
+              .readDocs(operationCode, [path.bucket, path.bucketId, path.collection])
+              .pipe(mergeMap((batch) => batch)),
           )
           await delay(10)
 
           const update2 = { ...doc2, rev: 3, content: { baz: 'foo-update' } }
           const doc3 = { id: 'baz', rev: 3, content: { foo: 'bar' } }
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, update2.id], update2)
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc3.id], doc3)
+          await firestoreService.writeDoc(
+            operationCode,
+            [path.bucket, path.bucketId, path.collection, update2.id],
+            update2,
+          )
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc3.id], doc3)
 
           // act
-          const result = await collectFrom(db.getDocs(path, lastUpdate))
+          const result = await collectFrom(db.getDocs(operationCode, path, lastUpdate))
 
           // assert
           expect(result.flat()).toEqual([
@@ -299,11 +307,11 @@ describe('FirestoreDatabase', () => {
           const startTime = new Date()
 
           // act
-          await db.putDoc(path, doc)
+          await db.putDoc(operationCode, path, doc)
 
           // assert
           const finishTime = new Date()
-          const document = await firestoreService.readDoc([path.bucket, doc.id])
+          const document = await firestoreService.readDoc(operationCode, [path.bucket, doc.id])
           expect(document).toEqual({
             lastUpdate: expect.any(Number),
             doc: { id: 'foo', rev: 1, content: { bar: 'baz' } },
@@ -318,11 +326,16 @@ describe('FirestoreDatabase', () => {
           const startTime = new Date()
 
           // act
-          await db.putDoc(path, doc)
+          await db.putDoc(operationCode, path, doc)
 
           // assert
           const finishTime = new Date()
-          const document = await firestoreService.readDoc([path.bucket, path.bucketId, path.collection, doc.id])
+          const document = await firestoreService.readDoc(operationCode, [
+            path.bucket,
+            path.bucketId,
+            path.collection,
+            doc.id,
+          ])
           expect(document).toEqual({
             lastUpdate: expect.any(Number),
             doc: { id: 'foo', rev: 1, content: { bar: 'baz' } },
@@ -334,17 +347,17 @@ describe('FirestoreDatabase', () => {
           // arrange
           const path = { bucket: `${PREFIX}-put-update` }
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          await firestoreService.writeDoc([path.bucket, doc.id], doc)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc.id], doc)
 
           const update = { ...doc, rev: 2, content: { bar: 'baz-update' } }
           const startTime = new Date()
 
           // act
-          await db.putDoc(path, update)
+          await db.putDoc(operationCode, path, update)
 
           // assert
           const finishTime = new Date()
-          const document = await firestoreService.readDoc([path.bucket, doc.id])
+          const document = await firestoreService.readDoc(operationCode, [path.bucket, doc.id])
           expect(document).toEqual({
             lastUpdate: expect.any(Number),
             doc: { id: 'foo', rev: 2, content: { bar: 'baz-update' } },
@@ -356,17 +369,22 @@ describe('FirestoreDatabase', () => {
           // arrange
           const path = { bucket: `${PREFIX}-put-update-sub`, bucketId: 'test', collection: 'sub' }
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc.id], doc)
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc.id], doc)
 
           const update = { ...doc, rev: 2, content: { bar: 'baz-update' } }
           const startTime = new Date()
 
           // act
-          await db.putDoc(path, update)
+          await db.putDoc(operationCode, path, update)
 
           // assert
           const finishTime = new Date()
-          const document = await firestoreService.readDoc([path.bucket, path.bucketId, path.collection, doc.id])
+          const document = await firestoreService.readDoc(operationCode, [
+            path.bucket,
+            path.bucketId,
+            path.collection,
+            doc.id,
+          ])
           expect(document).toEqual({
             lastUpdate: expect.any(Number),
             doc: { id: 'foo', rev: 2, content: { bar: 'baz-update' } },
@@ -380,10 +398,10 @@ describe('FirestoreDatabase', () => {
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
 
           // act
-          const result = await db.putDoc(path, doc)
+          const result = await db.putDoc(operationCode, path, doc)
 
           // assert
-          const expected = await firestoreService.readDoc([path.bucket, doc.id])
+          const expected = await firestoreService.readDoc(operationCode, [path.bucket, doc.id])
           expect(result).toEqual(expected)
         })
 
@@ -393,10 +411,15 @@ describe('FirestoreDatabase', () => {
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
 
           // act
-          const result = await db.putDoc(path, doc)
+          const result = await db.putDoc(operationCode, path, doc)
 
           // assert
-          const expected = await firestoreService.readDoc([path.bucket, path.bucketId, path.collection, doc.id])
+          const expected = await firestoreService.readDoc(operationCode, [
+            path.bucket,
+            path.bucketId,
+            path.collection,
+            doc.id,
+          ])
           expect(result).toEqual(expected)
         })
 
@@ -404,15 +427,15 @@ describe('FirestoreDatabase', () => {
           // arrange
           const path = { bucket: `${PREFIX}-put-return-update` }
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          await firestoreService.writeDoc([path.bucket, doc.id], doc)
+          await firestoreService.writeDoc(operationCode, [path.bucket, doc.id], doc)
 
           const update = { ...doc, rev: 2, content: { bar: 'baz-update' } }
 
           // act
-          const result = await db.putDoc(path, update)
+          const result = await db.putDoc(operationCode, path, update)
 
           // assert
-          const expected = await firestoreService.readDoc([path.bucket, doc.id])
+          const expected = await firestoreService.readDoc(operationCode, [path.bucket, doc.id])
           expect(result).toEqual(expected)
         })
 
@@ -420,15 +443,20 @@ describe('FirestoreDatabase', () => {
           // arrange
           const path = { bucket: `${PREFIX}-put-return-update-sub`, bucketId: 'test', collection: 'sub' }
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          await firestoreService.writeDoc([path.bucket, path.bucketId, path.collection, doc.id], doc)
+          await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc.id], doc)
 
           const update = { ...doc, rev: 2, content: { bar: 'baz-update' } }
 
           // act
-          const result = await db.putDoc(path, update)
+          const result = await db.putDoc(operationCode, path, update)
 
           // assert
-          const expected = await firestoreService.readDoc([path.bucket, path.bucketId, path.collection, doc.id])
+          const expected = await firestoreService.readDoc(operationCode, [
+            path.bucket,
+            path.bucketId,
+            path.collection,
+            doc.id,
+          ])
           expect(result).toEqual(expected)
         })
       })
