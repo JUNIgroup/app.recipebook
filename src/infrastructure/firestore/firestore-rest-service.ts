@@ -9,10 +9,7 @@ import { convertDocumentToResult } from './convert-from'
 import { convertObjectToFields } from './convert-to'
 import { FirestoreRestError } from './firestore-rest-error'
 import { FirestoreDocumentWithLastUpdate, QueryResponseData } from './types'
-
-type FetchOptions = {
-  signal?: AbortSignal
-}
+import { FirestoreNetworkError } from './firestore-network-error'
 
 const setLastUpdate = {
   fieldPath: `__lastUpdate`,
@@ -47,6 +44,7 @@ export type FirestoreOptions = {
  * Using the REST API to access the Firestore database.
  */
 export class FirestoreRestService implements FirestoreService {
+  private readonly abortControllers = new Map<string, AbortController>()
   private readonly log: Log
   private readonly endpoint: Promise<string>
   private readonly namePrefix: string
@@ -71,10 +69,21 @@ export class FirestoreRestService implements FirestoreService {
 
   readDocs(operation: string, collectionPath: string[], after?: EpochTimestamp): Observable<ReadDoc[]> {
     return new Observable((subscriber) => {
-      const abortController = new AbortController()
+      const abortController = this.prepareQuery(collectionPath)
       this.getDocsQuery(operation, subscriber, abortController, collectionPath, after)
-      return () => abortController.abort()
+      return () => abortController.abort('unsubscribe')
     })
+  }
+
+  private prepareQuery(collectionPath: string[]): AbortController {
+    const key = collectionPath.join('/')
+    const previousAbortController = this.abortControllers.get(key)
+    if (previousAbortController) {
+      previousAbortController.abort('new query')
+    }
+    const abortController = new AbortController()
+    this.abortControllers.set(key, abortController)
+    return abortController
   }
 
   /**
@@ -106,14 +115,22 @@ export class FirestoreRestService implements FirestoreService {
           where,
         },
       }
-      const data = await this.fetch<QueryResponseData>(operationCode, 'POST', url, payload, {
+      const data = await this.fetch<QueryResponseData>({
+        operationCode,
+        method: 'POST',
+        url,
+        payload,
         signal: abortController.signal,
       })
       const results = data.filter((item) => item.document).map((item) => convertDocumentToResult(item.document))
       if (results.length > 0) subscriber.next(results)
       if (data[data.length - 1].done) subscriber.complete()
     } catch (error) {
-      subscriber.error(error)
+      if (error instanceof FirestoreNetworkError) {
+        subscriber.complete()
+      } else {
+        subscriber.error(error)
+      }
     }
   }
 
@@ -126,7 +143,11 @@ export class FirestoreRestService implements FirestoreService {
    */
   async readDoc(operationCode: string, docPath: string[]): Promise<ReadDoc> {
     const url = await this.createUrl(docPath)
-    const data = await this.fetch<FirestoreDocumentWithLastUpdate>(operationCode, 'GET', url, undefined)
+    const data = await this.fetch<FirestoreDocumentWithLastUpdate>({
+      operationCode,
+      method: 'GET',
+      url,
+    })
     if (!data.fields) throw new FirestoreRestError(`Document ${docPath.join('/')} not found.`)
     return convertDocumentToResult(data)
   }
@@ -154,7 +175,12 @@ export class FirestoreRestService implements FirestoreService {
         },
       ],
     }
-    await this.fetch(operationCode, 'POST', url, payload)
+    await this.fetch({
+      operationCode,
+      method: 'POST',
+      url,
+      payload,
+    })
   }
 
   private createName(path: string[]): string {
@@ -165,44 +191,35 @@ export class FirestoreRestService implements FirestoreService {
     return path.length === 0 ? this.endpoint : `${await this.endpoint}/${path.join('/')}`
   }
 
-  private async fetch<T>(
-    operationCode: string,
-    method: string,
-    url: string,
-    body: object | undefined,
-    options: FetchOptions = {},
-  ): Promise<T> {
+  private async fetch<T>(options: FetchOptions): Promise<T> {
+    const { operationCode, method, url, payload, signal } = options
     this.log.details(`${operationCode} ${method} ${url}`)
-    this.log.details(`${operationCode} payload ${JSON.stringify(body)}`)
+    this.log.details(`${operationCode} payload:`, payload)
 
     const fetchInit = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(body),
-      signal: options.signal,
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      headers: jsonHeaders,
+      body: JSON.stringify(payload),
+      signal,
     }
 
-    const response = await fetch(url, fetchInit).catch((error) =>
-      this.catchNetworkError(operationCode, error, method, url),
-    )
+    const response = await fetch(url, fetchInit).catch((error) => this.catchNetworkError(operationCode, error))
     await this.checkResponseStatus(operationCode, method, response)
 
     const data = await response.json()
-    this.log.details(`${operationCode} data  : ${JSON.stringify(data, null, 2)}`)
+    this.log.details(`${operationCode} data  :`, data)
     return data as T
   }
 
-  private catchNetworkError(operationCode: string, error: Error, method: string, url: string): never {
+  private catchNetworkError(operationCode: string, error: Error): never {
     if (error.name === 'AbortError') {
-      this.log.error(`${operationCode} aborted: ${url}`)
-      throw new FirestoreRestError(`${method} aborted: ${url}`)
+      this.log.error(`${operationCode} aborted: ${error.message}`)
+      throw new FirestoreNetworkError(`aborted: ${error.message}`, true)
+    } else {
+      this.log.error(`${operationCode} network error: ${error.message}`)
+      throw new FirestoreNetworkError(`network error: ${error.message}`, false)
     }
-
-    this.log.error(`${operationCode} network error: ${error.message}`)
-    throw new FirestoreRestError(`network error: ${error.message}`)
   }
 
   private async checkResponseStatus(operationCode: string, method: string, response: Response): Promise<void> {
@@ -213,4 +230,17 @@ export class FirestoreRestService implements FirestoreService {
     this.log.error(`${operationCode} error : ${errorBody}`)
     throw new FirestoreRestError(`${method} failed: ${response.status} ${response.statusText}: ${errorBody}`)
   }
+}
+
+const jsonHeaders: HeadersInit = {
+  'Content-Type': 'application/json',
+  Accept: 'application/json',
+}
+
+type FetchOptions = {
+  operationCode: string
+  method: string
+  url: string
+  payload?: object
+  signal?: AbortSignal
 }
