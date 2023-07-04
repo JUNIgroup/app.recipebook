@@ -28,27 +28,30 @@ export interface FirestoreService {
    * - The documents are returned in the order of their last update.
    * - The documents are returned in batches.
    *
+   * @param operationCode the operation code to identify the trace in the logs.
    * @param collectionPath the path to the collection to read from. Mast have an odd number of elements.
    * @param after (optional) only read documents that have been updated after this timestamp.
    * @returns an observable that emits the documents in the collection.
    */
-  readDocs(collectionPath: string[], after?: EpochTimestamp): Observable<Array<ReadDoc>>
+  readDocs(operationCode: string, collectionPath: string[], after?: EpochTimestamp): Observable<Array<ReadDoc>>
 
   /**
    * Read a single document from the database.
    *
+   * @param operationCode the operation code to identify the trace in the logs.
    * @param docPath the path of the document to read. Must have an even number of elements.
    * @returns a promise that resolves to the document.
    * @throws an Error if the document does not exist.
    */
-  readDoc(docPath: string[]): Promise<ReadDoc>
+  readDoc(operationCode: string, docPath: string[]): Promise<ReadDoc>
 
   /**
    * Write a single document to the database.
    *
+   * @param operationCode the operation code to identify the trace in the logs.
    * @param docPath the path of the document to write. Must have an even number of elements.
    * @param doc the content of the document.
    * @returns a promise that resolves when the document has been written.
    */
-  writeDoc(docPath: string[], doc: object): Promise<void>
+  writeDoc(operationCode: string, docPath: string[], doc: object): Promise<void>
 }

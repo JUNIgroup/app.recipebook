@@ -7,7 +7,11 @@ import { CollectionPath, Database } from '../database'
 import { IdbCacheDatabase } from './idb-cache-database'
 import { IDBStorage } from './utils'
 
+globalThis.IDBKeyRange = IDBKeyRange
+
 describe('IdbCacheDatabase', () => {
+  const operationCode = '«test»'
+
   let logger: Logger<'business'>
   let indexedDB: IDBFactory
   let database: Database
@@ -85,10 +89,10 @@ describe('IdbCacheDatabase', () => {
       })
 
       // act
-      await instance.putDoc(collectionPath, doc)
+      await instance.putDoc(operationCode, collectionPath, doc)
 
       // assert
-      expect(database.putDoc).toHaveBeenCalledWith(collectionPath, doc)
+      expect(database.putDoc).toHaveBeenCalledWith(operationCode, collectionPath, doc)
     })
 
     it('should return the document from inner database', async () => {
@@ -104,7 +108,7 @@ describe('IdbCacheDatabase', () => {
       })
 
       // act
-      const result = await instance.putDoc(collectionPath, doc)
+      const result = await instance.putDoc(operationCode, collectionPath, doc)
 
       // assert
       expect(result).toEqual({
@@ -126,7 +130,7 @@ describe('IdbCacheDatabase', () => {
       })
 
       // act
-      await instance.putDoc(collectionPath, doc)
+      await instance.putDoc(operationCode, collectionPath, doc)
 
       // assert
       const allEntries = await getAll(indexedDB, cacheName, 'cache')
@@ -152,7 +156,7 @@ describe('IdbCacheDatabase', () => {
       })
 
       // act
-      await instance.putDoc(collectionPath, doc)
+      await instance.putDoc(operationCode, collectionPath, doc)
 
       // assert
       const allEntries = await getAll(indexedDB, cacheName, 'cache')
@@ -184,8 +188,8 @@ describe('IdbCacheDatabase', () => {
       })
 
       // act
-      await instance.putDoc(collectionPath, doc1)
-      await instance.putDoc(collectionPath, doc2)
+      await instance.putDoc(operationCode, collectionPath, doc1)
+      await instance.putDoc(operationCode, collectionPath, doc2)
 
       // assert
       const allEntries = await getAll(indexedDB, cacheName, 'cache')
@@ -213,7 +217,7 @@ describe('IdbCacheDatabase', () => {
       vi.spyOn(database, 'putDoc').mockRejectedValue(error)
 
       // act
-      const result = instance.putDoc(collectionPath, doc)
+      const result = instance.putDoc(operationCode, collectionPath, doc)
 
       // assert
       await expect(result).rejects.toBe(error)
@@ -229,7 +233,7 @@ describe('IdbCacheDatabase', () => {
       vi.spyOn(database, 'putDoc').mockRejectedValue(error)
 
       // act
-      const result = instance.putDoc(collectionPath, doc)
+      const result = instance.putDoc(operationCode, collectionPath, doc)
 
       // assert
       await expect(result).rejects.toBe(error)
@@ -244,7 +248,7 @@ describe('IdbCacheDatabase', () => {
 
     beforeEach(() => {
       timer = 100
-      vi.spyOn(database, 'putDoc').mockImplementation(async (path, doc) => {
+      vi.spyOn(database, 'putDoc').mockImplementation(async (_operation, _path, doc) => {
         timer += 10
         return {
           lastUpdate: timer,
@@ -255,18 +259,18 @@ describe('IdbCacheDatabase', () => {
 
     it('should return all bucket documents from cache in put order, if after is not specified', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const doc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const doc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
       const doc3 = { id: 'foo-baz', rev: 1, info: 'baz' }
 
-      await instance.putDoc(collectionPath, doc1)
-      await instance.putDoc(collectionPath, doc2)
-      await instance.putDoc(collectionPath, doc3)
+      await instance.putDoc(operationCode, collectionPath, doc1)
+      await instance.putDoc(operationCode, collectionPath, doc2)
+      await instance.putDoc(operationCode, collectionPath, doc3)
 
       // act
-      const result = await collectFrom(instance.getDocs(collectionPath))
+      const result = await collectFrom(instance.getDocs(operationCode, collectionPath))
 
       // assert
       expect(result.flat()).toEqual([
@@ -278,22 +282,22 @@ describe('IdbCacheDatabase', () => {
 
     it('should return all bucket documents after given timestamp', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const doc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const doc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
       const doc3 = { id: 'foo-baz', rev: 1, info: 'baz' }
       const doc4 = { id: 'foo-qux', rev: 1, info: 'qux' }
 
-      await instance.putDoc(collectionPath, doc1)
-      await instance.putDoc(collectionPath, doc2)
-      await instance.putDoc(collectionPath, doc3)
-      await instance.putDoc(collectionPath, doc4)
+      await instance.putDoc(operationCode, collectionPath, doc1)
+      await instance.putDoc(operationCode, collectionPath, doc2)
+      await instance.putDoc(operationCode, collectionPath, doc3)
+      await instance.putDoc(operationCode, collectionPath, doc4)
 
       const after = 120
 
       // act
-      const result = await collectFrom(instance.getDocs(collectionPath, after))
+      const result = await collectFrom(instance.getDocs(operationCode, collectionPath, after))
 
       // assert
       expect(result.flat()).toEqual([
@@ -304,7 +308,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should include deletions after given timestamp', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const doc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const doc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
@@ -312,16 +316,16 @@ describe('IdbCacheDatabase', () => {
       const doc4 = { id: 'foo-qux', rev: 1, info: 'qux' }
       const del1 = { id: 'foo-foo', rev: 2, __deleted: true }
 
-      await instance.putDoc(collectionPath, doc1)
-      await instance.putDoc(collectionPath, doc2)
-      await instance.putDoc(collectionPath, doc3)
-      await instance.putDoc(collectionPath, doc4)
-      await instance.putDoc(collectionPath, del1)
+      await instance.putDoc(operationCode, collectionPath, doc1)
+      await instance.putDoc(operationCode, collectionPath, doc2)
+      await instance.putDoc(operationCode, collectionPath, doc3)
+      await instance.putDoc(operationCode, collectionPath, doc4)
+      await instance.putDoc(operationCode, collectionPath, del1)
 
       const after = 120
 
       // act
-      const result = await collectFrom(instance.getDocs(collectionPath, after))
+      const result = await collectFrom(instance.getDocs(operationCode, collectionPath, after))
 
       // assert
       expect(result.flat()).toEqual([
@@ -333,22 +337,22 @@ describe('IdbCacheDatabase', () => {
 
     it('should return all collection documents after given timestamp', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo', bucketId: 'foo-123', collection: 'bar' }
       const doc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const doc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
       const doc3 = { id: 'foo-baz', rev: 1, info: 'baz' }
       const doc4 = { id: 'foo-qux', rev: 1, info: 'qux' }
 
-      await instance.putDoc(collectionPath, doc1)
-      await instance.putDoc(collectionPath, doc2)
-      await instance.putDoc(collectionPath, doc3)
-      await instance.putDoc(collectionPath, doc4)
+      await instance.putDoc(operationCode, collectionPath, doc1)
+      await instance.putDoc(operationCode, collectionPath, doc2)
+      await instance.putDoc(operationCode, collectionPath, doc3)
+      await instance.putDoc(operationCode, collectionPath, doc4)
 
       const after = 120
 
       // act
-      const result = await collectFrom(instance.getDocs(collectionPath, after))
+      const result = await collectFrom(instance.getDocs(operationCode, collectionPath, after))
 
       // assert
       expect(result.flat()).toEqual([
@@ -359,7 +363,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should return only requested collection documents', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const bucketPath: CollectionPath = { bucket: 'foo' }
       const collectionPath1: CollectionPath = { bucket: 'foo', bucketId: 'foo-123', collection: 'bar' }
       const collectionPath2: CollectionPath = { bucket: 'foo', bucketId: 'foo-123', collection: 'qux' }
@@ -370,17 +374,17 @@ describe('IdbCacheDatabase', () => {
       const doc4 = { id: 'doc4', rev: 1, info: 'qux-b' }
       const doc5 = { id: 'doc5', rev: 1, info: 'baz' }
 
-      await instance.putDoc(bucketPath, doc1)
-      await instance.putDoc(collectionPath1, doc2)
-      await instance.putDoc(collectionPath2, doc3)
-      await instance.putDoc(collectionPath2, doc4)
-      await instance.putDoc(collectionPath3, doc5)
+      await instance.putDoc(operationCode, bucketPath, doc1)
+      await instance.putDoc(operationCode, collectionPath1, doc2)
+      await instance.putDoc(operationCode, collectionPath2, doc3)
+      await instance.putDoc(operationCode, collectionPath2, doc4)
+      await instance.putDoc(operationCode, collectionPath3, doc5)
 
       // act
-      const bucketDocs = await collectFrom(instance.getDocs(bucketPath))
-      const foo123BarDocs = await collectFrom(instance.getDocs(collectionPath1))
-      const foo123QuxDocs = await collectFrom(instance.getDocs(collectionPath2))
-      const foo456BarDocs = await collectFrom(instance.getDocs(collectionPath3))
+      const bucketDocs = await collectFrom(instance.getDocs(operationCode, bucketPath))
+      const foo123BarDocs = await collectFrom(instance.getDocs(operationCode, collectionPath1))
+      const foo123QuxDocs = await collectFrom(instance.getDocs(operationCode, collectionPath2))
+      const foo456BarDocs = await collectFrom(instance.getDocs(operationCode, collectionPath3))
 
       // assert
       expect(bucketDocs.flat()).toEqual([{ lastUpdate: 110, doc: doc1 }])
@@ -402,25 +406,25 @@ describe('IdbCacheDatabase', () => {
       'should request documents from inner database with after $innerAfter, if after is $after and cache has $count elements',
       async ({ count, after, innerAfter }) => {
         // arrange
-        const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+        const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
         const collectionPath: CollectionPath = { bucket: 'foo' }
         for (let i = 0; i < count; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          await instance.putDoc(collectionPath, { id: `doc-${i}`, rev: 1 })
+          await instance.putDoc(operationCode, collectionPath, { id: `doc-${i}`, rev: 1 })
         }
         vi.spyOn(database, 'getDocs')
 
         // act
-        await collectFrom(instance.getDocs(collectionPath, after))
+        await collectFrom(instance.getDocs(operationCode, collectionPath, after))
 
         // assert
-        expect(database.getDocs).toHaveBeenCalledWith(collectionPath, innerAfter)
+        expect(database.getDocs).toHaveBeenCalledWith(operationCode, collectionPath, innerAfter)
       },
     )
 
     it('should return inner database documents, after the cache documents', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const cacheDoc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const cacheDoc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
@@ -429,10 +433,10 @@ describe('IdbCacheDatabase', () => {
       const innerDoc1 = { id: 'foo-foo', rev: 2, info: 'foo' }
       const innerDoc2 = { id: 'new-doc', rev: 1, info: 'new' }
 
-      await instance.putDoc(collectionPath, cacheDoc1)
-      await instance.putDoc(collectionPath, cacheDoc2)
-      await instance.putDoc(collectionPath, cacheDoc3)
-      await instance.putDoc(collectionPath, cacheDoc4)
+      await instance.putDoc(operationCode, collectionPath, cacheDoc1)
+      await instance.putDoc(operationCode, collectionPath, cacheDoc2)
+      await instance.putDoc(operationCode, collectionPath, cacheDoc3)
+      await instance.putDoc(operationCode, collectionPath, cacheDoc4)
 
       vi.spyOn(database, 'getDocs').mockReturnValueOnce(
         of([
@@ -442,7 +446,7 @@ describe('IdbCacheDatabase', () => {
       )
 
       // act
-      const result = await collectFrom(instance.getDocs(collectionPath))
+      const result = await collectFrom(instance.getDocs(operationCode, collectionPath))
 
       // assert
       expect(result.flat()).toEqual([
@@ -457,7 +461,7 @@ describe('IdbCacheDatabase', () => {
 
     it('should inner database documents in cache for next request', async () => {
       // arrange
-      const instance = new IdbCacheDatabase(logger, database, { indexedDB, IDBKeyRange, cacheName })
+      const instance = new IdbCacheDatabase(logger, database, { indexedDB, cacheName })
       const collectionPath: CollectionPath = { bucket: 'foo' }
       const cacheDoc1 = { id: 'foo-foo', rev: 1, info: 'foo' }
       const cacheDoc2 = { id: 'foo-bar', rev: 1, info: 'bar' }
@@ -466,10 +470,10 @@ describe('IdbCacheDatabase', () => {
       const innerDoc1 = { id: 'foo-foo', rev: 2, info: 'foo' }
       const innerDoc2 = { id: 'new-doc', rev: 1, info: 'new' }
 
-      await instance.putDoc(collectionPath, cacheDoc1)
-      await instance.putDoc(collectionPath, cacheDoc2)
-      await instance.putDoc(collectionPath, cacheDoc3)
-      await instance.putDoc(collectionPath, cacheDoc4)
+      await instance.putDoc(operationCode, collectionPath, cacheDoc1)
+      await instance.putDoc(operationCode, collectionPath, cacheDoc2)
+      await instance.putDoc(operationCode, collectionPath, cacheDoc3)
+      await instance.putDoc(operationCode, collectionPath, cacheDoc4)
 
       vi.spyOn(database, 'getDocs').mockReturnValueOnce(
         of([
@@ -477,11 +481,11 @@ describe('IdbCacheDatabase', () => {
           { lastUpdate: 210, doc: innerDoc2 },
         ]),
       )
-      await collectFrom(instance.getDocs(collectionPath))
+      await collectFrom(instance.getDocs(operationCode, collectionPath))
       vi.spyOn(database, 'getDocs').mockReturnValueOnce(EMPTY)
 
       // act
-      const result = await collectFrom(instance.getDocs(collectionPath, 140))
+      const result = await collectFrom(instance.getDocs(operationCode, collectionPath, 140))
 
       // assert
       expect(result.flat()).toEqual([

@@ -2,6 +2,8 @@ import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { collectFrom } from '../../../../infrastructure/database/helpers/collect-from'
 import { CacheEntity, IDBStorage, clearCache, createKeyRange, openIdb, readIndex, write, writeAll } from './utils'
 
+globalThis.IDBKeyRange = IDBKeyRange
+
 describe('idb-utils', () => {
   const idbName = 'test-idb'
   const storeName = 'test-store'
@@ -112,7 +114,7 @@ describe('idb-utils', () => {
         // arrange
         const parent = ''
         const after = undefined
-        const range = createKeyRange(parent, after, IDBKeyRange.bound)
+        const range = createKeyRange(parent, after)
 
         // act
         const result = await collectFrom(readIndex(storage, range))
@@ -126,7 +128,7 @@ describe('idb-utils', () => {
         // arrange
         const parent = 'bar'
         const after = undefined
-        const range = createKeyRange(parent, after, IDBKeyRange.bound)
+        const range = createKeyRange(parent, after)
 
         // act
         const result = await collectFrom(readIndex(storage, range))
@@ -140,7 +142,7 @@ describe('idb-utils', () => {
         // arrange
         const parent = 'bar'
         const after = bar23.lastUpdate
-        const range = createKeyRange(parent, after, IDBKeyRange.bound)
+        const range = createKeyRange(parent, after)
 
         // act
         const result = await collectFrom(readIndex(storage, range))
@@ -154,7 +156,7 @@ describe('idb-utils', () => {
         // arrange
         const parent = 'bar'
         const after = 100_000
-        const range = createKeyRange(parent, after, IDBKeyRange.bound)
+        const range = createKeyRange(parent, after)
 
         // act
         const result = await collectFrom(readIndex(storage, range))

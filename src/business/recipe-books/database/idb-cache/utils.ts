@@ -73,8 +73,8 @@ export function writeAll({ idb, storeName }: IDBStorage, entities: CacheEntity[]
   })
 }
 
-export function createKeyRange(parent: string, after = Number.NEGATIVE_INFINITY, bound = IDBKeyRange.bound) {
-  return bound([parent, after, '\uFFFF'], [parent, Number.POSITIVE_INFINITY])
+export function createKeyRange(parent: string, after = Number.NEGATIVE_INFINITY) {
+  return IDBKeyRange.bound([parent, after, '\uFFFF'], [parent, Number.POSITIVE_INFINITY])
 }
 
 export function readIndex({ idb, storeName, indexName }: IDBStorage, range?: IDBKeyRange): Observable<CacheEntity[]> {

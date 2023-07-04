@@ -1,7 +1,7 @@
 import { FirestoreRestError } from './firestore-rest-error'
 
-describe('FirestoreError', () => {
-  it('should set the name to FirestoreError', () => {
+describe('FirestoreRestError', () => {
+  it('should set the name to class name', () => {
     // arrange
     const message = 'foo'
 
@@ -9,7 +9,7 @@ describe('FirestoreError', () => {
     const error = new FirestoreRestError(message)
 
     // assert
-    expect(error.name).toEqual('FirestoreError')
+    expect(error.name).toEqual(FirestoreRestError.name)
   })
 
   it('should set the message', () => {

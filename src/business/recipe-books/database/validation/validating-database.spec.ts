@@ -77,6 +77,8 @@ describe('createRecommendedValidators', () => {
 })
 
 describe('ValidatingDatabase', () => {
+  const operationCode = '«test»'
+
   let logger: FakeLogger
   let innerDatabase: Database
 
@@ -117,10 +119,10 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of())
 
       // act
-      await collectFrom(db.getDocs(path))
+      await collectFrom(db.getDocs(operationCode, path))
 
       // assert
-      expect(innerDatabase.getDocs).toHaveBeenCalledWith(path, undefined)
+      expect(innerDatabase.getDocs).toHaveBeenCalledWith(operationCode, path, undefined)
     })
 
     it('should request inner database (with after)', async () => {
@@ -132,10 +134,10 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of())
 
       // act
-      await collectFrom(db.getDocs(path, after))
+      await collectFrom(db.getDocs(operationCode, path, after))
 
       // assert
-      expect(innerDatabase.getDocs).toHaveBeenCalledWith(path, after)
+      expect(innerDatabase.getDocs).toHaveBeenCalledWith(operationCode, path, after)
     })
 
     it('should pass through empty results of the inner database if no validator is defined', async () => {
@@ -146,7 +148,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([]))
 
       // act
-      const result = await collectFrom(db.getDocs(path))
+      const result = await collectFrom(db.getDocs(operationCode, path))
 
       // assert
       expect(result.flat()).toEqual([])
@@ -162,7 +164,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([]))
 
       // act
-      const result = await collectFrom(db.getDocs(path))
+      const result = await collectFrom(db.getDocs(operationCode, path))
 
       // assert
       expect(result.flat()).toEqual([])
@@ -179,7 +181,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([result1], [result2, result3]))
 
       // act
-      const result = await collectFrom(db.getDocs(path))
+      const result = await collectFrom(db.getDocs(operationCode, path))
 
       // assert
       expect(result.flat()).toEqual([result1, result2, result3])
@@ -198,7 +200,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([result1], [result2, result3]))
 
       // act
-      const result = await collectFrom(db.getDocs(path))
+      const result = await collectFrom(db.getDocs(operationCode, path))
 
       // assert
       expect(result.flat()).toEqual([result1, result2, result3])
@@ -217,7 +219,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([result1], [result2, result3]))
 
       // act
-      const result = await collectFrom(db.getDocs(path))
+      const result = await collectFrom(db.getDocs(operationCode, path))
 
       // assert
       expect(result.flat()).toEqual([result3])
@@ -236,15 +238,15 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'getDocs').mockReturnValueOnce(of([result1], [result2, result3]))
 
       // act
-      await collectFrom(db.getDocs(path))
+      await collectFrom(db.getDocs(operationCode, path))
 
       // assert
       const logMessages = logger('business:ValidatingDatabase').messages
       expect(logMessages).toEqual([
-        '[getDocs] Ignore invalid document foo/foo-1: invalid 1',
-        '   {"id":"foo-1","rev":0}',
-        '[getDocs] Ignore invalid document foo/foo-2: invalid 2',
-        '   {"id":"foo-2","rev":0}',
+        '«test» [getDocs] Ignore invalid document foo/foo-1: invalid 1',
+        '«test»    {"id":"foo-1","rev":0}',
+        '«test» [getDocs] Ignore invalid document foo/foo-2: invalid 2',
+        '«test»    {"id":"foo-2","rev":0}',
       ])
     })
   })
@@ -260,10 +262,10 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'putDoc').mockResolvedValueOnce(result)
 
       // act
-      await db.putDoc(path, doc)
+      await db.putDoc(operationCode, path, doc)
 
       // assert
-      expect(innerDatabase.putDoc).toHaveBeenCalledWith(path, doc)
+      expect(innerDatabase.putDoc).toHaveBeenCalledWith(operationCode, path, doc)
     })
 
     it('should pass through the result of the inner database if no validator is defined', async () => {
@@ -276,7 +278,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'putDoc').mockResolvedValueOnce(result)
 
       // act
-      const actual = await db.putDoc(path, doc)
+      const actual = await db.putDoc(operationCode, path, doc)
 
       // assert
       expect(actual).toEqual(result)
@@ -296,7 +298,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'putDoc').mockResolvedValueOnce(result)
 
       // act
-      const actual = await db.putDoc(path, doc)
+      const actual = await db.putDoc(operationCode, path, doc)
 
       // assert
       expect(actual).toEqual(result)
@@ -313,7 +315,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'putDoc').mockResolvedValueOnce({ lastUpdate: 1000, doc })
 
       // act
-      await db.putDoc(path, doc).catch(() => null)
+      await db.putDoc(operationCode, path, doc).catch(() => null)
 
       // assert
       expect(innerDatabase.putDoc).not.toHaveBeenCalled()
@@ -330,7 +332,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'putDoc').mockResolvedValueOnce({ lastUpdate: 1000, doc })
 
       // act
-      const result = db.putDoc(path, doc)
+      const result = db.putDoc(operationCode, path, doc)
 
       // assert
       await expect(result).rejects.toThrow(`Can't write invalid document: invalid A`)
@@ -347,13 +349,13 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'putDoc').mockResolvedValueOnce({ lastUpdate: 1000, doc })
 
       // act
-      await db.putDoc(path, doc).catch(() => null)
+      await db.putDoc(operationCode, path, doc).catch(() => null)
 
       // assert
       const logMessages = logger('business:ValidatingDatabase').messages
       expect(logMessages).toEqual([
-        '[putDoc] Reject writing of invalid document foo/foo-1: invalid A',
-        '   {"id":"foo-1","rev":0}',
+        '«test» [putDoc] Reject writing of invalid document foo/foo-1: invalid A',
+        '«test»    {"id":"foo-1","rev":0}',
       ])
     })
 
@@ -368,7 +370,7 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'putDoc').mockResolvedValueOnce({ lastUpdate: 1000, doc })
 
       // act
-      const result = db.putDoc(path, doc)
+      const result = db.putDoc(operationCode, path, doc)
 
       // assert
       await expect(result).rejects.toThrow(`Can't handle written document: invalid Y`)
@@ -385,13 +387,13 @@ describe('ValidatingDatabase', () => {
       vi.spyOn(innerDatabase, 'putDoc').mockResolvedValueOnce({ lastUpdate: 1000, doc })
 
       // act
-      await db.putDoc(path, doc).catch(() => null)
+      await db.putDoc(operationCode, path, doc).catch(() => null)
 
       // assert
       const logMessages = logger('business:ValidatingDatabase').messages
       expect(logMessages).toEqual([
-        '[putDoc] Ignore invalid written document foo/foo-1: invalid Y',
-        '   {"id":"foo-1","rev":0}',
+        '«test» [putDoc] Ignore invalid written document foo/foo-1: invalid Y',
+        '«test»    {"id":"foo-1","rev":0}',
       ])
     })
   })

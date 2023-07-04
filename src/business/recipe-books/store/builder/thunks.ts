@@ -1,6 +1,6 @@
 import { AnyAction, ThunkAction } from '@reduxjs/toolkit'
 import { Log } from '../../../../utilities/logger'
-import { CollectionPath, Database } from '../../database/database'
+import { CollectionPath, Database, createOperationCode } from '../../database/database'
 import { BucketName, BucketStructure, CollectionName, Doc, ID } from '../../database/database-types'
 import { RootSelector } from './selectors'
 import { BucketsActionCreator } from './slice.types'
@@ -40,14 +40,15 @@ export function createRefreshBucketDocuments<T extends BucketStructure, S>(
   return () => async (dispatch, getState, extra) => {
     const { thunkLogs, database } = extra
     const log = thunkLogs[sliceName]
-    const task = `refresh: ${sliceName}`
+    const operationCode = createOperationCode()
+    const task = `${operationCode} refresh: ${sliceName}`
 
     const rootState = rootSelector(getState() as S)
     let { lastUpdate } = rootState
     log.details(`${task} after: ${lastUpdate}`)
 
     await new Promise<void>((resolve, reject) => {
-      database.getDocs(collectionPath, lastUpdate).subscribe({
+      database.getDocs(operationCode, collectionPath, lastUpdate).subscribe({
         next: (results) => {
           const documents: Doc[] = []
           const deleted: ID[] = []
@@ -92,10 +93,11 @@ export function createPushBucketDocument<T extends BucketStructure, P>(
     const log = thunkLogs[sliceName]
 
     const { document } = prepare(payload)
-    const task = `${operation} ${sliceName}/${document.id}: `
+    const operationCode = createOperationCode()
+    const task = `${operationCode} ${operation} ${sliceName}/${document.id}: `
 
     log.details(task, document)
-    const result = await database.putDoc(collectionPath, document)
+    const result = await database.putDoc(operationCode, collectionPath, document)
     log.details(task, result.lastUpdate)
 
     dispatch(actions.upsertBuckets(isDeleted(result.doc) ? { deleted: [result.doc.id] } : { documents: [result.doc] }))
@@ -125,11 +127,12 @@ export function createRefreshCollectionDocuments<T extends BucketStructure, CN e
     const rootState = rootSelector(getState() as S)
     let { lastUpdate } = rootState.buckets[bucketId]?.collections?.[collectionName] ?? {}
 
-    const task = `refresh: ${sliceName}/${bucketId}/${collectionName}`
+    const operationCode = createOperationCode()
+    const task = `${operationCode} refresh: ${sliceName}/${bucketId}/${collectionName}`
     log.details(`${task} after: ${lastUpdate}`)
 
     await new Promise<void>((resolve, reject) => {
-      database.getDocs(collectionPath, lastUpdate).subscribe({
+      database.getDocs(operationCode, collectionPath, lastUpdate).subscribe({
         next: (results) => {
           const documents: Doc[] = []
           const deleted: ID[] = []
@@ -172,10 +175,11 @@ export function createPushCollectionDocument<T extends BucketStructure, CN exten
 
     const { bucketId, collectionName, document } = prepare(payload)
     const collectionPath: CollectionPath = { bucket: sliceName, bucketId, collection: collectionName }
-    const task = `${operation} ${sliceName}/${document.id}: `
+    const operationCode = createOperationCode()
+    const task = `${operationCode} ${operation} ${sliceName}/${document.id}: `
 
     log.details(task, document)
-    const result = await database.putDoc(collectionPath, document)
+    const result = await database.putDoc(operationCode, collectionPath, document)
     log.details(task, result.lastUpdate)
 
     dispatch(

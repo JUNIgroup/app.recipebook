@@ -11,7 +11,7 @@ export class FirestoreMockService implements FirestoreService {
    */
   readDocsBatchSize?: number
 
-  readDocs(collectionPath: string[], after?: number | undefined): Observable<ReadDoc[]> {
+  readDocs(_operationCode: string, collectionPath: string[], after?: number | undefined): Observable<ReadDoc[]> {
     return defer(() => {
       const record = this.getRecord(collectionPath)
       const docs = Object.values(record).sort((a, b) => a.lastUpdate - b.lastUpdate)
@@ -22,7 +22,7 @@ export class FirestoreMockService implements FirestoreService {
     })
   }
 
-  async readDoc(docPath: string[]): Promise<ReadDoc> {
+  async readDoc(_operationCode: string, docPath: string[]): Promise<ReadDoc> {
     const { parentPath, docId } = splitDocPath(docPath)
     const record = this.getRecord(parentPath)
     const doc = record[docId]
@@ -30,7 +30,7 @@ export class FirestoreMockService implements FirestoreService {
     return doc
   }
 
-  async writeDoc(docPath: string[], doc: object): Promise<void> {
+  async writeDoc(_operationCode: string, docPath: string[], doc: object): Promise<void> {
     const { parentPath, docId } = splitDocPath(docPath)
     const record = this.getRecord(parentPath)
     const lastUpdate = Date.now()

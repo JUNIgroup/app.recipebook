@@ -1,7 +1,6 @@
 import { Observable, concat, from, map, mergeMap, switchMap, tap } from 'rxjs'
-import { encodeTime } from 'ulid'
 import { Log, Logger } from '../../../../utilities/logger'
-import { CollectionPath, Database, Result } from '../database'
+import { CollectionPath, Database, OperationCode, Result } from '../database'
 import { Doc } from '../database-types'
 import { IDBStorage, clearCache, createKeyRange, openIdb, readIndex, write, writeAll } from './utils'
 
@@ -11,18 +10,9 @@ type IdbCacheOptions = {
    *
    * This is useful for testing outside of a browser.
    *
-   * @default global.indexedDB
+   * @default globalThis.indexedDB
    */
   indexedDB?: IDBFactory
-
-  /**
-   * The indexedDB key range factory.
-   *
-   * This is useful for testing outside of a browser.
-   *
-   * @default global.IDBKeyRange
-   */
-  IDBKeyRange?: typeof IDBKeyRange
 
   /**
    * The name of the IDB store to use for the cache.
@@ -70,15 +60,12 @@ export class IdbCacheDatabase implements Database {
     this.storage = this.openStorage()
   }
 
-  getDocs(path: CollectionPath, after?: number | undefined): Observable<Result<Doc>[]> {
-    const time0 = Date.now()
-    const operation = encodeTime(time0, 10)
-
+  getDocs(operationCode: OperationCode, path: CollectionPath, after?: number | undefined): Observable<Result<Doc>[]> {
     return from(this.storage).pipe(
       switchMap((storage) =>
         concat(
-          this.getCachedDocs(storage, operation, path, after), //
-          this.getRemoteDocs(storage, operation, path, after),
+          this.getCachedDocs(storage, operationCode, path, after), //
+          this.getRemoteDocs(storage, operationCode, path, after),
         ),
       ),
     )
@@ -86,39 +73,38 @@ export class IdbCacheDatabase implements Database {
 
   private getCachedDocs(
     storage: IDBStorage,
-    operation: string,
+    operationCode: OperationCode,
     path: CollectionPath,
     after?: number | undefined,
   ): Observable<Result<Doc>[]> {
     const parent = this.getParent(path)
-    this.log.details(`${operation} getDocs (cache): ${parent}/*`)
+    this.log.details(`${operationCode} getDocs (cache): ${parent}/*`)
 
-    const range = this.options.IDBKeyRange ?? global.IDBKeyRange
-    const keyRange = createKeyRange(parent, after, range.bound)
+    const keyRange = createKeyRange(parent, after)
     return readIndex(storage, keyRange).pipe(
       map((entities) => entities.map(({ lastUpdate, doc }) => ({ lastUpdate, doc }))),
-      tap((results) => this.log.details(`${operation} (cache): `, results)),
+      tap((results) => this.log.details(`${operationCode} (cache): `, results)),
     )
   }
 
-  private getRemoteDocs(storage: IDBStorage, operation: string, path: CollectionPath, after?: number | undefined) {
+  private getRemoteDocs(storage: IDBStorage, operationCode: string, path: CollectionPath, after?: number | undefined) {
     const parent = this.getParent(path)
     const cacheResults = async (results: Result<Doc>[]) => {
       const entities = results.map((result) => ({ ...result, parent }))
-      this.log.details(`${operation} (remote): `, results)
+      this.log.details(`${operationCode} (remote): `, results)
       await writeAll(storage, entities)
       return results
     }
 
-    this.log.details(`${operation} getDocs (remote): ${parent}/*`)
-    return this.database.getDocs(path, after).pipe(mergeMap((results) => from(cacheResults(results))))
+    this.log.details(`${operationCode} getDocs (remote): ${parent}/*`)
+    return this.database.getDocs(operationCode, path, after).pipe(mergeMap((results) => from(cacheResults(results))))
   }
 
-  async putDoc(path: CollectionPath, doc: Doc): Promise<Result<Doc>> {
+  async putDoc(operationCode: OperationCode, path: CollectionPath, doc: Doc): Promise<Result<Doc>> {
     const parent = this.getParent(path)
     this.log.details(`Writing document to cache: ${parent}/${doc.id}`)
 
-    const result = await this.database.putDoc(path, doc)
+    const result = await this.database.putDoc(operationCode, path, doc)
 
     const storage = await this.storage
     await write(storage, { ...result, parent })
@@ -134,7 +120,7 @@ export class IdbCacheDatabase implements Database {
   }
 
   private async openStorage(): Promise<IDBStorage> {
-    const indexedDB = this.options.indexedDB ?? global.indexedDB
+    const indexedDB = this.options.indexedDB ?? globalThis.indexedDB
     const idbName = this.options.cacheName
     const storeName = this.options.storeName ?? 'cache'
     const indexName = this.options.indexName ?? 'lastUpdate'

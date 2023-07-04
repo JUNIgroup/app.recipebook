@@ -29,7 +29,9 @@ export type BreakfastStructure = {
 
 export type BreakfastState = BucketsState<BreakfastStructure>
 
-export const initialBreakfastState: BreakfastState = {
+const createBreakfastState = <T extends BucketsState<BreakfastStructure>>(state: T): T => state
+
+export const initialBreakfastState = createBreakfastState({
   ids: ['b0001', 'b0002'],
   buckets: {
     b0001: {
@@ -101,7 +103,7 @@ export const initialBreakfastState: BreakfastState = {
       },
     },
   },
-}
+})
 
 export type PartialRootState = { breakfasts: BreakfastState }
 

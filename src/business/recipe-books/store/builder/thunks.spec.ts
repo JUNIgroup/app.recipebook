@@ -46,7 +46,7 @@ beforeEach(() => {
 
   database = {
     getDocs: vi.fn(() => EMPTY),
-    putDoc: vi.fn((path, doc) => Promise.resolve({ lastUpdate: 0, doc })),
+    putDoc: vi.fn((_operationCode, _path, doc) => Promise.resolve({ lastUpdate: 0, doc })),
   }
 
   dispatch = vi.fn()
@@ -89,7 +89,7 @@ describe('createRefreshBucketDocuments', () => {
       await thunkAction(dispatch, () => 'state', { database, thunkLogs })
 
       // assert
-      expect(database.getDocs).toHaveBeenCalledWith({ bucket: sliceName }, lastUpdate)
+      expect(database.getDocs).toHaveBeenCalledWith(expect.any(String), { bucket: sliceName }, lastUpdate)
     },
   )
 
@@ -193,7 +193,11 @@ describe('createPushBucketDocument', () => {
     await thunkAction(dispatch, () => 'state', { database, thunkLogs })
 
     // assert
-    expect(database.putDoc).toHaveBeenCalledWith({ bucket: sliceName }, { id: '1', rev: 1, info: 'test' })
+    expect(database.putDoc).toHaveBeenCalledWith(
+      expect.any(String),
+      { bucket: sliceName },
+      { id: '1', rev: 1, info: 'test' },
+    )
   })
 
   it('should dispatch upsertBucket with the document returned by the database but skip lastUpdate', async () => {
@@ -274,6 +278,7 @@ describe('createRefreshCollectionDocuments', () => {
 
     // assert
     expect(database.getDocs).toHaveBeenCalledWith(
+      expect.any(String),
       { bucket: sliceName, bucketId: 'testBucketId', collection: 'testCases' },
       undefined,
     )
@@ -299,6 +304,7 @@ describe('createRefreshCollectionDocuments', () => {
 
       // assert
       expect(database.getDocs).toHaveBeenCalledWith(
+        expect.any(String),
         { bucket: sliceName, bucketId: 'testBucketId', collection: 'testCases' },
         lastUpdate,
       )
@@ -421,6 +427,7 @@ describe('createPushCollectionDocument', () => {
 
     // assert
     expect(database.putDoc).toHaveBeenCalledWith(
+      expect.any(String),
       { bucket: sliceName, bucketId: 'testBucketId', collection: 'testCases' },
       { id: '1', rev: 1, info: 'test' },
     )
