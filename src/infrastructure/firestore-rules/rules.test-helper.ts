@@ -1,3 +1,5 @@
+import { RulesTestContext } from '@firebase/rules-unit-testing'
+import { collection, deleteDoc, getDocs } from 'firebase/firestore'
 import { createWriteStream, readFileSync } from 'node:fs'
 import http from 'node:http'
 import { isEmulatorAvailable } from '../../utilities/firebase/emulator-utils'
@@ -67,4 +69,13 @@ export async function coverageReport(testEnv: RulesTestConfig, infix: string) {
   console.log(`Firestore rule coverage: ${coverageUri}`)
   // eslint-disable-next-line no-console
   console.log(`Firestore rule coverage: ${coverageFile}`)
+}
+
+export async function deleteAllDocs(
+  firestore: ReturnType<RulesTestContext['firestore']>,
+  path: string,
+  ...segments: string[]
+) {
+  const docs = await getDocs(collection(firestore, path, ...segments))
+  await Promise.all(docs.docs.map(({ ref }) => deleteDoc(ref)))
 }
