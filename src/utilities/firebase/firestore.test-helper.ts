@@ -132,3 +132,13 @@ export class FirestoreTestHelper {
     return data
   }
 }
+
+const timeMargin = 10 // 10ms security margin because of timer inaccuracy of different processes
+
+export function startTime() {
+  return new Date(Date.now() - timeMargin)
+}
+
+export function endTime() {
+  return new Date(Date.now() + timeMargin)
+}
