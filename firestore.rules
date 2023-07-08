@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read;
+      allow create: if request.auth.uid == userId && request.resource.data.createdAt == request.time;
+    }
+    // --------------------------------
+    // Unit test specific rules
+    // --------------------------------
+    match /{document=**} {
+      function isTestCaseDocument(segment) {
+        return segment.matches('.*-spec(-.*)?');
+      }
+
+      allow read: if isTestCaseDocument(request.path[3]);
+      allow write: if isTestCaseDocument(request.path[3]);
+    }
+  }
+}
