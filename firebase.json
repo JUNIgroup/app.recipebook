@@ -4,7 +4,7 @@
   },
   "emulators": {
     "hub": {
-      "port": 4000
+      "port": 4001
     },
     "auth": {
       "port": 9099
