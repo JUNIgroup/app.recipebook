@@ -1,5 +1,5 @@
 import { lastValueFrom, mergeMap } from 'rxjs'
-import { collectFrom } from '../../../../infrastructure/database/helpers/collect-from'
+import { collectFrom } from '../../../../utilities/rx/rx.test-helper'
 import { FirestoreOptions, FirestoreRestService } from '../../../../infrastructure/firestore/firestore-rest-service'
 import { isEmulatorAvailable } from '../../../../utilities/firebase/emulator-utils'
 import { FirestoreTestHelper, endTime, startTime } from '../../../../utilities/firebase/firestore.test-helper'

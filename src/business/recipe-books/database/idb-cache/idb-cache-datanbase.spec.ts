@@ -1,6 +1,6 @@
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { EMPTY, of } from 'rxjs'
-import { collectFrom } from '../../../../infrastructure/database/helpers/collect-from'
+import { collectFrom } from '../../../../utilities/rx/rx.test-helper'
 import { Logger } from '../../../../utilities/logger'
 import { createFakeLogger } from '../../../../utilities/logger/fake-logger.test-helper'
 import { CollectionPath, Database } from '../database'

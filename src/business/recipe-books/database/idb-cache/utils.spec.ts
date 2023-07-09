@@ -1,5 +1,5 @@
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
-import { collectFrom } from '../../../../infrastructure/database/helpers/collect-from'
+import { collectFrom } from '../../../../utilities/rx/rx.test-helper'
 import { CacheEntity, IDBStorage, clearCache, createKeyRange, openIdb, readIndex, write, writeAll } from './utils'
 
 globalThis.IDBKeyRange = IDBKeyRange
