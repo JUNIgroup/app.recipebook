@@ -1,17 +1,13 @@
 import { AnyAction, configureStore, ThunkAction } from '@reduxjs/toolkit'
-import { RdbService } from '../infrastructure/database/rdb.service'
 import { Logger } from '../utilities/logger'
 import type { AuthService } from './auth/service/auth-service'
 import { authReducer } from './auth/store/auth.slice'
-import { dbReducer } from './db/store/db.slice'
 import { Database } from './recipe-books/database/database'
 import { recipeBooksReducer } from './recipe-books/store'
-import { recipesReducer } from './recipes/store/recipe.slice'
 
 export type Services = {
   storage: Storage
   authService: AuthService
-  dbService: RdbService<'recipes'>
   database: Database
   logger: Logger<'business'>
 }
@@ -27,8 +23,6 @@ export const createStore = (services: Services) => {
   return configureStore({
     reducer: {
       auth: authReducer,
-      db: dbReducer,
-      recipes: recipesReducer,
       recipeBooks: recipeBooksReducer,
     },
     middleware: (getDefaultMiddleware) =>
