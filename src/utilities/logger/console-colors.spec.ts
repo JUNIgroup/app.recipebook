@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { darkColors, getHashColor, lightColors, middleColors, middleGray, styleConsoleLog } from './console-colors'
-import { contrastRatio, joinColors, relativeLuminance, splitColors } from './console-colors.test-helpers'
+import { contrastRatio, joinColors, relativeLuminance, splitColors } from './console-colors.test-helper'
 
 describe('test-helpers', () => {
   describe('relativeLuminance', () => {
