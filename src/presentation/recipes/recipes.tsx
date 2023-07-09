@@ -7,7 +7,6 @@ import * as fromAuth from '../../business/auth'
 import { useAppSelector } from '../store.hooks'
 import { RecipeBody } from './random/random'
 
-import { LocalRecipesColumn } from './local/local-recipes'
 import { Action, RandomRecipesColumn } from './random/random-recipes'
 
 import { FireRecipesColumn } from './fire/fire-recipes'
@@ -19,24 +18,9 @@ export const RecipesPage = () => {
 
   const [error, setError] = useState<string | null>()
 
-  const [addLocalRecipeAction, setAddLocalRecipeAction] = useState<Action>({
-    key: 'add-local',
-    text: '+¹',
-    enabled: false,
-    action: () => {},
-  })
-
-  const setAddLocalRecipe = useCallback((fn: null | ((recipe: RecipeBody) => Promise<void>)) => {
-    setAddLocalRecipeAction((action) => ({
-      ...action,
-      enabled: fn != null,
-      action: fn ?? (() => {}),
-    }))
-  }, [])
-
   const [addFireRecipeAction, setAddFireRecipeAction] = useState<Action>({
     key: 'add-fire',
-    text: '+²',
+    text: '+',
     enabled: false,
     action: () => {},
   })
@@ -54,8 +38,7 @@ export const RecipesPage = () => {
       <h1>Recipes of {user.name}</h1>
       <div className="error">{error ?? ''}</div>
       <div className="columns">
-        <RandomRecipesColumn actions={[addLocalRecipeAction, addFireRecipeAction]} />
-        <LocalRecipesColumn setError={setError} setAddRecipe={setAddLocalRecipe} />
+        <RandomRecipesColumn actions={[addFireRecipeAction]} />
         <FireRecipesColumn setError={setError} setAddRecipe={setAddFireRecipe} />
       </div>
     </div>

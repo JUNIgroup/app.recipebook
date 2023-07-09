@@ -25,6 +25,8 @@
     "test:ui": "vitest --ui --no-open",
     "test:ui:open": "vitest --ui",
     "emulator": "kill-port --port 4000,4001,9099,9098,4500,9150 && firebase emulators:start --only auth,firestore",
+    "analyze:deadcode": "npx deadfile ./src/main.tsx --dir ./src --exclude main.tsx \\.spec\\. \\.test-helper\\. ^mock- \\.samples\\.ts \\.d\\.ts",
+    "analyze:bundlesize": "vite build --sourcemap && npx source-map-explorer dist/assets/*.js",
     "lint": "npm run eslint && npm run prettier && npm run stylelint",
     "eslint": "eslint . --cache",
     "eslint:fix": "eslint . --cache --fix --ext .ts,.tsx",

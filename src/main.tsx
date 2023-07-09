@@ -5,11 +5,9 @@ import { BrowserRouter } from 'react-router-dom'
 import { IDB_ID } from './app.constants'
 import { createStore } from './business/app.store'
 import { FirebaseRestAuthService } from './business/auth/service/firebase-rest-auth-service'
-import { FirestoreDatabase } from './business/recipe-books/database/firestore/firestore-database'
-import { FirestoreService } from './business/recipe-books/database/firestore/firestore-service.api'
-import { IdbCacheDatabase } from './business/recipe-books/database/idb-cache/idb-cache-database'
-import { IdbService } from './infrastructure/database/idb/idb.service'
-import { dbUpgrades, dbVersion } from './infrastructure/database/idb/idb.upgrades'
+import { FirestoreDatabase } from './business/database/firestore/firestore-database'
+import { FirestoreService } from './business/database/firestore/firestore-service.api'
+import { IdbCacheDatabase } from './business/database/idb-cache/idb-cache-database'
 import { memoryPersistence, storagePersistence } from './infrastructure/firebase/persistence'
 import { RestAuthService } from './infrastructure/firebase/rest-auth-service'
 import {
@@ -40,8 +38,6 @@ const authService = new FirebaseRestAuthService(restAuthService, logger, {
   temporary: memoryPersistence(),
 })
 
-const dbService = new IdbService(indexedDB, IDB_ID, dbVersion, dbUpgrades, logger)
-
 const firestoreOptions = {
   apiKey: import.meta.env.VITE_FIREBASE__API_KEY,
   projectId: import.meta.env.VITE_FIREBASE__PROJECT_ID,
@@ -61,7 +57,6 @@ const database = cacheDatabase
 const store = createStore({
   storage,
   authService,
-  dbService,
   database,
   logger,
 })

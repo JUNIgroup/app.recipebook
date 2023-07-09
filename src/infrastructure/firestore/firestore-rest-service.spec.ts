@@ -3,7 +3,7 @@ import { isEmulatorAvailable } from '../../utilities/firebase/emulator-utils'
 import { FirestoreTestHelper, endTime, startTime } from '../../utilities/firebase/firestore.test-helper'
 import { Logger } from '../../utilities/logger'
 import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
-import { collectFrom } from '../database/helpers/collect-from'
+import { collectFrom } from '../../utilities/rx/rx.test-helper'
 import { FirestoreRestError } from './firestore-rest-error'
 import { FirestoreOptions, FirestoreRestService } from './firestore-rest-service'
 

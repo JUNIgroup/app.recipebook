@@ -6,9 +6,8 @@ import { MemoryRouter } from 'react-router-dom'
 import { createStore } from '../business/app.store'
 import { UserData } from '../business/auth/service/auth-service'
 import { MockAuthService } from '../business/auth/service/mock-auth-service'
-import { FirestoreDatabase } from '../business/recipe-books/database/firestore/firestore-database'
-import { FirestoreMockService } from '../business/recipe-books/database/firestore/firestore-mock-service'
-import { MockRdbService } from '../infrastructure/database/mock-rdb/mock-rdb.service'
+import { FirestoreDatabase } from '../business/database/firestore/firestore-database'
+import { FirestoreMockService } from '../business/database/firestore/firestore-mock-service'
 import { createFakeLogger } from '../utilities/logger/fake-logger.test-helper'
 import { App } from './app'
 
@@ -19,12 +18,10 @@ describe('button', () => {
     const logger = createFakeLogger()
     const authService = new MockAuthService()
     authService.setMockUser({ id: 'foo', name: 'bar' } as UserData)
-    const dbService = new MockRdbService()
     const database = new FirestoreDatabase(logger, new FirestoreMockService())
     const store = createStore({
       storage: localStorage,
       authService,
-      dbService,
       database,
       logger,
     })

@@ -1,4 +1,4 @@
-import { EpochTimestamp, ReadDoc } from '../../business/recipe-books/database/firestore/firestore-service.api'
+import { EpochTimestamp, ReadDoc } from '../../business/database/firestore/firestore-service.api'
 import { FirestoreDocumentWithLastUpdate } from './types'
 
 export function convertDocumentToResult(document: FirestoreDocumentWithLastUpdate): ReadDoc {

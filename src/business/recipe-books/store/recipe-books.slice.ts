@@ -3,8 +3,8 @@
 import { actionError } from '../../helper/redux/redux-action-helper'
 import { Recipe, RecipeBook } from '../model'
 import { fullRecipe, fullRecipeBook } from '../model/recipe-books.samples'
-import { createBucketsSlice } from './builder/slice'
-import { BucketsState } from './builder/types'
+import { createBucketsSlice } from '../../data-store.builder/slice'
+import { BucketsState } from '../../data-store.builder/types'
 
 export type RecipeBookStructure = {
   bucket: RecipeBook

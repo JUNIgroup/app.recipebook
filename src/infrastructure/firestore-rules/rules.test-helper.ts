@@ -53,7 +53,7 @@ export async function coverageReport(testEnv: RulesTestConfig, infix: string) {
   if (!testEnv.available) return
 
   // Write the coverage report to a file
-  const coverageFile = `${testEnv.rulesFile}.${infix}.coverage.html`
+  const coverageFile = `analyze/${testEnv.rulesFile}.${infix}.coverage.html`
   const fileStream = createWriteStream(coverageFile)
   const { host, port } = testEnv.firestore
   const coverageUri = `http://${host}:${port}/emulator/v1/projects/${testEnv.projectId}:ruleCoverage.html`
