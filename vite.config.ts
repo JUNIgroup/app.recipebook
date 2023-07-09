@@ -20,7 +20,7 @@ export default defineConfig({
   },
   server: {
     watch: {
-      ignored: ['analyze/', 'coverage/', 'dist/'],
+      ignored: ['node_modules/', 'analyze/', 'coverage/', 'dist/', 'fire*-debug.log'],
     },
   },
 })
