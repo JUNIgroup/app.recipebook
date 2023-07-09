@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit'
 import { shallowEqual } from 'react-redux'
-import { BucketStructure, ID } from '../../../database/database-types'
+import { BucketStructure, ID } from '../database/database-types'
 import { Order } from './orders'
 import { BucketsState } from './types'
 

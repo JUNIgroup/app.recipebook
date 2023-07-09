@@ -1,4 +1,4 @@
-import { ID } from '../../../database/database-types'
+import { ID } from '../database/database-types'
 import { BucketsState } from './types'
 
 export type Breakfast = {

@@ -1,4 +1,4 @@
-import { Doc } from '../../../database/database-types'
+import { Doc } from '../database/database-types'
 
 /**
  * This function extends an existing prepare function with a check that the document has revision 0.

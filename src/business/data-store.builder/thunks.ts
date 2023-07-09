@@ -1,7 +1,7 @@
 import { AnyAction, ThunkAction } from '@reduxjs/toolkit'
-import { Log } from '../../../../utilities/logger'
-import { CollectionPath, Database, createOperationCode } from '../../../database/database'
-import { BucketName, BucketStructure, CollectionName, Doc, ID } from '../../../database/database-types'
+import { Log } from '../../utilities/logger'
+import { CollectionPath, Database, createOperationCode } from '../database/database'
+import { BucketName, BucketStructure, CollectionName, Doc, ID } from '../database/database-types'
 import { RootSelector } from './selectors'
 import { BucketsActionCreator } from './slice.types'
 

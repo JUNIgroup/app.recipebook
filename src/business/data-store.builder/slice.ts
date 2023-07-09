@@ -1,8 +1,8 @@
 /* eslint-disable no-param-reassign */
 
 import { PayloadAction, createSlice } from '@reduxjs/toolkit'
-import { WritableDraft, castDraft } from '../../../../utilities/redux/draft'
-import { BucketName, BucketStructure, ID } from '../../../database/database-types'
+import { WritableDraft, castDraft } from '../../utilities/redux/draft'
+import { BucketName, BucketStructure, ID } from '../database/database-types'
 import { BucketsActionCreator, BucketsSlice } from './slice.types'
 import { BucketCollectionState, BucketsState, OnActionError } from './types'
 

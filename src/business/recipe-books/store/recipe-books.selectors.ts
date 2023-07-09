@@ -1,4 +1,4 @@
-import { byString } from './builder/orders'
+import { byString } from '../../data-store.builder/orders'
 import {
   createSelectAllBucketDocuments,
   createSelectAllBucketDocumentsSorted,
@@ -6,7 +6,7 @@ import {
   createSelectAllCollectionDocuments,
   createSelectAllCollectionDocumentsSorted,
   createSelectCollectionDocumentById,
-} from './builder/selectors'
+} from '../../data-store.builder/selectors'
 import { RecipeBooksState } from './recipe-books.slice'
 
 type PartialRootState = { recipeBooks: RecipeBooksState }

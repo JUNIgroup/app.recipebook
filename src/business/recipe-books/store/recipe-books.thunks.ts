@@ -1,12 +1,12 @@
 import { ID } from '../../database/database-types'
 import { Recipe, RecipeBook } from '../model'
-import { checkNotDeleted, checkRevisionZero, increaseRevision, markDeleted } from './builder/prepare'
+import { checkNotDeleted, checkRevisionZero, increaseRevision, markDeleted } from '../../data-store.builder/prepare'
 import {
   createPushBucketDocument,
   createPushCollectionDocument,
   createRefreshBucketDocuments,
   createRefreshCollectionDocuments,
-} from './builder/thunks'
+} from '../../data-store.builder/thunks'
 import { selectRoot } from './recipe-books.selectors'
 import { actions, sliceName } from './recipe-books.slice'
 
