@@ -2,7 +2,7 @@ import { lastValueFrom, mergeMap } from 'rxjs'
 import { collectFrom } from '../../../../infrastructure/database/helpers/collect-from'
 import { FirestoreOptions, FirestoreRestService } from '../../../../infrastructure/firestore/firestore-rest-service'
 import { isEmulatorAvailable } from '../../../../utilities/firebase/emulator-utils'
-import { FirestoreTestHelper } from '../../../../utilities/firebase/firestore.test-helper'
+import { FirestoreTestHelper, endTime, startTime } from '../../../../utilities/firebase/firestore.test-helper'
 import { Logger } from '../../../../utilities/logger/api'
 import { createFakeLogger } from '../../../../utilities/logger/fake-logger.test-helper'
 import { FirestoreDatabase } from './firestore-database'
@@ -12,7 +12,7 @@ import { FirestoreService } from './firestore-service.api'
 const emulatorAvailable = await isEmulatorAvailable()
 const firestoreEmulator = emulatorAvailable?.firestore
 
-const PREFIX = 'FirestoreDatabase'
+const PREFIX = 'FirestoreDatabase-spec'
 
 type ClearAllFn = () => void | Promise<void>
 
@@ -304,32 +304,32 @@ describe('FirestoreDatabase', () => {
           // arrange
           const path = { bucket: `${PREFIX}-put-new` }
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          const startTime = new Date()
 
           // act
+          const start = startTime()
           await db.putDoc(operationCode, path, doc)
+          const end = endTime()
 
           // assert
-          const finishTime = new Date()
           const document = await firestoreService.readDoc(operationCode, [path.bucket, doc.id])
           expect(document).toEqual({
             lastUpdate: expect.any(Number),
             doc: { id: 'foo', rev: 1, content: { bar: 'baz' } },
           })
-          expect(document.lastUpdate).toBeBetween(startTime, finishTime)
+          expect(document.lastUpdate).toBeBetween(start, end)
         })
 
         it('should add a new bucket collection document', async () => {
           // arrange
           const path = { bucket: `${PREFIX}-put-new-sub`, bucketId: 'test', collection: 'sub' }
           const doc = { id: 'foo', rev: 1, content: { bar: 'baz' } }
-          const startTime = new Date()
 
           // act
+          const start = startTime()
           await db.putDoc(operationCode, path, doc)
+          const end = endTime()
 
           // assert
-          const finishTime = new Date()
           const document = await firestoreService.readDoc(operationCode, [
             path.bucket,
             path.bucketId,
@@ -340,7 +340,7 @@ describe('FirestoreDatabase', () => {
             lastUpdate: expect.any(Number),
             doc: { id: 'foo', rev: 1, content: { bar: 'baz' } },
           })
-          expect(document.lastUpdate).toBeBetween(startTime, finishTime)
+          expect(document.lastUpdate).toBeBetween(start, end)
         })
 
         it('should update an existing bucket document', async () => {
@@ -350,19 +350,19 @@ describe('FirestoreDatabase', () => {
           await firestoreService.writeDoc(operationCode, [path.bucket, doc.id], doc)
 
           const update = { ...doc, rev: 2, content: { bar: 'baz-update' } }
-          const startTime = new Date()
 
           // act
+          const start = startTime()
           await db.putDoc(operationCode, path, update)
+          const end = endTime()
 
           // assert
-          const finishTime = new Date()
           const document = await firestoreService.readDoc(operationCode, [path.bucket, doc.id])
           expect(document).toEqual({
             lastUpdate: expect.any(Number),
             doc: { id: 'foo', rev: 2, content: { bar: 'baz-update' } },
           })
-          expect(document.lastUpdate).toBeBetween(startTime, finishTime)
+          expect(document.lastUpdate).toBeBetween(start, end)
         })
 
         it('should update an existing bucket collection document', async () => {
@@ -372,13 +372,13 @@ describe('FirestoreDatabase', () => {
           await firestoreService.writeDoc(operationCode, [path.bucket, path.bucketId, path.collection, doc.id], doc)
 
           const update = { ...doc, rev: 2, content: { bar: 'baz-update' } }
-          const startTime = new Date()
 
           // act
+          const start = startTime()
           await db.putDoc(operationCode, path, update)
+          const end = endTime()
 
           // assert
-          const finishTime = new Date()
           const document = await firestoreService.readDoc(operationCode, [
             path.bucket,
             path.bucketId,
@@ -389,7 +389,7 @@ describe('FirestoreDatabase', () => {
             lastUpdate: expect.any(Number),
             doc: { id: 'foo', rev: 2, content: { bar: 'baz-update' } },
           })
-          expect(document.lastUpdate).toBeBetween(startTime, finishTime)
+          expect(document.lastUpdate).toBeBetween(start, end)
         })
 
         it('should return the written bucket document', async () => {

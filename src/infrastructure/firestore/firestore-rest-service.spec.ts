@@ -1,6 +1,6 @@
 import { ulid } from 'ulid'
 import { isEmulatorAvailable } from '../../utilities/firebase/emulator-utils'
-import { FirestoreTestHelper } from '../../utilities/firebase/firestore.test-helper'
+import { FirestoreTestHelper, endTime, startTime } from '../../utilities/firebase/firestore.test-helper'
 import { Logger } from '../../utilities/logger'
 import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 import { collectFrom } from '../database/helpers/collect-from'
@@ -22,7 +22,7 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
 
   const testHelper = new FirestoreTestHelper(firestoreHost, firestorePort, options.projectId, options.databaseId)
 
-  const PREFIX = 'FirestoreRestService'
+  const PREFIX = 'FirestoreRestService-spec'
 
   const collections = [
     `${PREFIX}-Empty`,
@@ -323,9 +323,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         }
 
         // act
-        const begin = new Date()
+        const begin = startTime()
         await db.writeDoc(operationCode, path, doc)
-        const end = new Date()
+        const end = endTime()
 
         // assert
         const document = await testHelper.getDocument(pathString)
@@ -363,9 +363,9 @@ describe.runIf(firestoreEmulator)('FirestoreRestService', () => {
         }
 
         // act
-        const begin = new Date()
+        const begin = startTime()
         await db.writeDoc(operationCode, path, update)
-        const end = new Date()
+        const end = endTime()
 
         // assert
         const document = await testHelper.getDocument(pathString)

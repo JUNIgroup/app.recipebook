@@ -9,6 +9,7 @@
 /dist
 /coverage
 /analyze
+firestore.rules.*.coverage.html
 .eslintcache
 
 # volatile test artefacts
