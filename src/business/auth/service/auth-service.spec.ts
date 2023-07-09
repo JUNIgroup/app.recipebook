@@ -1,12 +1,10 @@
 import ShortUniqueId from 'short-unique-id'
-import { FirebaseService } from '../../../infrastructure/firebase/firebase-service'
 import { memoryPersistence, nonePersistence } from '../../../infrastructure/firebase/persistence'
 import { RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
 import { isEmulatorAvailable } from '../../../utilities/firebase/emulator-utils'
 import { createFakeLogger } from '../../../utilities/logger/fake-logger.test-helper'
 import { defineGlobalFetchForTesting } from '../../../utilities/query/fetch.test-helper'
 import { AuthError, AuthService, UserData } from './auth-service'
-import { FirebaseAuthService } from './firebase-auth-service'
 import { FirebaseRestAuthService } from './firebase-rest-auth-service'
 import { MockAuthService } from './mock-auth-service'
 
@@ -46,21 +44,10 @@ function createFirebaseRestAuthServiceContext(): TestContext {
   }
 }
 
-function createFirebaseAuthServiceContext(): TestContext {
-  const firebase = new FirebaseService()
-  const logger = createFakeLogger()
-  return {
-    testArePossible: !!emulatorAvailable,
-    supportsErrors: true,
-    authService: () => new FirebaseAuthService(firebase, logger),
-  }
-}
-
 describe.each`
   serviceName                  | context
   ${'MockAuthService'}         | ${createMockAuthServiceContext()}
   ${'FirebaseRestAuthService'} | ${createFirebaseRestAuthServiceContext()}
-  ${'FirebaseAuthService'}     | ${createFirebaseAuthServiceContext()}
 `('AuthService $serviceName', ({ serviceName, context }: { serviceName: string; context: TestContext }) => {
   describe.runIf(context.testArePossible)('is testable', () => {
     let authService: AuthService
