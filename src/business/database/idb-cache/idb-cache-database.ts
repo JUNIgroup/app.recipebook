@@ -1,5 +1,5 @@
 import { Observable, concat, from, map, mergeMap, switchMap, tap } from 'rxjs'
-import { Log, Logger } from '../../../../utilities/logger'
+import { Log, Logger } from '../../../utilities/logger'
 import { CollectionPath, Database, OperationCode, Result } from '../database'
 import { Doc } from '../database-types'
 import { IDBStorage, clearCache, createKeyRange, openIdb, readIndex, write, writeAll } from './utils'

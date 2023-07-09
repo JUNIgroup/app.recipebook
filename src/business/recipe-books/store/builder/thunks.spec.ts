@@ -2,8 +2,8 @@ import { AnyAction, ThunkDispatch, createAction } from '@reduxjs/toolkit'
 import { EMPTY, bufferCount, of, throwError } from 'rxjs'
 import { Log } from '../../../../utilities/logger'
 import { createFakeLogger } from '../../../../utilities/logger/fake-logger.test-helper'
-import { Database } from '../../database/database'
-import { Doc } from '../../database/database-types'
+import { Database } from '../../../database/database'
+import { Doc } from '../../../database/database-types'
 import { BucketsActionCreator } from './slice.types'
 import {
   ThunkActionCreator,

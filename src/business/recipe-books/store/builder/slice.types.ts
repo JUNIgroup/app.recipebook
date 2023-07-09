@@ -1,5 +1,5 @@
 import { PayloadAction, Reducer } from '@reduxjs/toolkit'
-import { BucketName, BucketStructure, ID } from '../../database/database-types'
+import { BucketName, BucketStructure, ID } from '../../../database/database-types'
 import { BucketsState } from './types'
 
 /**

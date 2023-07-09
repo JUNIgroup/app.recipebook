@@ -1,6 +1,6 @@
 import { of } from 'rxjs'
-import { collectFrom } from '../../../../utilities/rx/rx.test-helper'
-import { FakeLogger, createFakeLogger } from '../../../../utilities/logger/fake-logger.test-helper'
+import { collectFrom } from '../../../utilities/rx/rx.test-helper'
+import { FakeLogger, createFakeLogger } from '../../../utilities/logger/fake-logger.test-helper'
 import { Database, Result } from '../database'
 import { Doc, EpochTimestamp } from '../database-types'
 import { DocSchema } from './schema'

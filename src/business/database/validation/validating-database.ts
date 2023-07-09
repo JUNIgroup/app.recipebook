@@ -1,5 +1,5 @@
 import { Observable, map } from 'rxjs'
-import { Log, Logger } from '../../../../utilities/logger'
+import { Log, Logger } from '../../../utilities/logger'
 import { CollectionPath, Database, OperationCode, Result } from '../database'
 import { DatabaseStructure, Doc, EpochTimestamp } from '../database-types'
 import { DatabaseSchemas } from './schema'

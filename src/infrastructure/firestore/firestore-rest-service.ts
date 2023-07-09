@@ -1,9 +1,5 @@
 import { Observable, Subscriber } from 'rxjs'
-import {
-  EpochTimestamp,
-  FirestoreService,
-  ReadDoc,
-} from '../../business/recipe-books/database/firestore/firestore-service.api'
+import { EpochTimestamp, FirestoreService, ReadDoc } from '../../business/database/firestore/firestore-service.api'
 import { Log, Logger } from '../../utilities/logger'
 import { convertDocumentToResult } from './convert-from'
 import { convertObjectToFields } from './convert-to'

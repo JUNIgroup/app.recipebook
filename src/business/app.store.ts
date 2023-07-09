@@ -2,7 +2,7 @@ import { AnyAction, configureStore, ThunkAction } from '@reduxjs/toolkit'
 import { Logger } from '../utilities/logger'
 import type { AuthService } from './auth/service/auth-service'
 import { authReducer } from './auth/store/auth.slice'
-import { Database } from './recipe-books/database/database'
+import { Database } from './database/database'
 import { recipeBooksReducer } from './recipe-books/store'
 
 export type Services = {

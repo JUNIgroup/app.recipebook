@@ -1,5 +1,5 @@
 import { Action } from '@reduxjs/toolkit'
-import { BucketStructure, Doc, ID } from '../../database/database-types'
+import { BucketStructure, Doc, ID } from '../../../database/database-types'
 
 export type BucketsState<T extends BucketStructure> = {
   ids: ID[]

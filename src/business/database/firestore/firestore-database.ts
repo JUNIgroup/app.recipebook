@@ -1,5 +1,5 @@
 import { Observable, map, tap } from 'rxjs'
-import { Log, Logger } from '../../../../utilities/logger'
+import { Log, Logger } from '../../../utilities/logger'
 import { CollectionPath, Database, OperationCode, Result } from '../database'
 import { Doc } from '../database-types'
 import { EpochTimestamp, FirestoreService } from './firestore-service.api'

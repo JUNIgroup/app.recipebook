@@ -1,4 +1,4 @@
-import { FirestoreService } from '../../business/recipe-books/database/firestore/firestore-service.api'
+import { FirestoreService } from '../../business/database/firestore/firestore-service.api'
 import { isEmulatorAvailable } from '../../utilities/firebase/emulator-utils'
 import { Logger } from '../../utilities/logger'
 import { FirestoreOptions, FirestoreRestService } from './firestore-rest-service'

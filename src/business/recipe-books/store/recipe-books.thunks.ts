@@ -1,4 +1,4 @@
-import { ID } from '../database/database-types'
+import { ID } from '../../database/database-types'
 import { Recipe, RecipeBook } from '../model'
 import { checkNotDeleted, checkRevisionZero, increaseRevision, markDeleted } from './builder/prepare'
 import {
