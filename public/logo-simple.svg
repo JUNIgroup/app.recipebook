@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="768px" height="768px" viewBox="0 0 768 768" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <path d="M768 0L768 0L768 768L0 768L0 0L768 0Z" id="path_1" />
+    <clipPath id="clip_1">
+      <use xlink:href="#path_1" />
+    </clipPath>
+  </defs>
+  <g id="Frame" clip-path="url(#clip_1)">
+    <path d="M768 0L768 0L768 768L0 768L0 0L768 0Z" id="Frame" fill="none" stroke="none" />
+    <g id="details--simple" fill-opacity="1" transform="translate(128.00005 32.99997)">
+      <path d="M512 0L512 0L512 704L0 704L0 0L512 0Z" id="details--simple" fill="none" stroke="none" />
+      <g id="flavor-jar">
+        <path d="M424 184C472.608 184 512 223.392 512 272L512 616C512 664.608 472.608 704 424 704L88 704C39.3923 704 0 664.608 0 616L0 272C0 223.392 39.3923 184 88 184L424 184Z" id="jar" fill="#FF6F00" stroke="#1A381B" stroke-width="4" stroke-linejoin="round" />
+        <path d="M431.076 184C480.167 184 470.522 124.531 431.076 120.292C363.033 120.292 149.357 120 80.8585 120C42.4687 124.455 32.8903 184 80.8585 184C128.827 184 381.985 184 431.076 184Z" id="screw-thread" fill="#393939" fill-rule="evenodd" stroke="#1A381B" stroke-width="4" />
+        <path d="M75.3302 120C-16.3261 110.884 6.43341 0.323002 87.6212 0.0993832C168.809 -0.124227 332.999 0.0993815 415.352 0.0993738C497.707 0.0993661 520.596 110.652 428.285 120C326.341 120 147.628 120 75.3302 120Z" id="lid" fill="#FF6F00" fill-rule="evenodd" stroke="#1A381B" stroke-width="4" stroke-linejoin="round" />
+        <path d="M393 569C398.524 569 403 573.476 403 579L403 629C403 634.524 398.524 639 393 639L120 639C114.476 639 110 634.524 110 629L110 579C110 573.476 114.476 569 120 569L393 569Z" id="Flavor-Alias" fill="#1A381B" stroke="none" />
+        <g id="bay-leaf" transform="translate(118.13414 238.43695)">
+          <g id="leaf-dark">
+            <path d="M187.125 228.652C235.01 61.0531 42.8659 4.57764e-05 42.8659 4.57764e-05C42.8659 4.57764e-05 13.2247 196.361 187.125 228.652Z" id="leaf" fill="#1A381B" fill-rule="evenodd" stroke="none" />
+          </g>
+          <g id="leaf-light" transform="translate(53.95775 51.66786)">
+            <path d="M22.5662 200.842C216.338 237.899 220.02 18.5589 223.407 0C202.389 1.21905 9.32223 11.0328 22.5662 200.842Z" id="leaf" fill="#A5D6A7" fill-rule="evenodd" stroke="none" />
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
