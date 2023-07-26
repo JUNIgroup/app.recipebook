@@ -1,3 +1,5 @@
+@import 'assets/fonts/rubik/rubik-app-title';
+
 body,
 html {
   margin: 0;
@@ -53,6 +55,7 @@ html {
 
 .splash__text h1 {
   font-size: clamp(2rem, 8vw, 4rem);
+  line-height: 1.2;
   margin: 3rem;
   padding-block: 0.5rem;
   padding-inline: min(12vw, 50px);
@@ -62,4 +65,8 @@ html {
 .app-title {
   font-size: 2.25rem;
   font-weight: 700;
+}
+
+.app-title--font {
+  font-family: rubik-app-title, sans-serif;
 }
