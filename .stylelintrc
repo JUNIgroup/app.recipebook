@@ -4,6 +4,6 @@
   "rules": {
     "selector-class-pattern": "^[a-z][a-zA-Z0-9_-]*[a-zA-Z0-9]*$",
     "declaration-empty-line-before": null,
-    "scss/double-slash-comment-empty-line-before": "never"
+    "scss/double-slash-comment-empty-line-before": null
   }
 }

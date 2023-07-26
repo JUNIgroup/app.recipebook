@@ -1,3 +1,4 @@
+import { resolve } from 'path'
 import { defineConfig, splitVendorChunkPlugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -5,7 +6,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(), //
+    react(),
     splitVendorChunkPlugin(),
     visualizer({
       title: 'Vite Bundle Tree',
@@ -17,6 +18,11 @@ export default defineConfig({
   ],
   build: {
     target: 'es2021',
+  },
+  resolve: {
+    alias: {
+      '@assets': resolve(__dirname, 'src/assets'),
+    },
   },
   server: {
     watch: {
