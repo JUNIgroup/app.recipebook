@@ -10,18 +10,21 @@ html {
 }
 
 .full-screen-section {
-  height: 100vh;
-  max-height: 100vh;
+  width: 100%;
+  min-height: 100vh;
   max-width: 1200px;
   margin-inline: auto;
 }
 
 .splash {
+  position: relative;
+  top: 0;
   display: flex;
   flex-direction: column;
   background-color: #a5d6a7;
   align-items: center;
   overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .splash__logo,

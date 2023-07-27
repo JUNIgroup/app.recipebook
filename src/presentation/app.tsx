@@ -8,7 +8,6 @@ import * as fromAuth from '../business/auth'
 import { UNLOADED } from '../business/helper/redux/redux-helper'
 import { AppRoutes } from './app-routes'
 import { useAppDispatch } from './store.hooks'
-import { LoadingSpinner } from './utils/loading-spinner'
 
 const isLoaded = (data: unknown) => data !== UNLOADED
 
@@ -21,7 +20,11 @@ export const App = () => {
   const dataLoaded = useSelector(dataLoadedFlag)
 
   useEffect(() => dispatch(fromAuth.fetchRememberedEmail()), [])
-  useEffect(() => dispatch(fromAuth.observeUser()), [])
+  useEffect(() => {
+    setTimeout(() => {
+      dispatch(fromAuth.observeUser())
+    }, 1000)
+  }, [])
 
-  return dataLoaded ? <AppRoutes /> : <LoadingSpinner />
+  return dataLoaded ? <AppRoutes /> : null
 }
