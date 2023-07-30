@@ -1,5 +1,61 @@
 @use '../../theme';
 @use "sass:math";
+@use "sass:map";
+
+$splash-mx: 12vw;
+$splash-my: 6vh;
+$logo-size-large: clamp(64px, min(#{100vw - $splash-mx - $splash-mx}, #{50vh - $splash-my}), 300px);
+$logo-size-small: 40px;
+$header-mx: 12px;
+$header-my: 12px;
+$header-height: $logo-size-small + 2 * $header-my;
+
+// breakpoints for the scrolling
+$scroll-break-start: 20; // don't move the first 10% of the scroll
+$scroll-break-action-1: 22; // the actions are fixed on the right of the page
+$scroll-break-action-2: 30; // the actions are fixed in same hight as the title
+$scroll-break-action-3: 50; // the actions are fixed in same hight as the title
+$scroll-break-titlebar: 100; // the titlebar is fixed on top of the page
+$scroll-break-end: 170; // last point of moving splash elements
+
+$title-scroll-split: 50;
+$action-scroll-split: 45;
+
+// scroll range to move the titlebar to top of the page
+$scroll-range-titlebar-y: (
+  from: $scroll-break-start,
+  to: $scroll-break-titlebar
+);
+
+// scroll range to align the title to the left of the titlebar
+$scroll-range-title-x: (
+  from: $scroll-break-titlebar,
+  to: $scroll-break-end,
+);
+
+// scroll range to align the actions to the right of the titlebar
+$scroll-range-actions-x: (
+  from: $scroll-break-start,
+  to: $scroll-break-action-2,
+);
+
+// scroll range to move the actions to the top of the page
+$scroll-range-actions-y: (
+  from: $scroll-break-action-1,
+  to: $scroll-break-action-3,
+);
+
+// scroll range to convert the action buttons into icons
+$scroll-range-actions-to-icon: (
+  from: $scroll-break-action-1,
+  to: $scroll-break-action-2,
+);
+
+// small scroll range where the logo switches from a detailed to a simple version
+$scroll-range-logo-details: (
+  from: $scroll-break-titlebar - 20,
+  to: $scroll-break-titlebar
+);
 
 .full-screen-section {
   &::after {
@@ -15,22 +71,18 @@
   }
 }
 
-// calculate a value depending on the scroll position
-@function align($value-from, $value-to, $scroll-from: 10, $scroll-to: 90) {
+@function align($value-from, $value-to, $scroll-range) {
+  $scroll-from: map.get($scroll-range, 'from');
+  $scroll-to: map.get($scroll-range, 'to');
   $factor: clamp(0, calc((var(--scroll) - $scroll-from) / ($scroll-to - $scroll-from)), 1);
-  
-  @return calc(($value-from) + $factor * ($value-to - $value-from));
-}
 
-// toggle an value depending on the scroll position
-@function toggle($value-before, $value-after, $breakpoint) {
-  @return align($value-before, $value-after, $breakpoint - 0.001, $breakpoint + 0.001);
+  @return calc(($value-from) + $factor * ($value-to - $value-from));
 }
 
 // body::before {
 //   content: '';
 //   position: fixed;
-//   top: 0;
+//   bottom: 0;
 //   left: 50%;
 //   z-index: 1000;
 //   // background-color: #fff;
@@ -44,77 +96,73 @@
 //   border-bottom-right-radius: 10px;
 //   border-top: 15px solid hsl(138deg 69% 0%);
 //   border-bottom: 15px solid hsl(138deg 69% 49%);
-//   background-color: hsl(138deg 69% align(0%, 49%));
+//   background-color: hsl(138deg 69% align(0%, 49%, $scroll-range-titlebar-y));
 // }
 
 .splash.title-bar {
-  $splash-mx: 12vw;
-  $splash-my: 6vh;
-  $header-mx: 12px;
-  $header-my: 12px;
-  $logo-size-large: clamp(64px, min(#{100vw - $splash-mx - $splash-mx}, #{50vh - $splash-my}), 300px);
-  $logo-size-small: 40px;
-  $title-scroll-split: 50;
-  $action-scroll-split: 45;
-
   display: flex;
-  flex: row nowrap;
+  flex-flow: row nowrap;
   align-items: center;
   padding-block: $header-my;
-  min-height: align(100vh, $logo-size-small, $scroll-to: $title-scroll-split);
+  min-height: calc(align(100vh, $header-height, $scroll-range-titlebar-y) - 2 * $header-my);
 
   .logo {
     // background-color: rgb(255 0 0 / 23%);
     position: absolute;
-    left: align(50%, $header-mx + math.div($logo-size-small, 2), $scroll-to: $title-scroll-split);
-    width: align($logo-size-large, $logo-size-small, $scroll-to: $title-scroll-split);
-    height: align($logo-size-large, $logo-size-small, $scroll-to: $title-scroll-split);
-    transform: 
+    left: align(50%, math.div($header-height, 2), $scroll-range-titlebar-y);
+    width: align($logo-size-large, $logo-size-small, $scroll-range-titlebar-y);
+    height: align($logo-size-large, $logo-size-small, $scroll-range-titlebar-y);
+    transform:
       translateX(-50%)
-      translateY(align(calc($logo-size-large / -2), #{0px}, $scroll-to: $title-scroll-split))
-      ;
+      translateY(align(calc($logo-size-large / -2), #{0px}, $scroll-range-titlebar-y))
+    ;
 
     & > img {
       position: absolute;
       top: 0;
       left: 0;
     }
-  
+
     & > img.simple {
-      opacity: toggle(0, 1, $title-scroll-split);
+      opacity: 1;
     }
 
     & > img.details {
-      opacity: toggle(1, 0, $title-scroll-split);
+      opacity: align(1, 0, $scroll-range-logo-details);
     }
   }
 
   .title {
     // background-color: rgb(140 0 255 / 23%);
     flex: 1 1;
-    margin-inline: align($header-mx, $logo-size-small + 2 * $header-mx, $scroll-to: $title-scroll-split);
+    margin-inline: align($header-mx, $logo-size-small + 2 * $header-mx, $scroll-range-titlebar-y);
     transform:
-      translateX(align(50%, #{0px}, $scroll-from: $title-scroll-split))
-      translateY(align(20vh, #{0px}, $scroll-to: $title-scroll-split))
+      translateX(align(50%, #{0px}, $scroll-range-title-x))
+      translateY(align(20vh, #{0px}, $scroll-range-titlebar-y))
     ;
-    
+
     h1 {
       // background-color: rgb(140 0 255 / 23%);
-      font-size: align(clamp(2.25rem, 8vw, 4rem), 2.25rem, $scroll-to: $title-scroll-split);
+      font-size: align(clamp(2.25rem, 8vw, 4rem), 2.25rem, $scroll-range-titlebar-y);
       line-height: min($logo-size-small, 1);
       width: fit-content;
       transform:
-        translateX(align(-50%, 0%, $scroll-from: $title-scroll-split))
+        translateX(align(-50%, 0%, $scroll-range-title-x))
       ;
     }
   }
 
   .actions {
-    $action-width: 4rem;
+    $action-width: 8ch;
+    $action-mx: 0.5ch;
 
     position: absolute;
-    top: calc($header-my + math.div($logo-size-small, 2) - 1rem);
-    right: 2 * $header-mx;
+    right: align(50%, 2 * $header-mx, $scroll-range-actions-x);
+    transform:
+      translateX(align(50%, #{0px}, $scroll-range-actions-x))
+      translateY(align(20vh, #{0px}, $scroll-range-titlebar-y))
+      translateY(align(20vh, #{0px}, $scroll-range-actions-y))
+    ;
 
     display: flex;
     flex-flow: row nowrap;
@@ -123,7 +171,7 @@
     border-radius: 2rem;
     overflow: hidden;
     background-color: #212a21;
-    box-shadow: 
+    box-shadow:
       0 0 0 1px #212a21,
       0 2px 10px rgba(0 0 0 / 14%)
     ;
@@ -132,12 +180,12 @@
       all: unset;
       box-sizing: border-box;
       position: relative;
-      
+
       width: $action-width;
       text-align: center;
-      
-      font-size: 1rem;
-      font-weight: 500;
+
+      font-size: 1.2rem;
+      font-weight: 700;
       line-height: 2rem;
       height: 2rem;
 
@@ -145,10 +193,17 @@
       color: #212a21;
       cursor: pointer;
 
+      & span {
+        margin-inline: $action-mx;
+        display: block;
+        overflow: hidden;
+        text-overflow: clip;
+      }
+
       &:hover {
         background-color: #F0FFF1;
       }
-      
+
       &:focus {
         background-color: #FF6F00;
       }
@@ -156,46 +211,49 @@
 
     @media screen and (max-width: 600px) {
       & {
-        gap: toggle(1px, #{0px}, $action-scroll-split);
+        gap: align(1px, #{0px}, $scroll-range-actions-to-icon);
       }
 
       & button {
         & span {
-          margin-inline: 0.5rem;
-          display: block;
-          overflow: hidden;
-          text-overflow: clip;  
-          opacity: align(1, 0, $action-scroll-split - 5, $action-scroll-split);
+          opacity: align(1, 0, $scroll-range-actions-to-icon);
         }
 
         &::after {
           content: '';
           position: absolute;
           inset: 0;
-          background: url("@assets/images/account.svg") no-repeat center center;      
-          opacity: align(0, 1, $action-scroll-split - 5, $action-scroll-split);
+          background: url("@assets/images/account.svg") no-repeat center center;
+          opacity: align(0, 1, $scroll-range-actions-to-icon);
         }
       }
 
       &:not(:focus-within) {
         button {
-          width: align($action-width, #{0px}, $action-scroll-split - 5, $action-scroll-split);
+          width: align($action-width, #{0px}, $scroll-range-actions-to-icon);
         }
 
         button.prefer {
-          width: align($action-width, 2rem, $action-scroll-split - 5, $action-scroll-split);
-        }  
+          width: align($action-width, 2rem, $scroll-range-actions-to-icon);
+        }
       }
 
       &:focus-within {
         button {
-          width: align($action-width, #{0px}, $action-scroll-split - 5, $action-scroll-split);
+          width: align($action-width, #{0px}, $scroll-range-actions-to-icon);
         }
 
         button:focus {
-          width: align($action-width, 2rem, $action-scroll-split - 5, $action-scroll-split);
-        }  
+          width: align($action-width, 2rem, $scroll-range-actions-to-icon);
+        }
       }
     }
   }
+}
+
+.full-screen-section:nth-of-type(2) {
+  $second-selection-offset: calc((map.get($scroll-range-titlebar-y, 'to') - map.get($scroll-range-titlebar-y, 'from')) * 0.1vh);
+
+  position: relative;
+  padding-top: align(calc($scroll-break-start * 1vh), $header-height, $scroll-range-titlebar-y),
 }

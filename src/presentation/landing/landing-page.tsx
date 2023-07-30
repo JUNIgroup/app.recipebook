@@ -43,7 +43,24 @@ export const LandingPage = () => {
           </div>
         </div>
       </div>
-      <div className="full-screen-section">Section 2</div>
+      <div className="full-screen-section">
+        <h2 style={{ margin: 0 }}>Section 2</h2>
+        <p style={{ color: 'darkblue' }}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
+        </p>
+        <p style={{ color: 'darkgreen' }}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
+        </p>
+        <p style={{ color: 'darkred' }}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
+        </p>
+        <p style={{ color: 'darkorange' }}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
+        </p>
+        <p style={{ color: 'darkcyan' }}>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
+        </p>
+      </div>
       <div className="full-screen-section">Section 3</div>
     </>
   )

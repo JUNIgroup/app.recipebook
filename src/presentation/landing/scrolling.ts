@@ -16,5 +16,5 @@ export function registerScrollEvent() {
 function setScrollVariables() {
   const htmlElement = document.documentElement
   const percentOfScreenHeightScrolled = (100 * htmlElement.scrollTop) / htmlElement.clientHeight
-  htmlElement.style.setProperty('--scroll', Math.min(100, percentOfScreenHeightScrolled).toString())
+  htmlElement.style.setProperty('--scroll', percentOfScreenHeightScrolled.toString())
 }
