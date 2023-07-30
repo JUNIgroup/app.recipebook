@@ -1,3 +1,4 @@
+@use 'theme';
 @import 'assets/fonts/rubik/rubik-app-title';
 
 body,
@@ -5,71 +6,87 @@ html {
   margin: 0;
   padding: 0;
   height: 100%;
-  background-color: #f0f0f0;
+  background-color: theme.$body-color;
   box-sizing: border-box;
 }
 
 .full-screen-section {
+  position: relative;
   width: 100%;
   min-height: 100vh;
   max-width: 1200px;
   margin-inline: auto;
+  background-color: theme.$background-color;
 }
 
 .splash {
-  position: relative;
+  position: fixed;
+  z-index: 100;
   top: 0;
+  width: 100%;
+
+  $splash-mx: 12vw;
+  $splash-my: 6vh;
+  $header-mx: 12px;
+  $header-my: 12px;
+  $logo-size-large: clamp(64px, min(#{100vw - $splash-mx - $splash-mx}, #{50vh - $splash-my}), 300px);
+  $logo-size-small: 40px;
+
   display: flex;
-  flex-direction: column;
-  background-color: #a5d6a7;
+  flex-flow: row nowrap;
   align-items: center;
+  padding-block: $header-my;
+
+  min-height: 100vh;
+  max-width: 1200px;
+  background-color: theme.$primary-color;
   overflow-x: hidden;
   overflow-y: hidden;
-}
 
-.splash__logo,
-.splash__text {
-  display: flex;
-  flex-direction: column;
-}
+  .logo {
+    position: absolute;
+    left: 50%;
+    width: $logo-size-large;
+    height: $logo-size-large;
+    transform: 
+      translateX(-50%)
+      translateY(calc($logo-size-large / -2))
+    ;
 
-.splash__logo {
-  flex: 0 0 50vh;
-  padding-inline: min(12vw, 50px);
-  width: clamp(64px, 300px, 76vw);
-  justify-content: end;
-  overflow: hidden;
-}
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
 
-.splash__logo img {
-  display: block;
-  margin-top: 2.25rem;
-  width: 100%;
-  height: 100%;
-  // display: none;
-  object-fit: contain;
-  object-position: center bottom;
-}
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center bottom;
+    }
+  }
 
-.splash__text {
-  flex: 1 1 50vh;
-  // width: 100%;
-}
+  .title {
+    flex: 1 1;
+    margin-inline: $header-mx;
+    transform: translate(50%, 20vh);
 
-.splash__text h1 {
-  font-size: clamp(2rem, 8vw, 4rem);
-  line-height: 1.2;
-  margin: 3rem;
-  padding-block: 0.5rem;
-  padding-inline: min(12vw, 50px);
-  text-align: center;
-}
+    h1 {
+      margin: 0;
+      font-size: clamp(2.25rem, 8vw, 4rem);
+      line-height: min($logo-size-small, 1);
+      width: fit-content;
+      transform: translateX(-50%);
 
-.app-title {
-  font-size: 2.25rem;
-  font-weight: 700;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
 }
 
 .app-title--font {
   font-family: rubik-app-title, sans-serif;
+  font-weight: 700;
 }

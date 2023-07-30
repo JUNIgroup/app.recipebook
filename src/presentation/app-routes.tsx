@@ -9,7 +9,7 @@ import { LandingPage } from './landing/landing-page'
 
 export const AppRoutes = () => {
   useLayoutEffect(() => {
-    document.getElementById('splash')?.remove()
+    document.getElementById('splash-section')?.remove()
   }, [])
   return (
     <Routes>
