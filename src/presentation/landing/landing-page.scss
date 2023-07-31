@@ -104,7 +104,7 @@ $scroll-range-logo-details: (
   flex-flow: row nowrap;
   align-items: center;
   padding-block: $header-my;
-  min-height: calc(align(100vh, $header-height, $scroll-range-titlebar-y) - 2 * $header-my);
+  min-height: calc(align(100vh, $header-height, $scroll-range-titlebar-y));
 
   .logo {
     // background-color: rgb(255 0 0 / 23%);

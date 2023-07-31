@@ -1,13 +1,16 @@
 @use 'theme';
 @import 'assets/fonts/rubik/rubik-app-title';
 
+* {
+  box-sizing: border-box;
+}
+
 body,
 html {
   margin: 0;
   padding: 0;
   height: 100%;
   background-color: theme.$body-color;
-  box-sizing: border-box;
 }
 
 .full-screen-section {

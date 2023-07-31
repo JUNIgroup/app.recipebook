@@ -4,14 +4,7 @@ import { registerScrollEvent } from './scrolling'
 import './landing-page.scss'
 
 export const LandingPage = () => {
-  useEffect(() => {
-    console.log('LandingPage mounted')
-    const unregister = registerScrollEvent()
-    return () => {
-      console.log('LandingPage unmounted')
-      unregister()
-    }
-  }, [])
+  useEffect(registerScrollEvent, [])
 
   const onSigninClick = () => {
     console.log('Login clicked')
