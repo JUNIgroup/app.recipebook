@@ -18,9 +18,11 @@ export const LandingPage = () => {
     <>
       <section className="title-bar-offset" />
       <section className="title-bar">
-        <div className="logo">
-          <img className="simple" src="/logo-simple.svg" alt="" aria-hidden="true" />
-          <img className="details" src="/logo-details.svg" alt="" aria-hidden="true" />
+        <div className="logo-bar">
+          <div className="logo">
+            <img className="simple" src="/logo-simple.svg" alt="" aria-hidden="true" />
+            <img className="details" src="/logo-details.svg" alt="" aria-hidden="true" />
+          </div>
         </div>
         <div className="title">
           <h1 className="app-title--font">Flavor Vault</h1>

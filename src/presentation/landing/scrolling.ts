@@ -42,8 +42,6 @@ function setSize() {
   // see index.scss for the values
   const logoSizeLarge = clamp(64, Math.min((1 - 2 * 0.12) * vw, ((1 - 2 * 0.06) / 2) * vh), 300)
 
-  scrollContainer.style.setProperty('--vh', `${window.innerHeight}`)
-  scrollContainer.style.setProperty('--vw', `${window.innerWidth}`)
   scrollContainer.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`)
   scrollContainer.style.setProperty('--logo-size-large-unit', `${logoSizeLarge}`)
   setScrollVariable()

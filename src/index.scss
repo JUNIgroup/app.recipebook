@@ -9,25 +9,12 @@ body,
 html {
   margin: 0;
   padding: 0;
-  // overscroll-behavior: none;
+  overscroll-behavior: none;
   background-color: theme.$body-color;
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  left: calc(50vw - 3px);
-  left: calc(50svi - 3px);
-  top: calc(50vh - 3px);
-  width: 4px;
-  height: 4px;
-  background-color: yellowgreen;
-  border: 1px solid black;
-  z-index: 4000;
-}
-
 .splash {
-  position: relative;
+  position: absolute;
   width: 100vw;
   height: 100vh;
   max-width: 1200px;
@@ -58,11 +45,13 @@ body::after {
   }
 
   .title {
-    padding-top: 10vh;
+    position: absolute;
+    height: $logo-size-small;
+    bottom: calc(130lvh - 100svh + $header-my);
     
     h1 {
       margin: 0;
-      font-size: clamp(2.25rem, 1rem + 7vw, 4rem);
+      font-size: clamp(2.25rem, 1rem + 7vw, min(4rem, 10vh));
       line-height: 1em;
       width: fit-content;
       max-width: calc(100vw - 2 * $header-mx);
