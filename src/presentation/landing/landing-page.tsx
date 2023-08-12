@@ -16,27 +16,28 @@ export const LandingPage = () => {
 
   return (
     <>
-      <div className="full-screen-section">
-        <div className="splash title-bar">
+      <section className="title-bar-offset" />
+      <section className="title-bar">
+        <div className="logo-bar">
           <div className="logo">
             <img className="simple" src="/logo-simple.svg" alt="" aria-hidden="true" />
             <img className="details" src="/logo-details.svg" alt="" aria-hidden="true" />
           </div>
-          <div className="title">
-            <h1 className="app-title--font">Flavor Vault</h1>
-          </div>
-          <div className="actions">
-            {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-            <button type="button" className="prefer" autoFocus onClick={onSigninClick}>
-              <span>Login</span>
-            </button>
-            <button type="button" onClick={onSignupClick}>
-              <span>Signup</span>
-            </button>
-          </div>
         </div>
-      </div>
-      <div className="full-screen-section">
+        <div className="title">
+          <h1 className="app-title--font">Flavor Vault</h1>
+        </div>
+        <div className="actions">
+          {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+          <button type="button" className="sign-in prefer" autoFocus onClick={onSigninClick}>
+            <span>Login</span>
+          </button>
+          <button type="button" className="sign-up" onClick={onSignupClick}>
+            <span>Signup</span>
+          </button>
+        </div>
+      </section>
+      <section className="full-screen-section">
         <h2 style={{ margin: 0 }}>Section 2</h2>
         <p style={{ color: 'darkblue' }}>
           Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
@@ -53,8 +54,10 @@ export const LandingPage = () => {
         <p style={{ color: 'darkcyan' }}>
           Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
         </p>
-      </div>
-      <div className="full-screen-section">Section 3</div>
+      </section>
+      <section className="full-screen-section">Section 3</section>
+      <section className="full-screen-section">Section 4</section>
+      <section className="full-screen-section">Section 5</section>
     </>
   )
 }

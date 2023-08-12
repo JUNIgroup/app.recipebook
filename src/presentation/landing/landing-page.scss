@@ -2,125 +2,114 @@
 @use "sass:math";
 @use "sass:map";
 
-$splash-mx: 12vw;
-$splash-my: 6vh;
-$logo-size-large: clamp(64px, min(#{100vw - $splash-mx - $splash-mx}, #{50vh - $splash-my}), 300px);
+$zero: #{0px};
+$svw: min(100vw - var(--scrollbar-width), 1200px);
+
+// logo dimensions
+$logo-size-large: var(--logo-size-large);
+$logo-size-small-unit: 40;
 $logo-size-small: 40px;
+
+// header dimensions
 $header-mx: 12px;
 $header-my: 12px;
 $header-height: $logo-size-small + 2 * $header-my;
 
-// breakpoints for the scrolling
-$scroll-break-start: 20; // don't move the first 10% of the scroll
-$scroll-break-action-1: 22; // the actions are fixed on the right of the page
-$scroll-break-action-2: 30; // the actions are fixed in same hight as the title
-$scroll-break-action-3: 50; // the actions are fixed in same hight as the title
-$scroll-break-titlebar: 100; // the titlebar is fixed on top of the page
-$scroll-break-end: 170; // last point of moving splash elements
+// actions dimensions
+$action-icon-breakpoint: 800px;
+$action-icon-width: 1.2em;
+$action-width: calc(8ch + $action-icon-width);
+$action-mx: 0.5ch;
 
-$title-scroll-split: 50;
-$action-scroll-split: 45;
+// scroll range to align the logo
+$scroll-range-logo-x: ( from:  05, to:  50 );
+$scroll-range-logo-y: ( from:  50, to:  80 );
+$scroll-range-logo-s: ( from:  15, to:  80 );
 
-// scroll range to move the titlebar to top of the page
-$scroll-range-titlebar-y: (
-  from: $scroll-break-start,
-  to: $scroll-break-titlebar
-);
+// scroll range to align the title
+$scroll-range-title-x: ( from: 110, to: 130 );
+$scroll-range-title-y: ( from: 05, to: 50 );
+$scroll-range-title-s: ( from: 05, to: 50 );
 
-// scroll range to align the title to the left of the titlebar
-$scroll-range-title-x: (
-  from: $scroll-break-titlebar,
-  to: $scroll-break-end,
-);
+// scroll range to align the actions
+$scroll-range-actions-x: ( from: 05, to: 40 );
+$scroll-range-actions-y: ( from: 05, to: 40 );
 
-// scroll range to align the actions to the right of the titlebar
-$scroll-range-actions-x: (
-  from: $scroll-break-start,
-  to: $scroll-break-action-2,
-);
-
-// scroll range to move the actions to the top of the page
-$scroll-range-actions-y: (
-  from: $scroll-break-action-1,
-  to: $scroll-break-action-3,
-);
-
-// scroll range to convert the action buttons into icons
-$scroll-range-actions-to-icon: (
-  from: $scroll-break-action-1,
-  to: $scroll-break-action-2,
-);
-
-// small scroll range where the logo switches from a detailed to a simple version
-$scroll-range-logo-details: (
-  from: $scroll-break-titlebar - 20,
-  to: $scroll-break-titlebar
-);
-
-.full-screen-section {
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background-color: black;
-    z-index: 1;
-    opacity: 0.5;
-  }
+#root {
+  --tp: 
+    logo-simplified: 65,
+    actions-to-icon: 30,
+  ;
 }
+
+$transition-time: 0.2s;
 
 @function align($value-from, $value-to, $scroll-range) {
   $scroll-from: map.get($scroll-range, 'from');
   $scroll-to: map.get($scroll-range, 'to');
-  $factor: clamp(0, calc((var(--scroll) - $scroll-from) / ($scroll-to - $scroll-from)), 1);
+  $factor: clamp(0, calc((var(--scroll) - ($scroll-from)) / ($scroll-to - $scroll-from)), 1);
 
   @return calc(($value-from) + $factor * ($value-to - $value-from));
 }
 
-// body::before {
-//   content: '';
-//   position: fixed;
-//   bottom: 0;
-//   left: 50%;
-//   z-index: 1000;
-//   // background-color: #fff;
-//   height: calc(50vh - 30px);
-//   width: 1px;
-//   opacity: 0.5;
-//   display: flex;
-//   justify-content: center;
-//   align-items: center;
-//   border-bottom-left-radius: 10px;
-//   border-bottom-right-radius: 10px;
-//   border-top: 15px solid hsl(138deg 69% 0%);
-//   border-bottom: 15px solid hsl(138deg 69% 49%);
-//   background-color: hsl(138deg 69% align(0%, 49%, $scroll-range-titlebar-y));
-// }
+.title-bar-offset {
+  background-color: rgb(127 255 212 / 50%);
+  background-color: theme.$primary-color;
+  height: calc(100vh - $header-height);
+  max-width: 1200px;
+  margin-inline: auto;
+}
 
-.splash.title-bar {
+.title-bar {
+  position: sticky;
+  top: 0;
+  height: $header-height;
+  max-width: 1200px;
+  margin-inline: auto;
+  overflow: visible visible;
+  z-index: 100;
+  // opacity: 0.7;
+
+  background-color: theme.$primary-color;
+
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  padding-block: $header-my;
-  min-height: calc(align(100vh, $header-height, $scroll-range-titlebar-y));
+  padding: $header-my $header-mx;
+
+  .logo-bar {
+    // background-color: rgb(255 0 0 / 23%);
+    position: fixed;
+    top: $header-my;
+    width: $logo-size-small;
+    height: $logo-size-small;
+  }
 
   .logo {
     // background-color: rgb(255 0 0 / 23%);
     position: absolute;
-    left: align(50%, math.div($header-height, 2), $scroll-range-titlebar-y);
-    width: align($logo-size-large, $logo-size-small, $scroll-range-titlebar-y);
-    height: align($logo-size-large, $logo-size-small, $scroll-range-titlebar-y);
+    top: 0;
+    left: 0;
+    width: $logo-size-small;
+    height: $logo-size-small;
+
+    transform-origin: left top;
+
+    $move-x: calc(0.5 * $svw + 0.5 * var(--scrollbar-width) - $header-mx - 0.5px * var(--logo-size-large-unit));
+    $move-y: calc(50vh - $header-my - 1px * var(--logo-size-large-unit));
+    $scaled: var(--logo-size-large-unit) / $logo-size-small-unit;
     transform:
-      translateX(-50%)
-      translateY(align(calc($logo-size-large / -2), #{0px}, $scroll-range-titlebar-y))
+      translateX(align($move-x, $zero, $scroll-range-logo-x))
+      translateY(align($move-y, $zero, $scroll-range-logo-y))
+      scale(align($scaled, 1, $scroll-range-logo-s))
     ;
 
     & > img {
       position: absolute;
       top: 0;
       left: 0;
+      width: $logo-size-small;
+      height: $logo-size-small;
     }
 
     & > img.simple {
@@ -128,76 +117,109 @@ $scroll-range-logo-details: (
     }
 
     & > img.details {
-      opacity: align(1, 0, $scroll-range-logo-details);
+      opacity: 1;
+      transition: opacity $transition-time ease-in-out;
+
+      .logo-simplified & {
+        opacity: 0;
+      }
     }
   }
 
   .title {
     // background-color: rgb(140 0 255 / 23%);
-    flex: 1 1;
-    margin-inline: align($header-mx, $logo-size-small + 2 * $header-mx, $scroll-range-titlebar-y);
-    transform:
-      translateX(align(50%, #{0px}, $scroll-range-title-x))
-      translateY(align(20vh, #{0px}, $scroll-range-titlebar-y))
-    ;
+    position: absolute;
+    bottom: $header-my;
+    left: $logo-size-small + 2 * $header-mx;
+    height: $logo-size-small;
 
     h1 {
       // background-color: rgb(140 0 255 / 23%);
-      font-size: align(clamp(2.25rem, 8vw, 4rem), 2.25rem, $scroll-range-titlebar-y);
-      line-height: min($logo-size-small, 1);
+      margin: 0;
+      font-size: align(clamp(2.25rem, 1rem + 7vw, min(4rem, 10vh)), 2.25rem, $scroll-range-title-s);
+      line-height: align(1em, $logo-size-small, $scroll-range-title-s);
       width: fit-content;
+
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      $move-x: calc(0.5 * $svw + 0.5 * var(--scrollbar-width) - $logo-size-small - 2 * $header-mx - 50%);
+      $move-y: calc(100svh - 130lvh);
       transform:
-        translateX(align(-50%, 0%, $scroll-range-title-x))
+        translateX(align($move-x, $zero, $scroll-range-title-x))
+        translateY(align($move-y, $zero, $scroll-range-title-y))
       ;
     }
   }
 
   .actions {
-    $action-width: 8ch;
-    $action-mx: 0.5ch;
-
     position: absolute;
-    right: align(50%, 2 * $header-mx, $scroll-range-actions-x);
+    bottom: calc($header-my + 0.5 * $logo-size-small - 1em);
+    right: 2 * $header-mx;
+
+    $move-x: calc(-0.5 * $svw + 0.5 * var(--scrollbar-width) + 2 * $header-mx + 50%);
+    $move-y: calc(100svh - 110lvh);
     transform:
-      translateX(align(50%, #{0px}, $scroll-range-actions-x))
-      translateY(align(20vh, #{0px}, $scroll-range-titlebar-y))
-      translateY(align(20vh, #{0px}, $scroll-range-actions-y))
+      translateX(align($move-x, $zero, $scroll-range-actions-x))
+      translateY(align($move-y, $zero, $scroll-range-actions-y))
     ;
 
     display: flex;
     flex-flow: row nowrap;
     gap: 1px;
-
-    border-radius: 2rem;
+    transition: gap $transition-time ease-in-out;
+    
+    font-size: 1.3rem;
+    border-radius: 2em;
     overflow: hidden;
     background-color: #212a21;
     box-shadow:
       0 0 0 1px #212a21,
       0 2px 10px rgba(0 0 0 / 14%)
     ;
-
+    
+    
     button {
       all: unset;
       box-sizing: border-box;
       position: relative;
 
       width: $action-width;
-      text-align: center;
+      transition: width $transition-time ease-in-out;
 
-      font-size: 1.2rem;
       font-weight: 700;
-      line-height: 2rem;
-      height: 2rem;
-
-      background-color: theme.$primary-color;
+      line-height: 2em;
+      height: 2em;
+      
+      text-align: center;
       color: #212a21;
       cursor: pointer;
 
       & span {
-        margin-inline: $action-mx;
         display: block;
         overflow: hidden;
         text-overflow: clip;
+
+        opacity: 1;
+        transition: opacity $transition-time ease-in-out;
+      }
+
+      &.sign-in {
+        background: theme.$primary-color theme.$sign-in-icon no-repeat right center;
+
+        & span {
+          margin-inline: $action-mx calc($action-mx + $action-icon-width);
+        }
+      }
+      
+      &.sign-up {
+        background: theme.$primary-color theme.$sign-up-icon no-repeat left center;
+        
+        & span {
+          margin-inline: calc($action-mx + $action-icon-width) $action-mx;
+        }
       }
 
       &:hover {
@@ -209,51 +231,46 @@ $scroll-range-logo-details: (
       }
     }
 
-    @media screen and (max-width: 600px) {
-      & {
-        gap: align(1px, #{0px}, $scroll-range-actions-to-icon);
-      }
+    @media screen and (max-width: $action-icon-breakpoint) {
+      .actions-to-icon & {
+        gap: 0;
 
-      & button {
-        & span {
-          opacity: align(1, 0, $scroll-range-actions-to-icon);
+        & button span {
+          opacity: 0;
         }
 
-        &::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: url("@assets/images/account.svg") no-repeat center center;
-          opacity: align(0, 1, $scroll-range-actions-to-icon);
-        }
-      }
-
-      &:not(:focus-within) {
-        button {
-          width: align($action-width, #{0px}, $scroll-range-actions-to-icon);
+        &:not(:focus-within) {
+          button { width: 0; }
+          button.prefer { width: 2em; }
         }
 
-        button.prefer {
-          width: align($action-width, 2rem, $scroll-range-actions-to-icon);
-        }
-      }
-
-      &:focus-within {
-        button {
-          width: align($action-width, #{0px}, $scroll-range-actions-to-icon);
-        }
-
-        button:focus {
-          width: align($action-width, 2rem, $scroll-range-actions-to-icon);
+        &:focus-within {
+          button { width: 0; }
+          button:focus { width: 2em; }
         }
       }
     }
   }
 }
 
-.full-screen-section:nth-of-type(2) {
-  $second-selection-offset: calc((map.get($scroll-range-titlebar-y, 'to') - map.get($scroll-range-titlebar-y, 'from')) * 0.1vh);
-
+.full-screen-section {
   position: relative;
-  padding-top: align(calc($scroll-break-start * 1vh), $header-height, $scroll-range-titlebar-y),
+  width: 100%;
+  min-height: 100vh;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-top: $header-height;
+  background-color: theme.$background-color;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: black;
+    z-index: 1;
+    opacity: 0.5;
+  }
 }

@@ -9,79 +9,53 @@ body,
 html {
   margin: 0;
   padding: 0;
-  height: 100%;
   overscroll-behavior: none;
   background-color: theme.$body-color;
 }
 
-.full-screen-section {
-  position: relative;
-  width: 100%;
-  min-height: 100vh;
-  max-width: 1200px;
-  margin-inline: auto;
-  background-color: theme.$background-color;
-}
-
 .splash {
-  position: fixed;
-  z-index: 100;
-  top: 0;
-  width: 100%;
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  max-width: 1200px;
+  margin-left: clamp(0px, 50vw - 600px, 100vw);
 
-  $splash-mx: 12vw;
-  $splash-my: 6vh;
   $header-mx: 12px;
   $header-my: 12px;
-  $logo-size-large: clamp(64px, min(#{100vw - $splash-mx - $splash-mx}, #{50vh - $splash-my}), 300px);
+  $logo-size-large: clamp(64px, min(100vw - 2 * 12vw, 50vh - 6vh), 300px);
   $logo-size-small: 40px;
 
   display: flex;
-  flex-flow: row nowrap;
+  flex-flow: column nowrap;
   align-items: center;
-  padding-block: $header-my;
 
-  min-height: 100vh;
-  max-width: 1200px;
   background-color: theme.$primary-color;
   overflow-x: hidden;
   overflow-y: hidden;
 
   .logo {
-    position: absolute;
-    left: 50%;
+    margin-top: calc(50vh - $logo-size-large);
     width: $logo-size-large;
     height: $logo-size-large;
-    transform: 
-      translateX(-50%)
-      translateY(calc($logo-size-large / -2))
-    ;
 
     img {
-      position: absolute;
-      top: 0;
-      left: 0;
-
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      object-position: center bottom;
+      width: $logo-size-large;
+      height: $logo-size-large;
     }
   }
 
   .title {
-    flex: 1 1;
-    margin-inline: $header-mx;
-    transform: translate(50%, 20vh);
-
+    position: absolute;
+    height: $logo-size-small;
+    bottom: calc(130lvh - 100svh + $header-my);
+    
     h1 {
       margin: 0;
-      font-size: clamp(2.25rem, 8vw, 4rem);
-      line-height: min($logo-size-small, 1);
+      font-size: clamp(2.25rem, 1rem + 7vw, min(4rem, 10vh));
+      line-height: 1em;
       width: fit-content;
-      transform: translateX(-50%);
-
+      max-width: calc(100vw - 2 * $header-mx);
+      
       text-align: left;
       white-space: nowrap;
       overflow: hidden;
