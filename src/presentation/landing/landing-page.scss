@@ -1,6 +1,6 @@
 @use '../../theme';
-@use "sass:math";
-@use "sass:map";
+@use 'sass:math';
+@use 'sass:map';
 
 $zero: #{0px};
 $svw: min(100vw - var(--scrollbar-width), 1200px);
@@ -22,24 +22,45 @@ $action-width: calc(8ch + $action-icon-width);
 $action-mx: 0.5ch;
 
 // scroll range to align the logo
-$scroll-range-logo-x: ( from:  05, to:  50 );
-$scroll-range-logo-y: ( from:  50, to:  80 );
-$scroll-range-logo-s: ( from:  15, to:  80 );
+$scroll-range-logo-x: (
+  from: 05,
+  to: 50,
+);
+$scroll-range-logo-y: (
+  from: 50,
+  to: 80,
+);
+$scroll-range-logo-s: (
+  from: 15,
+  to: 80,
+);
 
 // scroll range to align the title
-$scroll-range-title-x: ( from: 110, to: 130 );
-$scroll-range-title-y: ( from: 05, to: 50 );
-$scroll-range-title-s: ( from: 05, to: 50 );
+$scroll-range-title-x: (
+  from: 110,
+  to: 130,
+);
+$scroll-range-title-y: (
+  from: 05,
+  to: 50,
+);
+$scroll-range-title-s: (
+  from: 05,
+  to: 50,
+);
 
 // scroll range to align the actions
-$scroll-range-actions-x: ( from: 05, to: 40 );
-$scroll-range-actions-y: ( from: 05, to: 40 );
+$scroll-range-actions-x: (
+  from: 05,
+  to: 40,
+);
+$scroll-range-actions-y: (
+  from: 05,
+  to: 40,
+);
 
 #root {
-  --tp: 
-    logo-simplified: 65,
-    actions-to-icon: 30,
-  ;
+  --tp: 'logo-simplified: 65, actions-to-icon: 30';
 }
 
 $transition-time: 0.2s;
@@ -98,11 +119,8 @@ $transition-time: 0.2s;
     $move-x: calc(0.5 * $svw + 0.5 * var(--scrollbar-width) - $header-mx - 0.5px * var(--logo-size-large-unit));
     $move-y: calc(50vh - $header-my - 1px * var(--logo-size-large-unit));
     $scaled: var(--logo-size-large-unit) / $logo-size-small-unit;
-    transform:
-      translateX(align($move-x, $zero, $scroll-range-logo-x))
-      translateY(align($move-y, $zero, $scroll-range-logo-y))
-      scale(align($scaled, 1, $scroll-range-logo-s))
-    ;
+    transform: translateX(align($move-x, $zero, $scroll-range-logo-x))
+      translateY(align($move-y, $zero, $scroll-range-logo-y)) scale(align($scaled, 1, $scroll-range-logo-s));
 
     & > img {
       position: absolute;
@@ -147,10 +165,8 @@ $transition-time: 0.2s;
 
       $move-x: calc(0.5 * $svw + 0.5 * var(--scrollbar-width) - $logo-size-small - 2 * $header-mx - 50%);
       $move-y: calc(100svh - 130lvh);
-      transform:
-        translateX(align($move-x, $zero, $scroll-range-title-x))
-        translateY(align($move-y, $zero, $scroll-range-title-y))
-      ;
+      transform: translateX(align($move-x, $zero, $scroll-range-title-x))
+        translateY(align($move-y, $zero, $scroll-range-title-y));
     }
   }
 
@@ -161,26 +177,20 @@ $transition-time: 0.2s;
 
     $move-x: calc(-0.5 * $svw + 0.5 * var(--scrollbar-width) + 2 * $header-mx + 50%);
     $move-y: calc(100svh - 110lvh);
-    transform:
-      translateX(align($move-x, $zero, $scroll-range-actions-x))
-      translateY(align($move-y, $zero, $scroll-range-actions-y))
-    ;
+    transform: translateX(align($move-x, $zero, $scroll-range-actions-x))
+      translateY(align($move-y, $zero, $scroll-range-actions-y));
 
     display: flex;
     flex-flow: row nowrap;
     gap: 1px;
     transition: gap $transition-time ease-in-out;
-    
+
     font-size: 1.3rem;
     border-radius: 2em;
     overflow: hidden;
     background-color: #212a21;
-    box-shadow:
-      0 0 0 1px #212a21,
-      0 2px 10px rgba(0 0 0 / 14%)
-    ;
-    
-    
+    box-shadow: 0 0 0 1px #212a21, 0 2px 10px rgba(0 0 0 / 14%);
+
     button {
       all: unset;
       box-sizing: border-box;
@@ -192,7 +202,7 @@ $transition-time: 0.2s;
       font-weight: 700;
       line-height: 2em;
       height: 2em;
-      
+
       text-align: center;
       color: #212a21;
       cursor: pointer;
@@ -213,21 +223,21 @@ $transition-time: 0.2s;
           margin-inline: $action-mx calc($action-mx + $action-icon-width);
         }
       }
-      
+
       &.sign-up {
         background: theme.$primary-color theme.$sign-up-icon no-repeat left center;
-        
+
         & span {
           margin-inline: calc($action-mx + $action-icon-width) $action-mx;
         }
       }
 
       &:hover {
-        background-color: #F0FFF1;
+        background-color: #f0fff1;
       }
 
       &:focus {
-        background-color: #FF6F00;
+        background-color: #ff6f00;
       }
     }
 
@@ -240,13 +250,23 @@ $transition-time: 0.2s;
         }
 
         &:not(:focus-within) {
-          button { width: 0; }
-          button.prefer { width: 2em; }
+          button {
+            width: 0;
+          }
+
+          button.prefer {
+            width: 2em;
+          }
         }
 
         &:focus-within {
-          button { width: 0; }
-          button:focus { width: 2em; }
+          button {
+            width: 0;
+          }
+
+          button:focus {
+            width: 2em;
+          }
         }
       }
     }

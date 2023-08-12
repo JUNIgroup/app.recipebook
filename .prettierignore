@@ -5,5 +5,3 @@ dist
 package-lock.json
 README.md
 .vscode
-*.css
-*.scss

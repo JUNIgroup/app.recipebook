@@ -48,14 +48,14 @@ html {
     position: absolute;
     height: $logo-size-small;
     bottom: calc(130lvh - 100svh + $header-my);
-    
+
     h1 {
       margin: 0;
       font-size: clamp(2.25rem, 1rem + 7vw, min(4rem, 10vh));
       line-height: 1em;
       width: fit-content;
       max-width: calc(100vw - 2 * $header-mx);
-      
+
       text-align: left;
       white-space: nowrap;
       overflow: hidden;
