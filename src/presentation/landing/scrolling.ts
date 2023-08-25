@@ -27,6 +27,7 @@ export function registerScrollEvent() {
 function getTippingPoints() {
   const cssTippingPoints = window.getComputedStyle(scrollContainer).getPropertyValue('--tp') ?? ''
   return cssTippingPoints
+    .replaceAll(/^"|"$/g, '')
     .split(',')
     .map((tp) => tp.split(':'))
     .map((tp) => [tp[0].trim(), parseFloat(tp[1])] as [string, number])

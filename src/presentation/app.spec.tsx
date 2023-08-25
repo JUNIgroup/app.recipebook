@@ -9,7 +9,7 @@ import { MockAuthService } from '../business/auth/service/mock-auth-service'
 import { FirestoreDatabase } from '../business/database/firestore/firestore-database'
 import { FirestoreMockService } from '../business/database/firestore/firestore-mock-service'
 import { createFakeLogger } from '../utilities/logger/fake-logger.test-helper'
-import { App } from './app'
+import { LandingPage } from './landing/landing-page'
 
 describe('button', () => {
   let button: HTMLButtonElement
@@ -26,13 +26,15 @@ describe('button', () => {
       logger,
     })
     render(
-      <MemoryRouter initialEntries={['/protected']}>
-        <StoreProvider store={store}>
-          <App />
-        </StoreProvider>
-      </MemoryRouter>,
+      <div id="root">
+        <MemoryRouter initialEntries={['/protected']}>
+          <StoreProvider store={store}>
+            <LandingPage />
+          </StoreProvider>
+        </MemoryRouter>
+      </div>,
     )
-    button = screen.getByTestId('random')
+    button = screen.getByRole('button', { name: 'Sign In' })
   })
 
   it('should exist', () => {

@@ -6,12 +6,12 @@ import './landing-page.scss'
 export const LandingPage = () => {
   useEffect(registerScrollEvent, [])
 
-  const onSigninClick = () => {
-    console.log('Login clicked')
+  const onSignInClick = () => {
+    console.log('Sign In clicked')
   }
 
-  const onSignupClick = () => {
-    console.log('Signup clicked')
+  const onSignUpClick = () => {
+    console.log('Sign Up clicked')
   }
 
   return (
@@ -28,36 +28,47 @@ export const LandingPage = () => {
           <h1 className="app-title--font">Flavor Vault</h1>
         </div>
         <div className="actions">
-          {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-          <button type="button" className="sign-in prefer" autoFocus onClick={onSigninClick}>
-            <span>Login</span>
+          <button type="button" className="sign-in prefer" onClick={onSignInClick}>
+            <span>Sign In</span>
           </button>
-          <button type="button" className="sign-up" onClick={onSignupClick}>
-            <span>Signup</span>
+          <button type="button" className="sign-up" onClick={onSignUpClick}>
+            <span>Sign Up</span>
           </button>
         </div>
       </section>
       <section className="full-screen-section">
-        <h2 style={{ margin: 0 }}>Section 2</h2>
-        <p style={{ color: 'darkblue' }}>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
-        </p>
-        <p style={{ color: 'darkgreen' }}>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
-        </p>
-        <p style={{ color: 'darkred' }}>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
-        </p>
-        <p style={{ color: 'darkorange' }}>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
-        </p>
-        <p style={{ color: 'darkcyan' }}>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatum. Quisquam, voluptatum. Quisquam,
+        <h2>Welcome to Flavor&nbsp;Vault</h2>
+        <h3>Your Personal Recipe Collection</h3>
+        <p>Experience a new way to gather and treasure your cherished recipes with Flavor Vault!</p>
+        <p>
+          Whether you&apos;re an avid home chef or simply love cooking, our web app offers you the seamless ability to
+          collect, curate, and share your favorite recipes.
         </p>
       </section>
-      <section className="full-screen-section">Section 3</section>
-      <section className="full-screen-section">Section 4</section>
-      <section className="full-screen-section">Section 5</section>
+      <section className="full-screen-section">
+        <h2>Key Highlights</h2>
+        <dl>
+          <dt>Import Recipes</dt>
+          <dd>Effortlessly bring in recipes from the internet and neatly organize them in one accessible place.</dd>
+          <dt>Create Your Collections</dt>
+          <dd>
+            Group your recipes into collections based on cuisines, occasions, or any themes that resonate with you.
+          </dd>
+          <dt>Tag and Organize</dt>
+          <dd>Apply tags to your recipes for quick categorization and easy retrieval.</dd>
+          <dt>Collaborate and Share</dt>
+          <dd>Collaborate with friends and family on recipe collections and keep them up-to-date together.</dd>
+        </dl>
+      </section>
+      <section className="full-screen-section">
+        <p>
+          Embark on your culinary journey today with Flavor Vault and transform the way you save and enjoy your
+          treasured recipes. Sign up now to unlock a world of flavors!
+        </p>
+        <button type="button" className="sign-up--standalone" onClick={onSignUpClick}>
+          <span>Sign Up</span>
+        </button>
+      </section>
     </>
   )
 }

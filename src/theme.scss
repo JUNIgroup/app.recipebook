@@ -1,5 +1,17 @@
-// primary color of the theme
+// primary color: main color
 $primary-color: #a5d6a7;
+
+// primary color: light variant
+$primary-color--light: #f0fff1;
+
+// secondary color: main color
+$secondary-color: #ff6f00;
+
+// secondary color: light variant
+$secondary-color--light: #ffdfbd;
+
+// secondary color: contrast for background in secondary color
+$secondary-color--contrast: #212a21;
 
 // color of the content background
 $background-color: #fff;

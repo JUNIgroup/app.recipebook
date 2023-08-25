@@ -3,7 +3,7 @@
   heigth="1em"
   fill="none"
   stroke-width="2"
-  stroke=" currentcolor"
+  stroke="currentcolor"
   stroke-linecap="round"
   stroke-linejoin="round"
   transform="scale(-1,1)">
