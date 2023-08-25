@@ -17,7 +17,7 @@ import {
 import { App } from './presentation/app'
 import { createConsoleLogger, createDebugObserver } from './utilities/logger'
 
-import './index.scss'
+import './main.scss'
 
 type LogScope = 'app' | 'utils' | 'infra' | 'business' | 'ui'
 

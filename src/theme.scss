@@ -1,0 +1,26 @@
+// primary color: main color
+$primary-color: #a5d6a7;
+
+// primary color: light variant
+$primary-color--light: #f0fff1;
+
+// secondary color: main color
+$secondary-color: #ff6f00;
+
+// secondary color: light variant
+$secondary-color--light: #ffdfbd;
+
+// secondary color: contrast for background in secondary color
+$secondary-color--contrast: #212a21;
+
+// color of the content background
+$background-color: #fff;
+
+// color of the background outside of the content
+$body-color: #f2f2f2;
+
+// icon for sign-in
+$sign-in-icon: url('@assets/images/sign-in.svg?inline');
+
+// icon for sign-up
+$sign-up-icon: url('@assets/images/sign-up.svg?inline');

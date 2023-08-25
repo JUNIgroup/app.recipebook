@@ -15,7 +15,7 @@
   ],
   "type": "module",
   "scripts": {
-    "start": "vite",
+    "start": "vite --host",
     "build": "tsc && vite build",
     "build:only": "vite build",
     "preview": "vite preview",
@@ -32,7 +32,7 @@
     "eslint:fix": "eslint . --cache --fix --ext .ts,.tsx",
     "prettier": "prettier . --check",
     "prettier:fix": "prettier . --write",
-    "stylelint": "stylelint ./src/**/*.scss ./src/**/*.css",
+    "stylelint": "stylelint \"./src/**/*.{scss,css}\"",
     "stylelint:fix": "stylelint --fix ./src/**/*.scss ./src/**/*.css",
     "clean": "shx rm -rf coverage dist .eslintcache",
     "prepare": "husky install"
@@ -46,6 +46,7 @@
   },
   "homepage": "https://github.com/JUNIgroup/app.recipebook#readme",
   "dependencies": {
+    "@fontsource-variable/open-sans": "^5.0.6",
     "@reduxjs/toolkit": "^1.9.3",
     "firebase": "^9.18.0",
     "react": "^18.2.0",
@@ -88,6 +89,7 @@
     "jest-extended": "^3.2.4",
     "kill-port": "^2.0.1",
     "lint-staged": "^13.2.0",
+    "postcss-scss": "^4.0.6",
     "prettier": "^2.8.7",
     "sass": "^1.60.0",
     "short-unique-id": "^4.4.4",

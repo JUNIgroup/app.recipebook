@@ -1,35 +1,35 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
+import { useLayoutEffect } from 'react'
 import { Link, Outlet, Route, Routes } from 'react-router-dom'
 import { AuthStatus } from './auth/auth-status'
 import { LoginDialog } from './auth/login-dialog'
 import { RecipesPage } from './recipes/recipes'
 import { RequireAuth } from './route/require-auth'
+import { LandingPage } from './landing/landing-page'
 
-export const AppRoutes = () => (
-  <Routes>
-    <Route element={<Outlet />}>
-      <Route
-        index
-        element={
-          <Layout>
-            <PublicPage />
-          </Layout>
-        }
-      />
-      <Route path="login/*" element={<LoginDialog />} />
-      <Route
-        path="/protected"
-        element={
-          <RequireAuth>
-            <Layout>
-              <RecipesPage />
-            </Layout>
-          </RequireAuth>
-        }
-      />
-    </Route>
-  </Routes>
-)
+export const AppRoutes = () => {
+  useLayoutEffect(() => {
+    document.getElementById('splash-section')?.remove()
+  }, [])
+  return (
+    <Routes>
+      <Route element={<Outlet />}>
+        <Route index element={<LandingPage />} />
+        <Route path="login/*" element={<LoginDialog />} />
+        <Route
+          path="/protected"
+          element={
+            <RequireAuth>
+              <Layout>
+                <RecipesPage />
+              </Layout>
+            </RequireAuth>
+          }
+        />
+      </Route>
+    </Routes>
+  )
+}
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <div>
@@ -45,5 +45,3 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
     {children}
   </div>
 )
-
-const PublicPage = () => <h3>Public</h3>

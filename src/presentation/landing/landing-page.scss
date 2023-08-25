@@ -1,0 +1,379 @@
+@use '../../theme';
+@use 'sass:math';
+@use 'sass:map';
+
+$zero: #{0px};
+$svw: min(100vw - var(--scrollbar-width), 1200px);
+
+// logo dimensions
+$logo-size-large: var(--logo-size-large);
+$logo-size-small-unit: 40;
+$logo-size-small: 40px;
+
+// header dimensions
+$header-mx: 12px;
+$header-my: 12px;
+$header-height: $logo-size-small + 2 * $header-my;
+
+// actions dimensions
+$action-icon-breakpoint: 800px;
+$action-icon-width: 1.2em;
+$action-width: calc(8ch + $action-icon-width);
+$action-mx: 0.5ch;
+
+// scroll range to align the logo
+$scroll-range-logo-x: (
+  from: 05,
+  to: 50,
+);
+$scroll-range-logo-y: (
+  from: 50,
+  to: 80,
+);
+$scroll-range-logo-s: (
+  from: 15,
+  to: 80,
+);
+
+// scroll range to align the title
+$scroll-range-title-x: (
+  from: 110,
+  to: 130,
+);
+$scroll-range-title-y: (
+  from: 05,
+  to: 50,
+);
+$scroll-range-title-s: (
+  from: 05,
+  to: 50,
+);
+
+// scroll range to align the actions
+$scroll-range-actions-x: (
+  from: 05,
+  to: 40,
+);
+$scroll-range-actions-y: (
+  from: 05,
+  to: 40,
+);
+
+#root {
+  --tp: 'logo-simplified: 65, actions-to-icon: 30';
+}
+
+$transition-time: 0.2s;
+
+@function align($value-from, $value-to, $scroll-range) {
+  $scroll-from: map.get($scroll-range, 'from');
+  $scroll-to: map.get($scroll-range, 'to');
+  $factor: clamp(0, calc((var(--scroll) - ($scroll-from)) / ($scroll-to - $scroll-from)), 1);
+
+  @return calc(($value-from) + $factor * ($value-to - $value-from));
+}
+
+.title-bar-offset {
+  background-color: rgb(127 255 212 / 50%);
+  background-color: theme.$primary-color;
+  height: calc(100vh - $header-height);
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.title-bar {
+  position: sticky;
+  top: 0;
+  height: $header-height;
+  max-width: 1200px;
+  margin-inline: auto;
+  overflow: visible visible;
+  z-index: 100;
+
+  background-color: theme.$primary-color;
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  padding: $header-my $header-mx;
+
+  .logo-bar {
+    // background-color: rgb(255 0 0 / 23%);
+    position: fixed;
+    top: $header-my;
+    width: $logo-size-small;
+    height: $logo-size-small;
+  }
+
+  .logo {
+    // background-color: rgb(255 0 0 / 23%);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: $logo-size-small;
+    height: $logo-size-small;
+
+    transform-origin: left top;
+
+    $move-x: calc(0.5 * $svw + 0.5 * var(--scrollbar-width) - $header-mx - 0.5px * var(--logo-size-large-unit));
+    $move-y: calc(50vh - $header-my - 1px * var(--logo-size-large-unit));
+    $scaled: var(--logo-size-large-unit) / $logo-size-small-unit;
+    transform: //
+      translateX(align($move-x, $zero, $scroll-range-logo-x)) //
+      translateY(align($move-y, $zero, $scroll-range-logo-y)) //
+      scale(align($scaled, 1, $scroll-range-logo-s));
+
+    & > img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: $logo-size-small;
+      height: $logo-size-small;
+    }
+
+    & > img.simple {
+      opacity: 1;
+    }
+
+    & > img.details {
+      opacity: 1;
+      transition: opacity $transition-time ease-in-out;
+
+      .logo-simplified & {
+        opacity: 0;
+      }
+    }
+  }
+
+  .title {
+    // background-color: rgb(140 0 255 / 23%);
+    position: absolute;
+    bottom: $header-my;
+    left: $logo-size-small + 2 * $header-mx;
+    height: $logo-size-small;
+
+    h1 {
+      // background-color: rgb(140 0 255 / 23%);
+      margin: 0;
+      font-size: align(clamp(2.25rem, 1rem + 7vw, min(4rem, 10vh)), 2.25rem, $scroll-range-title-s);
+      line-height: align(1em, $logo-size-small, $scroll-range-title-s);
+      width: fit-content;
+
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      $move-x: calc(0.5 * $svw + 0.5 * var(--scrollbar-width) - $logo-size-small - 2 * $header-mx - 50%);
+      $move-y: calc(100svh - 130lvh);
+      transform: translateX(align($move-x, $zero, $scroll-range-title-x))
+        translateY(align($move-y, $zero, $scroll-range-title-y));
+    }
+  }
+
+  .actions {
+    position: absolute;
+    bottom: calc($header-my + 0.5 * $logo-size-small - 1em);
+    right: 2 * $header-mx;
+
+    $move-x: calc(-0.5 * $svw + 0.5 * var(--scrollbar-width) + 2 * $header-mx + 50%);
+    $move-y: calc(100svh - 110lvh);
+    transform: //
+      translateX(align($move-x, $zero, $scroll-range-actions-x)) //
+      translateY(align($move-y, $zero, $scroll-range-actions-y));
+
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 1px;
+    transition: gap $transition-time ease-in-out;
+
+    font-size: 1.3rem;
+    border-radius: 2em;
+    overflow: hidden;
+    background-color: theme.$secondary-color--contrast;
+    box-shadow: 0 0 0 1px theme.$secondary-color--contrast, 0 2px 10px rgba(0 0 0 / 14%);
+
+    button {
+      position: relative;
+      border: none;
+      margin: 0;
+      padding: 0;
+      outline: 0;
+
+      width: $action-width;
+      transition: width $transition-time ease-in-out, background-color $transition-time ease-in-out;
+
+      font-family: inherit;
+      font-size: 1.3rem;
+      font-weight: 700;
+      line-height: 2em;
+      height: 2em;
+      white-space: nowrap;
+
+      text-align: center;
+      color: theme.$secondary-color--contrast;
+      cursor: pointer;
+
+      & span {
+        display: block;
+        overflow: hidden;
+        text-overflow: clip;
+
+        opacity: 1;
+        transition: opacity $transition-time ease-in-out;
+      }
+
+      &.sign-in {
+        background: theme.$primary-color theme.$sign-in-icon no-repeat right center;
+
+        & span {
+          margin-inline: $action-mx calc($action-mx + $action-icon-width);
+        }
+      }
+
+      &.sign-up {
+        background: theme.$primary-color theme.$sign-up-icon no-repeat left center;
+
+        & span {
+          margin-inline: calc($action-mx + $action-icon-width) $action-mx;
+        }
+      }
+
+      &:hover {
+        background-color: theme.$primary-color--light;
+      }
+
+      &:focus {
+        background-color: theme.$secondary-color;
+      }
+
+      &:active {
+        background-color: theme.$secondary-color--light;
+      }
+    }
+
+    @media screen and (max-width: $action-icon-breakpoint) {
+      .actions-to-icon & {
+        gap: 0;
+
+        & button {
+          & span {
+            opacity: 0;
+          }
+        }
+
+        &:not(:focus-within) {
+          button {
+            width: 0;
+          }
+
+          button.prefer {
+            width: 2em;
+          }
+        }
+
+        &:focus-within {
+          button {
+            width: 0;
+          }
+
+          button:focus {
+            width: 2em;
+          }
+        }
+      }
+    }
+  }
+}
+
+.full-screen-section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: $header-height 10%;
+  background-color: theme.$background-color;
+
+  @media screen and (max-width: $action-icon-breakpoint) {
+    padding-inline: 5%;
+  }
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+
+  h2 {
+    font-size: 1.6rem;
+  }
+
+  h3 {
+    font-size: 1.4rem;
+    margin: 0 0 1em;
+  }
+
+  h2 + h3 {
+    margin-top: -1em;
+  }
+
+  p {
+    font-size: 1.2rem;
+  }
+
+  dl {
+    font-size: 1.2rem;
+    padding: 0;
+    margin: 0;
+
+    @media screen and (max-width: $action-icon-breakpoint) {
+      font-size: 1rem;
+    }
+  }
+
+  dt {
+    display: block;
+    font-weight: bold;
+    margin: 1em 0 0.5em;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  button.sign-up--standalone {
+    margin: 1em auto;
+    border: none;
+    padding: 0;
+    outline: 0;
+
+    background: theme.$primary-color theme.$sign-up-icon no-repeat left center;
+    border-radius: 2em;
+    box-shadow: 0 0 0 1px theme.$secondary-color--contrast, 0 2px 10px rgba(0 0 0 / 14%);
+    transition: background-color $transition-time ease-in-out;
+
+    font-size: 1.3rem;
+    font-family: inherit;
+    font-weight: 700;
+    line-height: 2em;
+    width: $action-width;
+    height: 2em;
+    padding-inline: calc($action-mx + $action-icon-width) $action-mx;
+
+    text-align: center;
+    color: theme.$secondary-color--contrast;
+    cursor: pointer;
+
+    &:hover {
+      background-color: theme.$primary-color--light;
+    }
+
+    &:focus {
+      background-color: theme.$secondary-color;
+    }
+
+    &:active {
+      background-color: theme.$secondary-color--light;
+    }
+  }
+}
