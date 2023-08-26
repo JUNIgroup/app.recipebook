@@ -1,47 +1,69 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { useLayoutEffect } from 'react'
-import { Link, Outlet, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from '@solidjs/router'
+import { Show, onMount } from 'solid-js'
 import { AuthStatus } from './auth/auth-status'
-import { LoginDialog } from './auth/login-dialog'
-import { RecipesPage } from './recipes/recipes'
-import { RequireAuth } from './route/require-auth'
-import { LandingPage } from './landing/landing-page'
+// import { RecipesPage } from './recipes/recipes'
+import { useAuthContext } from '../business/auth/reactives/auth-context'
+import { hideSplash } from './landing/hide-splash'
+import { logMount } from './utils/log-mount'
 
-export const AppRoutes = () => {
-  useLayoutEffect(() => {
-    document.getElementById('splash-section')?.remove()
-  }, [])
+const AppRoutes = () => {
+  logMount('AppRoutes')
+  const [authState] = useAuthContext()
+
+  onMount(hideSplash)
   return (
-    <Routes>
-      <Route element={<Outlet />}>
-        <Route index element={<LandingPage />} />
-        <Route path="login/*" element={<LoginDialog />} />
+    <Show when={authState.authUser} fallback={<AuthStatus />}>
+      <Routes>
         <Route
-          path="/protected"
+          path="/"
           element={
-            <RequireAuth>
-              <Layout>
-                <RecipesPage />
-              </Layout>
-            </RequireAuth>
+            <div>
+              <AuthStatus />
+              <div>Home</div>
+            </div>
           }
         />
-      </Route>
-    </Routes>
+        <Route
+          path="/recipes"
+          element={
+            <div>
+              <AuthStatus />
+              <div>Recipes</div>
+            </div>
+          }
+        />
+        {/* <Route element={<Outlet />}>
+          <Route
+            path="/protected"
+            element={
+              <RequireAuth>
+                <Layout>
+                  <RecipesPage />
+                </Layout>
+              </RequireAuth>
+            }
+          />
+        </Route> */}
+      </Routes>
+    </Show>
   )
 }
 
-const Layout = ({ children }: { children: React.ReactNode }) => (
-  <div>
-    <AuthStatus />
-    <ul>
-      <li>
-        <Link to="/">Public Page</Link>
-      </li>
-      <li>
-        <Link to="/protected">Protected Page</Link>
-      </li>
-    </ul>
-    {children}
-  </div>
-)
+// const Layout = ({ children }: { children: React.ReactNode }) => (
+//   <div>
+//     <AuthStatus />
+//     <ul>
+//       <li>
+//         <Link to="/">Public Page</Link>
+//       </li>
+//       <li>
+//         <Link to="/protected">Protected Page</Link>
+//       </li>
+//     </ul>
+//     {children}
+//   </div>
+// )
+
+// for lazy loading, export as default
+export default AppRoutes

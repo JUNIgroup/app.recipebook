@@ -1,17 +1,21 @@
+import { useNavigate } from '@solidjs/router'
 import { onMount } from 'solid-js'
 import { registerScrollEvent } from './scrolling'
-
+import { logMount } from '../utils/log-mount'
 import './landing-page.scss'
 
 export const LandingPage = () => {
+  logMount('LandingPage')
+  const navigate = useNavigate()
+
   onMount(registerScrollEvent)
 
   const onSignInClick = () => {
-    console.log('Sign In clicked')
+    navigate('/login/sign-in')
   }
 
   const onSignUpClick = () => {
-    console.log('Sign Up clicked')
+    navigate('/login/sign-up')
   }
 
   return (

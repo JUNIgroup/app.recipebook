@@ -1,6 +1,6 @@
-/* eslint-disable jsx-a11y/label-has-associated-control */
-import * as fromAuth from '../../../business/auth'
-import { useAppDispatch, useAppSelector } from '../../store.hooks'
+import { Component, JSX } from 'solid-js'
+import { useAuthContext } from '../../../business/auth/reactives/auth-context'
+import { logMount } from '../../utils/log-mount'
 import {
   ContinueSubmit,
   EmailInput,
@@ -11,11 +11,11 @@ import {
   SignUpLink,
 } from './elements'
 
-export const SignInDialog = () => {
-  const dispatch = useAppDispatch()
-  const authError = useAppSelector(fromAuth.selectAuthError)
+export const SignInDialog: Component = () => {
+  logMount('SignInDialog')
+  const [authState, authActions] = useAuthContext()
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const handleSubmit: JSX.EventHandler<HTMLFormElement, Event> = (event) => {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
@@ -23,17 +23,17 @@ export const SignInDialog = () => {
     const password = formData.get('password') as string
     const rememberLogin = !!formData.get('remember-me')
 
-    dispatch(fromAuth.signIn(email, password, { rememberMe: rememberLogin }))
+    authActions.signIn(email, password, { rememberMe: rememberLogin })
   }
 
   return (
-    <div className="dialog">
+    <div class="dialog">
       <form onSubmit={handleSubmit}>
         <h2>Welcome back</h2>
         <EmailInput />
         <PasswordInput />
         <RememberMeInput />
-        <ErrorMessage error={authError} />
+        <ErrorMessage error={authState.authError} />
         <ContinueSubmit />
       </form>
       <ResetPasswordLink />

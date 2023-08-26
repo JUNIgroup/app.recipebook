@@ -1,26 +1,25 @@
-import { useNavigate } from 'react-router-dom'
-import * as fromAuth from '../../business/auth'
-import { useAppDispatch, useAppSelector } from '../store.hooks'
+import { useNavigate } from '@solidjs/router'
+import { Show } from 'solid-js'
+import { useAuthContext } from '../../business/auth/reactives/auth-context'
 
 export const AuthStatus = () => {
-  const user = useAppSelector(fromAuth.selectAuthorizedUser)
-  const dispatch = useAppDispatch()
-
+  const [authState, authActions] = useAuthContext()
   const navigate = useNavigate()
-  const logoutHandler = () => {
-    dispatch(fromAuth.signOut()).then(() => navigate('/'))
-  }
 
-  if (!user) {
-    return <p>You are not logged in.</p>
+  const logoutHandler = () => {
+    authActions.signOut().then(() => navigate('/'))
   }
 
   return (
-    <p>
-      Welcome {user.name}!{' '}
-      <button type="button" onClick={logoutHandler}>
-        Sign out
-      </button>
-    </p>
+    <Show when={authState.authUser} fallback={<p>You are not logged in.</p>}>
+      {(user) => (
+        <p>
+          Welcome {user.name}!{' '}
+          <button type="button" onClick={logoutHandler}>
+            Sign out
+          </button>
+        </p>
+      )}
+    </Show>
   )
 }

@@ -1,7 +1,5 @@
-import type { PropsWithChildren } from 'react'
-import { createContext, useContext, useState } from 'react'
-import * as fromAuth from '../../../business/auth'
-import { useAppSelector } from '../../store.hooks'
+import { ParentComponent, createContext, useContext } from 'solid-js'
+import { SetStoreFunction, createStore } from 'solid-js/store'
 
 export type LoginData = {
   name: string
@@ -9,22 +7,21 @@ export type LoginData = {
   rememberMe: boolean
 }
 
-export type LoginDataState = [LoginData, React.Dispatch<React.SetStateAction<LoginData>>]
+const LoginDataContext = createContext<[LoginData, SetStoreFunction<LoginData>]>(undefined, {
+  name: 'LoginDataContext',
+})
 
-const LoginDataContext = createContext<LoginDataState | undefined>(undefined)
-
-export const LoginDataProvider: React.FC<PropsWithChildren> = ({ children }) => {
-  const rememberedEmail = useAppSelector(fromAuth.selectRememberedEmail)
-  const loginDataState = useState<LoginData>({
+export const LoginDataContextProvider: ParentComponent = (props) => {
+  const [loginData, updateLoginData] = createStore<LoginData>({
     name: '',
-    email: rememberedEmail ?? '',
-    rememberMe: !!rememberedEmail,
+    email: '',
+    rememberMe: false,
   })
-  return <LoginDataContext.Provider value={loginDataState}>{children}</LoginDataContext.Provider>
+  return <LoginDataContext.Provider value={[loginData, updateLoginData]}>{props.children}</LoginDataContext.Provider>
 }
 
-export const useLoginData = () => {
-  const loginDataState = useContext(LoginDataContext)
-  if (loginDataState == null) throw new Error('Please wrap your component in a LoginDataContext')
-  return loginDataState
+export const useLoginDataContext = () => {
+  const loginDataContext = useContext(LoginDataContext)
+  if (loginDataContext == null) throw new Error('useLoginDataContext: cannot find a LoginDataContext')
+  return loginDataContext
 }

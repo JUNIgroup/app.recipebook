@@ -1,6 +1,6 @@
 import { ParentComponent, createContext, untrack, useContext } from 'solid-js'
 import { createStore } from 'solid-js/store'
-import { ServiceErrorDto } from '../../error/service-error'
+import { ServiceErrorDto, toServiceErrorDto } from '../../error/service-error'
 import { AuthError, AuthService, LoginOptions, UserData } from '../service/auth-service'
 
 export type AuthState = {
@@ -12,8 +12,8 @@ export type AuthState = {
 export type AuthActions = {
   signIn(email: string, password: string, options?: LoginOptions): void
   signUp(name: string, email: string, password: string, options?: LoginOptions): void
-  signOut(): void
-  resetPassword(): void
+  signOut(): Promise<void>
+  resetPassword(email: string): Promise<void>
 }
 
 export const AuthContext = createContext<[AuthState, AuthActions]>(undefined, { name: 'AuthContext' })
@@ -48,8 +48,19 @@ export const AuthContextProvider: ParentComponent<AuthProps> = (props) => {
         updateState('authInProgress', true)
         updateState('authInProgress', false)
       },
-      signOut() {},
-      resetPassword() {},
+      async signOut() {
+        updateState('authInProgress', true)
+        try {
+          await authService.logout()
+          updateState('authError', null)
+        } catch (error) {
+          updateState('authError', toServiceErrorDto(error as AuthError))
+        }
+        updateState('authInProgress', false)
+      },
+      async resetPassword() {
+        throw new Error('Not implemented')
+      },
     },
   ]
   return <AuthContext.Provider value={auth}>{props.children}</AuthContext.Provider>
