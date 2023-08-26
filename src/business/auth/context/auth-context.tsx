@@ -2,16 +2,18 @@ import { ParentComponent, createContext, untrack, useContext } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { ServiceErrorDto, toServiceErrorDto } from '../../error/service-error'
 import { AuthError, AuthService, LoginOptions, UserData } from '../service/auth-service'
+import { AuthPersistence } from '../../../infrastructure/firebase/persistence'
 
 export type AuthState = {
   authInProgress: boolean
+  authEmail: string | null
   authUser: UserData | null
   authError: AuthErrorDto | null
 }
 
 export type AuthActions = {
-  signIn(email: string, password: string, options?: LoginOptions): void
-  signUp(name: string, email: string, password: string, options?: LoginOptions): void
+  signIn(email: string, password: string, options?: LoginOptions): Promise<void>
+  signUp(name: string, email: string, password: string, options?: LoginOptions): Promise<void>
   signOut(): Promise<void>
   resetPassword(email: string): Promise<void>
 }
@@ -20,15 +22,18 @@ export const AuthContext = createContext<[AuthState, AuthActions]>(undefined, { 
 
 type AuthProps = {
   authService: AuthService
+  emailPersistence: AuthPersistence
 }
 
 export type AuthErrorDto = ServiceErrorDto<AuthError>
 
 export const AuthContextProvider: ParentComponent<AuthProps> = (props) => {
   const authService = untrack(() => props.authService)
+  const emailPersistence = untrack(() => props.emailPersistence)
 
   const [state, updateState] = createStore<AuthState>({
     authInProgress: false,
+    authEmail: emailPersistence.load(),
     authUser: null,
     authError: null,
   })
@@ -37,29 +42,40 @@ export const AuthContextProvider: ParentComponent<AuthProps> = (props) => {
     updateState('authUser', user)
   })
 
+  async function processAuth(action: () => Promise<void>) {
+    updateState('authInProgress', true)
+    try {
+      await action()
+      updateState('authError', null)
+    } catch (error) {
+      updateState('authError', toServiceErrorDto(error as AuthError))
+    } finally {
+      updateState('authInProgress', false)
+    }
+  }
+
+  // async function
+
   const auth: [AuthState, AuthActions] = [
     state,
     {
-      signIn() {
-        updateState('authInProgress', true)
-        updateState('authInProgress', false)
+      signIn(email, password, options) {
+        return processAuth(async () => {
+          await authService.signInWithEmailAndPassword(email, password, options)
+          emailPersistence.save(options?.rememberMe ? email : null)
+        })
       },
-      signUp() {
-        updateState('authInProgress', true)
-        updateState('authInProgress', false)
+      signUp(name, email, password, options) {
+        return processAuth(async () => {
+          await authService.signUpWithEmailAndPassword(name, email, password, options)
+          emailPersistence.save(options?.rememberMe ? email : null)
+        })
       },
-      async signOut() {
-        updateState('authInProgress', true)
-        try {
-          await authService.logout()
-          updateState('authError', null)
-        } catch (error) {
-          updateState('authError', toServiceErrorDto(error as AuthError))
-        }
-        updateState('authInProgress', false)
+      signOut() {
+        return processAuth(() => authService.logout())
       },
-      async resetPassword() {
-        throw new Error('Not implemented')
+      resetPassword(email) {
+        return processAuth(() => authService.resetPassword(email))
       },
     },
   ]

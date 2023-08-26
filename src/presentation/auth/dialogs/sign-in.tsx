@@ -1,5 +1,5 @@
 import { Component, JSX } from 'solid-js'
-import { useAuthContext } from '../../../business/auth/reactives/auth-context'
+import { useAuthContext } from '../../../business/auth'
 import { logMount } from '../../utils/log-mount'
 import {
   ContinueSubmit,

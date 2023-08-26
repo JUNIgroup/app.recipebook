@@ -1,8 +1,8 @@
 import { useNavigate } from '@solidjs/router'
-import { Show } from 'solid-js'
-import { useAuthContext } from '../../business/auth/reactives/auth-context'
+import { Component, Show } from 'solid-js'
+import { useAuthContext } from '../../business/auth'
 
-export const AuthStatus = () => {
+export const AuthStatus: Component = () => {
   const [authState, authActions] = useAuthContext()
   const navigate = useNavigate()
 

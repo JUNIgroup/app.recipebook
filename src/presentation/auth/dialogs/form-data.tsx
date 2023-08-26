@@ -1,5 +1,6 @@
 import { ParentComponent, createContext, useContext } from 'solid-js'
 import { SetStoreFunction, createStore } from 'solid-js/store'
+import { useAuthContext } from '../../../business/auth'
 
 export type LoginData = {
   name: string
@@ -12,10 +13,11 @@ const LoginDataContext = createContext<[LoginData, SetStoreFunction<LoginData>]>
 })
 
 export const LoginDataContextProvider: ParentComponent = (props) => {
+  const [authState] = useAuthContext()
   const [loginData, updateLoginData] = createStore<LoginData>({
     name: '',
-    email: '',
-    rememberMe: false,
+    email: authState.authEmail ?? '',
+    rememberMe: !!authState.authEmail,
   })
   return <LoginDataContext.Provider value={[loginData, updateLoginData]}>{props.children}</LoginDataContext.Provider>
 }

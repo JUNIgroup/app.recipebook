@@ -1,6 +1,6 @@
 import { useNavigate } from '@solidjs/router'
 import { Component, JSX } from 'solid-js'
-import { useAuthContext } from '../../../business/auth/reactives/auth-context'
+import { useAuthContext } from '../../../business/auth'
 import { ContinueSubmit, EmailInput, ErrorMessage, Message, RememberPasswordLink } from './elements'
 
 export const ResetPasswordDialog: Component = () => {

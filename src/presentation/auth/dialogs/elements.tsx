@@ -1,8 +1,7 @@
 import { Link } from '@solidjs/router'
-import { Component, ParentComponent, JSX, Show } from 'solid-js'
-import type { AuthErrorDto } from '../../../business/auth'
+import { Component, JSX, ParentComponent, Show } from 'solid-js'
+import { AuthErrorDto, useAuthContext } from '../../../business/auth'
 import { useLoginDataContext } from './form-data'
-import { useAuthContext } from '../../../business/auth/reactives/auth-context'
 
 const rootPath = '/login'
 
@@ -63,7 +62,7 @@ export const RememberMeInput: Component = () => {
   const [loginData, update] = useLoginDataContext()
   const changeHandler: ChangeHandler<HTMLInputElement> = (event) => {
     const rememberMe = event.currentTarget.checked
-    update((data) => ({ ...data, rememberMe }))
+    update('rememberMe', rememberMe)
   }
   return (
     <div class="checkbox">

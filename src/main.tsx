@@ -1,8 +1,7 @@
 import 'solid-devtools/setup'
 import { render } from 'solid-js/web'
-import { IDB_ID } from './app.constants'
-import { createStore } from './business/app.store'
-import { AuthContextProvider } from './business/auth/reactives/auth-context'
+import { STORAGE_KEY_USER, STORAGE_KEY_EMAIL } from './app.constants'
+import { AuthContextProvider } from './business/auth'
 import { FirebaseRestAuthService } from './business/auth/service/firebase-rest-auth-service'
 import { FirestoreDatabase } from './business/database/firestore/firestore-database'
 import { FirestoreService } from './business/database/firestore/firestore-service.api'
@@ -33,9 +32,11 @@ const restAuthService = import.meta.env.VITE_FIREBASE__USE_EMULATOR
   ? RestAuthService.forEmulator(logger)
   : RestAuthService.forRemote(logger, import.meta.env.VITE_FIREBASE__API_KEY)
 const authService = new FirebaseRestAuthService(restAuthService, logger, {
-  permanent: storagePersistence(IDB_ID, storage),
+  permanent: storagePersistence(STORAGE_KEY_USER, storage),
   temporary: memoryPersistence(),
 })
+
+const emailPersistence = storagePersistence(STORAGE_KEY_EMAIL, storage)
 
 const firestoreOptions = {
   apiKey: import.meta.env.VITE_FIREBASE__API_KEY,
@@ -51,15 +52,9 @@ const cacheDatabase = new IdbCacheDatabase(logger, firestoreDatabase, {
   cacheName: 'de.junigroup.app.recipebook',
   clearOnStart: true,
 })
-const database = cacheDatabase
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const store = createStore({
-  storage,
-  authService,
-  database,
-  logger,
-})
+const database = cacheDatabase
 
 const root = document.getElementById('root')
 
@@ -71,7 +66,7 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 
 render(
   () => (
-    <AuthContextProvider authService={authService}>
+    <AuthContextProvider authService={authService} emailPersistence={emailPersistence}>
       <App />
     </AuthContextProvider>
   ),

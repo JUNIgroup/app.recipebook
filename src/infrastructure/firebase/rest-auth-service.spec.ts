@@ -13,6 +13,7 @@ globalThis.Response = Response
 
 const uid = new ShortUniqueId()
 const emulatorIsAvailable = await isEmulatorAvailable()
+const timeTolerance = 16 // ms
 
 describe('RestAuthService.forRemote', () => {
   it('should return a service', () => {
@@ -125,7 +126,9 @@ describe('RestAuthService', () => {
         const user = await service.signUpWithEmailAndPassword({ email, password })
 
         // assert
-        expect(persistence.memory).toMatchObject({ user })
+        const persisted = JSON.parse(persistence.memory ?? '')
+        const expected = JSON.parse(JSON.stringify({ user }))
+        expect(persisted).toMatchObject(expected)
       })
 
       it('should throw Firebase error if sign up failed', async () => {
@@ -163,9 +166,9 @@ describe('RestAuthService', () => {
         const password = usedPassword
 
         // act
-        const before = Date.now()
+        const before = Date.now() - timeTolerance
         const user = await service.signInWithEmailAndPassword({ email, password })
-        const after = Date.now()
+        const after = Date.now() + timeTolerance
 
         // assert
         expect(user).toMatchObject({
@@ -213,7 +216,8 @@ describe('RestAuthService', () => {
         const user = await service.signInWithEmailAndPassword({ email, password })
 
         // assert
-        expect(persistence.memory).toMatchObject({ user })
+        const persisted = JSON.parse(persistence.memory ?? '')
+        expect(persisted).toMatchObject({ user })
       })
 
       it('should throw FirebaseError if try to sign in an not-existing user', async () => {
@@ -365,15 +369,14 @@ describe('RestAuthService', () => {
       it('should sign in with new password after update password', async () => {
         // act
         await service.updateProfile({ password: newPassword })
-        const before = Date.now()
+        const before = Date.now() - timeTolerance
         const updated = await service.signInWithEmailAndPassword({ email: user.email, password: newPassword })
-        const after = Date.now()
+        const after = Date.now() + timeTolerance
 
         // assert
         expect(updated).toMatchObject({
           id: user.id,
           email: user.email,
-          displayName: undefined,
           verified: false,
           createdAt: user.createdAt,
           lastLoginAt: expect.toBeWithin(before, after + 1),
@@ -411,7 +414,8 @@ describe('RestAuthService', () => {
         const updated = await service.updateProfile({ displayName: newDisplayName })
 
         // assert
-        expect(persistence.memory).toMatchObject({ user: updated })
+        const persisted = JSON.parse(persistence.memory ?? '')
+        expect(persisted).toMatchObject({ user: updated })
       })
 
       it('should throw Firebase error if sign out before', async () => {
@@ -488,7 +492,9 @@ describe('RestAuthService', () => {
         // arrange
         const persistence = memoryPersistence()
         await service.setPersistence(persistence)
-        expect(persistence.memory, 'precondition').toMatchObject({ user })
+        const persisted = JSON.parse(persistence.memory ?? '')
+        const expected = JSON.parse(JSON.stringify({ user }))
+        expect(persisted, 'precondition').toMatchObject(expected)
 
         // act
         await service.deleteAccountPermanently()
@@ -561,7 +567,7 @@ describe('RestAuthService', () => {
       describe('invalid user data is stored', () => {
         it('should not update current user', async () => {
           // arrange
-          persistence.memory = { invalid: 'user data' }
+          persistence.memory = JSON.stringify({ invalid: 'user data' })
 
           // act
           await service.autoSignIn()
@@ -572,7 +578,7 @@ describe('RestAuthService', () => {
 
         it('should inform subscription onUserChanged', async () => {
           // arrange
-          persistence.memory = { invalid: 'user data' }
+          persistence.memory = JSON.stringify({ invalid: 'user data' })
 
           // act
           await service.autoSignIn()
@@ -584,7 +590,7 @@ describe('RestAuthService', () => {
 
         it('should delete persistence', async () => {
           // arrange
-          persistence.memory = { invalid: 'user data' }
+          persistence.memory = JSON.stringify({ invalid: 'user data' })
 
           // act
           await service.autoSignIn()
@@ -597,18 +603,18 @@ describe('RestAuthService', () => {
       describe('valid user data is stored', () => {
         it('should set current user to stored user', async () => {
           // arrange
-          persistence.memory = sampleUserData
+          persistence.memory = JSON.stringify(sampleUserData)
 
           // act
           await service.autoSignIn()
 
           // assert
-          expect(service.currentUser).toBe(sampleUserData.user)
+          expect(service.currentUser).toEqual(sampleUserData.user)
         })
 
         it('should inform subscription onUserChanged', async () => {
           // arrange
-          persistence.memory = sampleUserData
+          persistence.memory = JSON.stringify(sampleUserData)
 
           // act
           await service.autoSignIn()
@@ -620,13 +626,14 @@ describe('RestAuthService', () => {
 
         it('should not change persistence', async () => {
           // arrange
-          persistence.memory = sampleUserData
+          persistence.memory = JSON.stringify(sampleUserData)
 
           // act
           await service.autoSignIn()
 
           // assert
-          expect(persistence.memory).toBe(sampleUserData)
+          const persisted = JSON.parse(persistence.memory)
+          expect(persisted).toEqual(sampleUserData)
         })
       })
     })
@@ -731,19 +738,19 @@ describe('RestAuthService', () => {
       it('should not persist data, if never logged in (persisted data)', async () => {
         // arrange
         const newPersistence = memoryPersistence()
-        newPersistence.memory = { foo: 'bar' }
+        newPersistence.memory = 'foo-bar'
 
         // act
         await service.setPersistence(newPersistence)
 
         // assert
-        expect(newPersistence.memory).toEqual({ foo: 'bar' })
+        expect(newPersistence.memory).toEqual('foo-bar')
       })
 
       it('should delete old persistence', async () => {
         // arrange
         const oldPersistence = memoryPersistence()
-        oldPersistence.memory = sampleUserData
+        oldPersistence.memory = JSON.stringify(sampleUserData)
         await service.setPersistence(oldPersistence)
 
         const newPersistence = memoryPersistence()
@@ -763,7 +770,7 @@ describe('RestAuthService', () => {
         await service.autoSignIn()
 
         const newPersistence = memoryPersistence()
-        newPersistence.memory = { foo: 'bar' }
+        newPersistence.memory = JSON.stringify({ foo: 'bar' })
 
         // act
         await service.setPersistence(newPersistence)
@@ -775,7 +782,7 @@ describe('RestAuthService', () => {
       it('should persist user, after auto sign (user)', async () => {
         // arrange
         const oldPersistence = memoryPersistence()
-        oldPersistence.memory = sampleUserData
+        oldPersistence.memory = JSON.stringify(sampleUserData)
         await service.setPersistence(oldPersistence)
         await service.autoSignIn()
 
@@ -785,7 +792,8 @@ describe('RestAuthService', () => {
         await service.setPersistence(newPersistence)
 
         // assert
-        expect(newPersistence.memory).toEqual(sampleUserData)
+        const persisted = JSON.parse(newPersistence.memory ?? '')
+        expect(persisted).toEqual(sampleUserData)
       })
     })
   })

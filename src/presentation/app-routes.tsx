@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { Route, Routes } from '@solidjs/router'
+import { Navigate, Route, Routes } from '@solidjs/router'
 import { Show, onMount } from 'solid-js'
 import { AuthStatus } from './auth/auth-status'
 // import { RecipesPage } from './recipes/recipes'
-import { useAuthContext } from '../business/auth/reactives/auth-context'
+import { useAuthContext } from '../business/auth'
 import { hideSplash } from './landing/hide-splash'
 import { logMount } from './utils/log-mount'
 
@@ -33,6 +33,7 @@ const AppRoutes = () => {
             </div>
           }
         />
+        <Route path="/*" element={<Navigate href="/" />} />
         {/* <Route element={<Outlet />}>
           <Route
             path="/protected"

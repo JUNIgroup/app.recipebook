@@ -3,8 +3,8 @@
  */
 export interface AuthPersistence {
   name: string
-  load(): object | null | Promise<object | null>
-  save(value: object | null): void | Promise<void>
+  load(): string | null
+  save(value: string | null): void
 }
 
 export function nonePersistence(): AuthPersistence {
@@ -15,12 +15,12 @@ export function nonePersistence(): AuthPersistence {
   }
 }
 
-export function memoryPersistence(): AuthPersistence & { memory: object | null } {
+export function memoryPersistence(): AuthPersistence & { memory: string | null } {
   const persistence = {
-    memory: null as object | null,
+    memory: null as string | null,
     name: 'memory',
     load: () => persistence.memory,
-    save: (value: object | null) => {
+    save: (value: string | null) => {
       persistence.memory = value
     },
   }
@@ -33,13 +33,10 @@ export function storagePersistence(
 ): AuthPersistence {
   return {
     name: 'storage',
-    load: () => {
-      const value = storage.getItem(key)
-      return value ? JSON.parse(value) : null
-    },
-    save: (value: object | null) => {
+    load: () => storage.getItem(key),
+    save: (value: string | null) => {
       if (value == null) storage.removeItem(key)
-      else storage.setItem(key, JSON.stringify(value))
+      else storage.setItem(key, value)
     },
   }
 }
