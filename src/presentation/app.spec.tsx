@@ -1,13 +1,12 @@
 // @vitest-environment happy-dom
 
-import { render, screen } from '@testing-library/react'
-import { Provider as StoreProvider } from 'react-redux'
-import { MemoryRouter } from 'react-router-dom'
-import { createStore } from '../business/app.store'
-import { UserData } from '../business/auth/service/auth-service'
+import { Router } from '@solidjs/router'
+import { render, screen } from '@solidjs/testing-library'
+import { AuthContextProvider, UserData } from '../business/auth'
 import { MockAuthService } from '../business/auth/service/mock-auth-service'
 import { FirestoreDatabase } from '../business/database/firestore/firestore-database'
 import { FirestoreMockService } from '../business/database/firestore/firestore-mock-service'
+import { memoryPersistence } from '../infrastructure/firebase/persistence'
 import { createFakeLogger } from '../utilities/logger/fake-logger.test-helper'
 import { LandingPage } from './landing/landing-page'
 
@@ -18,22 +17,20 @@ describe('button', () => {
     const logger = createFakeLogger()
     const authService = new MockAuthService()
     authService.setMockUser({ id: 'foo', name: 'bar' } as UserData)
+    const emailPersistence = memoryPersistence()
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const database = new FirestoreDatabase(logger, new FirestoreMockService())
-    const store = createStore({
-      storage: localStorage,
-      authService,
-      database,
-      logger,
-    })
-    render(
+
+    render(() => (
       <div id="root">
-        <MemoryRouter initialEntries={['/protected']}>
-          <StoreProvider store={store}>
+        <AuthContextProvider authService={authService} emailPersistence={emailPersistence}>
+          <Router>
             <LandingPage />
-          </StoreProvider>
-        </MemoryRouter>
-      </div>,
-    )
+          </Router>
+        </AuthContextProvider>
+      </div>
+    ))
     button = screen.getByRole('button', { name: 'Sign In' })
   })
 
