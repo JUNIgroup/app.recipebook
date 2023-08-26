@@ -1,30 +1,29 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import { useEffect } from 'react'
-import { useSelector } from 'react-redux'
+import { Component, Show, createSignal, onMount } from 'solid-js'
 
-import { RootState } from '../business/app.store'
-import * as fromAuth from '../business/auth'
+import { useAuthContext } from '../business/auth/reactives/auth-context'
+import { LandingPage } from './landing/landing-page'
 
-import { UNLOADED } from '../business/helper/redux/redux-helper'
-import { AppRoutes } from './app-routes'
-import { useAppDispatch } from './store.hooks'
+const AppFakeRoutes = () => {
+  onMount(() => {
+    document.getElementById('splash-section')?.remove()
+  })
 
-const isLoaded = (data: unknown) => data !== UNLOADED
+  const [authState] = useAuthContext()
 
-const dataLoadedFlag = (state: RootState) =>
-  isLoaded(state.auth.rememberedEmail) && //
-  isLoaded(state.auth.user)
+  return (
+    <Show when={authState.authUser} fallback={<LandingPage />}>
+      {(user) => <div>Hello User: {user().name}</div>}
+    </Show>
+  )
+}
 
-export const App = () => {
-  const dispatch = useAppDispatch()
-  const dataLoaded = useSelector(dataLoadedFlag)
+export const App: Component = () => {
+  const [dataLoaded, setDataLoaded] = createSignal(false)
+  setTimeout(() => setDataLoaded(true), 1000)
 
-  useEffect(() => dispatch(fromAuth.fetchRememberedEmail()), [])
-  useEffect(() => {
-    setTimeout(() => {
-      dispatch(fromAuth.observeUser())
-    }, 1000)
-  }, [])
-
-  return dataLoaded ? <AppRoutes /> : null
+  return (
+    <Show when={dataLoaded()}>
+      <AppFakeRoutes />
+    </Show>
+  )
 }

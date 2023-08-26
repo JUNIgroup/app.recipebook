@@ -1,9 +1,8 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { Provider as StoreProvider } from 'react-redux'
-import { BrowserRouter } from 'react-router-dom'
+import 'solid-devtools/setup'
+import { render } from 'solid-js/web'
 import { IDB_ID } from './app.constants'
 import { createStore } from './business/app.store'
+import { AuthContextProvider } from './business/auth/reactives/auth-context'
 import { FirebaseRestAuthService } from './business/auth/service/firebase-rest-auth-service'
 import { FirestoreDatabase } from './business/database/firestore/firestore-database'
 import { FirestoreService } from './business/database/firestore/firestore-service.api'
@@ -54,6 +53,7 @@ const cacheDatabase = new IdbCacheDatabase(logger, firestoreDatabase, {
 })
 const database = cacheDatabase
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const store = createStore({
   storage,
   authService,
@@ -61,12 +61,19 @@ const store = createStore({
   logger,
 })
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <StoreProvider store={store}>
-        <App />
-      </StoreProvider>
-    </BrowserRouter>
-  </React.StrictMode>,
+const root = document.getElementById('root')
+
+if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
+  throw new Error(
+    'Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got misspelled?',
+  )
+}
+
+render(
+  () => (
+    <AuthContextProvider authService={authService}>
+      <App />
+    </AuthContextProvider>
+  ),
+  root as HTMLElement,
 )

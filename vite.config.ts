@@ -1,12 +1,17 @@
 import { resolve } from 'path'
 import { defineConfig, splitVendorChunkPlugin } from 'vite'
-import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
+import solidPlugin from 'vite-plugin-solid'
+import solidDevTools from 'solid-devtools/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    solidDevTools({
+      /* features options - all disabled by default */
+      autoname: true, // e.g. enable autoname
+    }),
+    solidPlugin(),
     splitVendorChunkPlugin(),
     visualizer({
       title: 'Vite Bundle Tree',
