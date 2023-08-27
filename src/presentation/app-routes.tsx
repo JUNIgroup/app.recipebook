@@ -9,7 +9,7 @@ import { logMount } from './utils/log-mount'
 
 const AppRoutes = () => {
   logMount('AppRoutes')
-  const [authState] = useAuthContext()
+  const { authState } = useAuthContext()
 
   onMount(hideSplash)
   return (

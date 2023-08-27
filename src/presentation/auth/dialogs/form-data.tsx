@@ -13,7 +13,7 @@ const LoginDataContext = createContext<[LoginData, SetStoreFunction<LoginData>]>
 })
 
 export const LoginDataContextProvider: ParentComponent = (props) => {
-  const [authState] = useAuthContext()
+  const { authState } = useAuthContext()
   const [loginData, updateLoginData] = createStore<LoginData>({
     name: '',
     email: authState.authEmail ?? '',

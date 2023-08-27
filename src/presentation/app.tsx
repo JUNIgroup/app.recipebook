@@ -8,11 +8,11 @@ const AppRoutes = lazy(() => import('./app-routes'))
 
 export const App: Component = () => {
   logMount('App')
-  const [authState] = useAuthContext()
+  const { isAuthorized } = useAuthContext()
 
   return (
     <Router>
-      <Show when={authState.authUser} fallback={<LoginRoutes />} children={<AppRoutes />} />
+      <Show when={isAuthorized()} fallback={<LoginRoutes />} children={<AppRoutes />} />
     </Router>
   )
 }

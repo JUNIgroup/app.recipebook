@@ -13,7 +13,7 @@ import {
 
 export const SignInDialog: Component = () => {
   logMount('SignInDialog')
-  const [authState, authActions] = useAuthContext()
+  const { authState, signIn } = useAuthContext()
 
   const handleSubmit: JSX.EventHandler<HTMLFormElement, Event> = (event) => {
     event.preventDefault()
@@ -23,7 +23,7 @@ export const SignInDialog: Component = () => {
     const password = formData.get('password') as string
     const rememberLogin = !!formData.get('remember-me')
 
-    authActions.signIn(email, password, { rememberMe: rememberLogin })
+    signIn(email, password, { rememberMe: rememberLogin })
   }
 
   return (

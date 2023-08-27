@@ -77,7 +77,7 @@ export class MockAuthService implements AuthService {
 
   // eslint-disable-next-line class-methods-use-this
   async resetPassword() {
-    // nothing to to in this mock.
+    // nothing to do in this mock.
   }
 
   private async change(key: keyof UserData, value: string) {
@@ -89,7 +89,6 @@ export class MockAuthService implements AuthService {
       }
       this.emailToUser[this.user.email] = user
       this.setMockUser(user)
-      // return user
     }
   }
 }

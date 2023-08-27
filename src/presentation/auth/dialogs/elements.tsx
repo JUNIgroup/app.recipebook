@@ -21,7 +21,7 @@ export const SignUpButton: Component = () => (
   </Link>
 )
 
-type ChangeHandler<T extends HTMLElement> = JSX.EventHandler<T, Event>
+type ChangeHandler<T extends HTMLElement> = JSX.ChangeEventHandler<T, Event>
 
 export const EmailInput: Component = () => {
   const [loginData, update] = useLoginDataContext()
@@ -79,7 +79,7 @@ export const RememberMeInput: Component = () => {
 }
 
 export const ContinueSubmit: Component = () => {
-  const [authState] = useAuthContext()
+  const { authState } = useAuthContext()
   return (
     <button type="submit" disabled={authState.authInProgress}>
       Continue

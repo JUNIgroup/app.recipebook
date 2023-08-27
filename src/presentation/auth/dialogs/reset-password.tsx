@@ -4,7 +4,7 @@ import { useAuthContext } from '../../../business/auth'
 import { ContinueSubmit, EmailInput, ErrorMessage, Message, RememberPasswordLink } from './elements'
 
 export const ResetPasswordDialog: Component = () => {
-  const [authState, authActions] = useAuthContext()
+  const { authState, resetPassword } = useAuthContext()
   const navigate = useNavigate()
 
   const handleSubmit: JSX.EventHandler<HTMLFormElement, Event> = (event) => {
@@ -13,7 +13,7 @@ export const ResetPasswordDialog: Component = () => {
     const formData = new FormData(event.currentTarget)
     const email = formData.get('email') as string
 
-    authActions.resetPassword(email).then(() => navigate('/login/sign-in'))
+    resetPassword(email).then(() => navigate('/login/sign-in'))
   }
 
   return (
