@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
 import { Navigate, Route, Routes } from '@solidjs/router'
 import { Show, onMount } from 'solid-js'
-import { AuthStatus } from './auth/auth-status'
-// import { RecipesPage } from './recipes/recipes'
 import { useAuthContext } from '../business/auth'
+import { AuthStatus } from './auth/auth-status'
 import { hideSplash } from './landing/hide-splash'
+import { RecipesPage } from './recipes/recipes'
 import { logMount } from './utils/log-mount'
 
 const AppRoutes = () => {
@@ -20,16 +19,7 @@ const AppRoutes = () => {
           element={
             <div>
               <AuthStatus />
-              <div>Home</div>
-            </div>
-          }
-        />
-        <Route
-          path="/recipes"
-          element={
-            <div>
-              <AuthStatus />
-              <div>Recipes</div>
+              <RecipesPage />
             </div>
           }
         />

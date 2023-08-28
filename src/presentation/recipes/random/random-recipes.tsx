@@ -1,81 +1,71 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
 
-import { useEffect, useState } from 'react'
-import * as fromAuth from '../../../business/auth'
-import { useAppSelector } from '../../store.hooks'
-import { RecipeBody, getRandomRecipes } from './random'
+import { Component, createResource, For } from 'solid-js'
+import { getRandomRecipes, RecipeBody } from './random'
 
 export type Action = {
-  key: string
-  text: React.ReactNode
+  text: string
   enabled?: boolean
-  action: (recipe: RecipeBody) => void
+  action?: (recipe: RecipeBody) => void
 }
 
 export type RandomRecipesColumnProps = {
   actions?: Action[]
 }
 
-export const RandomRecipesColumn: React.FC<RandomRecipesColumnProps> = ({ actions = [] }) => {
-  const user = useAppSelector(fromAuth.selectAuthorizedUser)
-  if (!user) return null
+export const RandomRecipesColumn: Component<RandomRecipesColumnProps> = (props) => {
+  const [randomRecipes, { refetch }] = createResource<RecipeBody[]>(getRandomRecipes, {
+    initialValue: [],
+    name: 'random-recipes',
+  })
 
-  const [randomRecipes, setRandomRecipes] = useState<null | RecipeBody[]>(null)
-
-  useEffect(() => {
-    if (randomRecipes === null) {
-      getRandomRecipes().then((recipes) => setRandomRecipes(recipes))
-    }
-  }, [randomRecipes === null])
-
-  const newRandomRecipes = () => setRandomRecipes(null)
   return (
-    <div className="column">
-      <h2 className="title">
-        <div className="title-text stretch">Add a new recipe</div>
-        <button className="title-action icon" data-testid="random" type="button" onClick={newRandomRecipes}>
+    <div class="column">
+      <h2 class="title">
+        <div class="title-text stretch">Add a new recipe</div>
+        <button class="title-action icon" data-testid="random" type="button" onClick={refetch}>
           ↺
         </button>
       </h2>
       {randomRecipes === null ? (
         <div>...</div>
       ) : (
-        <ul className="cards">
-          {randomRecipes.map((recipe, idx) => (
-            // eslint-disable-next-line react/no-array-index-key
-            <li key={`rnd${idx}`} className="card">
-              <div className="card-body">
-                {recipe.origin ? (
-                  <a
-                    className="card-title"
-                    href={recipe.origin.uri}
-                    title={recipe.origin.description ?? recipe.title}
-                    target="recipe-origin"
-                  >
-                    {recipe.title}
-                  </a>
-                ) : (
-                  <span className="card-title">{recipe.title}</span>
-                )}
-                <span className="card-subtitle">{recipe.subtitle}</span>
-              </div>
-              <div className="card-actions">
-                {actions.map((action) => (
-                  <button
-                    key={action.key}
-                    type="button"
-                    className="icon"
-                    disabled={!(action.enabled ?? true)}
-                    onClick={() => action.action(recipe)}
-                  >
-                    {action.text}
-                  </button>
-                ))}
-              </div>
-            </li>
-          ))}
+        <ul class="cards">
+          <For each={randomRecipes()}>
+            {(recipe) => (
+              <li class="card">
+                <div class="card-body">
+                  {recipe.origin ? (
+                    <a
+                      class="card-title"
+                      href={recipe.origin.uri}
+                      title={recipe.origin.description ?? recipe.title}
+                      target="recipe-origin"
+                    >
+                      {recipe.title}
+                    </a>
+                  ) : (
+                    <span class="card-title">{recipe.title}</span>
+                  )}
+                  <span class="card-subtitle">{recipe.subtitle}</span>
+                </div>
+                <div class="card-actions">
+                  <For each={props.actions ?? []}>
+                    {(action) => (
+                      <button
+                        type="button"
+                        class="icon"
+                        disabled={!action.enabled}
+                        onClick={() => action.action?.(recipe)}
+                      >
+                        {action.text}
+                      </button>
+                    )}
+                  </For>
+                </div>
+              </li>
+            )}
+          </For>
         </ul>
       )}
     </div>

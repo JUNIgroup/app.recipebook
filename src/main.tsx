@@ -16,6 +16,7 @@ import { App } from './presentation/app'
 import { createConsoleLogger, createDebugObserver } from './utilities/logger'
 
 import './main.scss'
+import { RecipeBooksContextProvider } from './business/recipe-books/context/recipe-books-context'
 
 type LogScope = 'app' | 'utils' | 'infra' | 'business' | 'ui'
 
@@ -67,7 +68,9 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 render(
   () => (
     <AuthContextProvider authService={authService} emailPersistence={emailPersistence}>
-      <App />
+      <RecipeBooksContextProvider logger={logger}>
+        <App />
+      </RecipeBooksContextProvider>
     </AuthContextProvider>
   ),
   root as HTMLElement,
