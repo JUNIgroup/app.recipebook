@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit'
 import { BucketStructure, ID } from '../database/database-types'
-import { Order } from './orders'
+import { Order } from '../helper/sorting/orders'
 import { BucketsState } from './types'
 
 const memoizeShallowArray = {

@@ -1,8 +1,8 @@
 import { batch } from 'solid-js'
 import { SetStoreFunction, createStore } from 'solid-js/store'
 import { Logger } from '../../../utilities/logger'
-import { byString } from '../../data-context.builder/orders'
 import { ID } from '../../database/database-types'
+import { byString } from '../../helper/sorting/orders'
 import { Recipe, RecipeBook } from '../model'
 import { fullRecipe, fullRecipeBook } from '../model/recipe-books.samples'
 
