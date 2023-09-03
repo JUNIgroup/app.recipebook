@@ -1,5 +1,5 @@
-import { batch } from 'solid-js'
 import { SetStoreFunction, createStore } from 'solid-js/store'
+import { batchWithDevtools, createStoreWithDevtools } from '../../../devtools'
 import { Logger } from '../../../utilities/logger'
 import { ID } from '../../database/database-types'
 import { byString } from '../../helper/sorting/orders'
@@ -53,22 +53,27 @@ export interface RecipeBooksStore {
 
 export function createRecipeBooksStore(logger: Logger<'business'>): RecipeBooksStore {
   const log = logger('business:RecipeBooksStore')
-  const [recipeBooksState, updateState] = createStore<RecipeBooksState>({
-    ids: [fullRecipeBook.id],
-    lastUpdate: undefined,
-    entities: {
-      [fullRecipeBook.id]: {
-        book: fullRecipeBook,
-        recipes: {
-          ids: [fullRecipe.id],
-          lastUpdate: undefined,
-          entities: {
-            [fullRecipe.id]: fullRecipe,
+  const [recipeBooksState, updateState] = createStoreWithDevtools<RecipeBooksState>(
+    {
+      ids: [fullRecipeBook.id],
+      lastUpdate: undefined,
+      entities: {
+        [fullRecipeBook.id]: {
+          book: fullRecipeBook,
+          recipes: {
+            ids: [fullRecipe.id],
+            lastUpdate: undefined,
+            entities: {
+              [fullRecipe.id]: fullRecipe,
+            },
           },
         },
       },
     },
-  })
+    {
+      name: 'RecipeBooksStore',
+    },
+  )
 
   const byTitle = byString<{ title: string }>((entity) => entity.title)
 
@@ -100,7 +105,7 @@ export function createRecipeBooksStore(logger: Logger<'business'>): RecipeBooksS
   const addRecipeBook: RecipeBooksStore['addRecipeBook'] = async (recipeBook) => {
     if (recipeBooksState.entities[recipeBook.id]) throw new Error(`RecipeBook with id ${recipeBook.id} already exists`)
     log.info('addRecipeBook', recipeBook.id, recipeBook.title)
-    batch(() => {
+    batchWithDevtools('addRecipeBook', { recipeBookId: recipeBook.id }, () => {
       updateState('ids', recipeBooksState.ids.length, recipeBook.id)
       updateState('entities', recipeBook.id, {
         book: recipeBook,
@@ -116,7 +121,7 @@ export function createRecipeBooksStore(logger: Logger<'business'>): RecipeBooksS
   const deleteRecipeBook: RecipeBooksStore['deleteRecipeBook'] = async (recipeBookId) => {
     if (!recipeBookId || !recipeBooksState.entities[recipeBookId]) return false
     log.info('deleteRecipeBook', recipeBookId)
-    batch(() => {
+    batchWithDevtools('deleteRecipeBook', { recipeBookId }, () => {
       updateState('ids', (ids) => ids.filter((id) => id !== recipeBookId))
       updateState('entities', { [recipeBookId]: undefined })
     })
@@ -133,17 +138,18 @@ export function createRecipeBooksStore(logger: Logger<'business'>): RecipeBooksS
     if (!collection) throw new Error(`RecipeBook with id ${recipeBookId} does not exist`)
     if (collection.entities[recipe.id]) throw new Error(`Recipe with id ${recipe.id} already exists`)
     log.info('addRecipe', recipeBookId, recipe.id, recipe.title)
-    batch(() => {
+    batchWithDevtools('addRecipe', { recipeBookId, recipeId: recipe.id }, () => {
       updateState('entities', recipeBookId, 'recipes', 'ids', collection.ids.length, recipe.id)
       updateState('entities', recipeBookId, 'recipes', 'entities', recipe.id, recipe)
     })
   }
+
   const deleteRecipe: RecipeBooksStore['deleteRecipe'] = async (recipeBookId, recipeId) => {
     const collection = recipeBooksState.entities[recipeBookId]?.recipes
     if (!collection) throw new Error(`RecipeBook with id ${recipeBookId} does not exist`)
     if (!recipeId || !collection.entities[recipeId]) return false
     log.info('deleteRecipe', recipeBookId, recipeId)
-    batch(() => {
+    batchWithDevtools('deleteRecipe', { recipeBookId, recipeId }, () => {
       updateState('entities', recipeBookId, 'recipes', 'ids', (ids) => ids.filter((id) => id !== recipeId))
       updateState('entities', recipeBookId, 'recipes', 'entities', { [recipeId]: undefined })
     })
@@ -157,7 +163,7 @@ export function createRecipeBooksStore(logger: Logger<'business'>): RecipeBooksS
     if (!entity) throw new Error(`Recipe with id ${recipeId} does not exist`)
     log.info('updateRecipe', recipeBookId, recipeId)
     const [get, set] = createStore(entity)
-    batch(() => {
+    batchWithDevtools('updateRecipe', { recipeBookId, recipeId }, () => {
       update(set, get)
     })
   }

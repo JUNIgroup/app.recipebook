@@ -1,5 +1,5 @@
-import { batch, createEffect } from 'solid-js'
-import { createStore } from 'solid-js/store'
+import { createEffect } from 'solid-js'
+import { batchWithDevtools, createStoreWithDevtools } from '../../../devtools'
 import { AuthPersistence } from '../../../infrastructure/firebase/persistence'
 import { ServiceErrorDto, toServiceErrorDto } from '../../error/service-error'
 import { AuthError, AuthService, LoginOptions, UserData } from '../service/auth-service'
@@ -26,12 +26,17 @@ export interface AuthStore {
 }
 
 export function createAuthStore(authService: AuthService, emailPersistence: AuthPersistence): AuthStore {
-  const [authState, updateState] = createStore<AuthState>({
-    authInProgress: false,
-    authEmail: emailPersistence.load(),
-    authUser: null,
-    authError: null,
-  })
+  const [authState, updateState] = createStoreWithDevtools<AuthState>(
+    {
+      authInProgress: false,
+      authEmail: emailPersistence.load(),
+      authUser: null,
+      authError: null,
+    },
+    {
+      name: 'AuthStore',
+    },
+  )
 
   authService.observeUser((user) => {
     updateState('authUser', user)
@@ -45,16 +50,19 @@ export function createAuthStore(authService: AuthService, emailPersistence: Auth
 
   const selectUserId: AuthStore['selectUserId'] = () => authState.authUser?.id ?? null
 
-  async function processAuth(action: () => Promise<void>) {
-    updateState('authInProgress', true)
+  async function processAuth(action: string, payload: unknown, actionFn: () => Promise<void>) {
+    batchWithDevtools(action, payload, () => {
+      updateState('authInProgress', true)
+    })
     try {
-      await action()
-      batch(() => {
+      await actionFn()
+      batchWithDevtools(`${action}:success`, {}, () => {
         updateState('authError', null)
         updateState('authInProgress', false)
       })
     } catch (error) {
-      batch(() => {
+      const authError = error as AuthError
+      batchWithDevtools(`${action}:failed`, { code: authError.code, message: authError.message }, () => {
         updateState('authError', toServiceErrorDto(error as AuthError))
         updateState('authInProgress', false)
       })
@@ -63,27 +71,27 @@ export function createAuthStore(authService: AuthService, emailPersistence: Auth
   }
 
   const signIn: AuthStore['signIn'] = async (email, password, options) => {
-    await processAuth(async () => {
+    await processAuth('signIn', { email, options }, async () => {
       await authService.signInWithEmailAndPassword(email, password, options)
       updateState('authEmail', options?.rememberMe ? email : null)
     })
   }
 
   const signUp: AuthStore['signUp'] = async (name, email, password, options) => {
-    await processAuth(async () => {
+    await processAuth('signUp', { name, email, options }, async () => {
       await authService.signUpWithEmailAndPassword(name, email, password, options)
       updateState('authEmail', options?.rememberMe ? email : null)
     })
   }
 
   const signOut: AuthStore['signOut'] = async () => {
-    await processAuth(async () => {
+    await processAuth('signOut', {}, async () => {
       await authService.logout()
     })
   }
 
   const resetPassword: AuthStore['resetPassword'] = async (email) => {
-    await processAuth(async () => {
+    await processAuth('resetPassword', { email }, async () => {
       await authService.resetPassword(email)
     })
   }
