@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
-import * as fromRecipeBooks from '../../../business/recipe-books/store'
-import { useAppSelector } from '../../store.hooks'
+import { Component, For, createEffect, createMemo } from 'solid-js'
+import { useRecipeBooksContext } from '../../../business/recipe-books/context/recipe-books-context'
+import { logMount } from '../../utils/log-mount'
 import { RecipeItem } from './recipe-item'
 
 export type RecipeListProps = {
@@ -8,20 +8,24 @@ export type RecipeListProps = {
   selectedBookId: string | null
 }
 
-export const RecipeList: React.FC<RecipeListProps> = ({ setError, selectedBookId }) => {
-  const allRecipes = useAppSelector((state) => fromRecipeBooks.selectRecipes(state, selectedBookId ?? ''))
+export const RecipeList: Component<RecipeListProps> = (props) => {
+  logMount('RecipeList')
 
-  useEffect(() => {
-    console.log('RecipeList: selectedBookId', selectedBookId)
-  }, [selectedBookId, allRecipes])
+  const { selectRecipesSortedByTitle } = useRecipeBooksContext()
+  const allRecipes = createMemo(() => selectRecipesSortedByTitle(props.selectedBookId))
+
+  createEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('RecipeList: selectedBookId', props.selectedBookId, allRecipes().length)
+  })
 
   return (
-    <div className="column">
-      <ul className="cards">
-        {allRecipes.map((recipe) => (
-          <RecipeItem key={recipe.id} setError={setError} bookId={selectedBookId ?? ''} recipe={recipe} />
-        ))}
-      </ul>{' '}
+    <div class="column">
+      <ul class="cards">
+        <For each={allRecipes()}>
+          {(recipe) => <RecipeItem setError={props.setError} bookId={props.selectedBookId ?? ''} recipe={recipe} />}
+        </For>
+      </ul>
     </div>
   )
 }

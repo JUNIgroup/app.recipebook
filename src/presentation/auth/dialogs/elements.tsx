@@ -1,73 +1,71 @@
-import { ChangeEventHandler } from 'react'
-import { Link } from 'react-router-dom'
-import type { AuthErrorDto } from '../../../business/auth'
-import * as fromAuth from '../../../business/auth'
-import { useAppSelector } from '../../store.hooks'
-import { useLoginData } from './form-data'
+import { Link } from '@solidjs/router'
+import { Component, JSX, ParentComponent, Show } from 'solid-js'
+import { AuthErrorDto, useAuthContext } from '../../../business/auth'
+import { useLoginDataContext } from './form-data'
 
 const rootPath = '/login'
 
-type ChildrenProps = { children: React.ReactNode }
+export const Logo: Component = () => <div class="login-logo">LOGO</div>
 
-export const Logo = () => <div className="login-logo">LOGO</div>
+export const Message: ParentComponent = (props) => <div class="login-message">{props.children}</div>
 
-export const Message: React.FC<ChildrenProps> = ({ children }) => <div className="login-message">{children}</div>
-
-export const SignInButton = () => (
-  <Link className="link-as-button" to="welcome">
+export const SignInButton: Component = () => (
+  <Link class="link-as-button" href={`${rootPath}/sign-in`}>
     Log in
   </Link>
 )
 
-export const SignUpButton = () => (
-  <Link className="link-as-button" to="new-account">
+export const SignUpButton: Component = () => (
+  <Link class="link-as-button" href={`${rootPath}/sign-up`}>
     Sign up
   </Link>
 )
 
-export const EmailInput = () => {
-  const [loginData, update] = useLoginData()
-  const changeHandler: ChangeEventHandler<HTMLInputElement> = (event) => {
-    const email = event.target.value
-    update((data) => ({ ...data, email }))
+type ChangeHandler<T extends HTMLElement> = JSX.ChangeEventHandler<T, Event>
+
+export const EmailInput: Component = () => {
+  const [loginData, update] = useLoginDataContext()
+  const changeHandler: ChangeHandler<HTMLInputElement> = (event) => {
+    const email = event.currentTarget.value
+    update('email', email)
   }
   return (
     <>
-      <label htmlFor="email">Email:</label>
+      <label for="email">Email:</label>
       <input type="text" id="email" name="email" value={loginData.email} onChange={changeHandler} />
     </>
   )
 }
 
-export const NameInput = () => {
-  const [loginData, update] = useLoginData()
-  const changeHandler: ChangeEventHandler<HTMLInputElement> = (event) => {
-    const name = event.target.value
-    update((data) => ({ ...data, name }))
+export const NameInput: Component = () => {
+  const [loginData, update] = useLoginDataContext()
+  const changeHandler: ChangeHandler<HTMLInputElement> = (event) => {
+    const name = event.currentTarget.value
+    update('name', name)
   }
   return (
     <>
-      <label htmlFor="name">Nickname:</label>
+      <label for="name">Nickname:</label>
       <input type="text" id="name" name="name" value={loginData.name} onChange={changeHandler} />
     </>
   )
 }
 
-export const PasswordInput = () => (
+export const PasswordInput: Component = () => (
   <>
-    <label htmlFor="password">Password:</label>
+    <label for="password">Password:</label>
     <input type="password" id="password" name="password" />
   </>
 )
 
-export const RememberMeInput = () => {
-  const [loginData, update] = useLoginData()
-  const changeHandler: ChangeEventHandler<HTMLInputElement> = (event) => {
-    const rememberMe = event.target.checked
-    update((data) => ({ ...data, rememberMe }))
+export const RememberMeInput: Component = () => {
+  const [loginData, update] = useLoginDataContext()
+  const changeHandler: ChangeHandler<HTMLInputElement> = (event) => {
+    const rememberMe = event.currentTarget.checked
+    update('rememberMe', rememberMe)
   }
   return (
-    <div className="checkbox">
+    <div class="checkbox">
       <input
         id="remember-me"
         name="remember-me"
@@ -75,23 +73,23 @@ export const RememberMeInput = () => {
         checked={loginData.rememberMe}
         onChange={changeHandler}
       />
-      <label htmlFor="remember-me">Remember Me</label>
+      <label for="remember-me">Remember Me</label>
     </div>
   )
 }
 
-export const ContinueSubmit = () => {
-  const inProgress = useAppSelector(fromAuth.selectAuthInProgress)
+export const ContinueSubmit: Component = () => {
+  const { authState } = useAuthContext()
   return (
-    <button type="submit" disabled={inProgress}>
+    <button type="submit" disabled={authState.authInProgress}>
       Continue
     </button>
   )
 }
 
-export const ResetPasswordLink = () => (
+export const ResetPasswordLink: Component = () => (
   <div>
-    <Link to={`${rootPath}/reset-password`} replace>
+    <Link href={`${rootPath}/reset-password`} replace>
       Forgot Password?
     </Link>
   </div>
@@ -99,26 +97,26 @@ export const ResetPasswordLink = () => (
 
 export const RememberPasswordLink = () => (
   <div>
-    <Link to={`${rootPath}/welcome`} replace>
+    <Link href={`${rootPath}/sign-in`} replace>
       Remember Password?
     </Link>
   </div>
 )
 
-export const SignUpLink = () => (
+export const SignUpLink: Component = () => (
   <div>
     Don&apos;t have an account?{' '}
-    <Link to={`${rootPath}/new-account`} replace>
-      Sign up
+    <Link href={`${rootPath}/sign-up`} replace>
+      Sign Up
     </Link>
   </div>
 )
 
-export const SignInLink = () => (
+export const SignInLink: Component = () => (
   <div>
     Already have an account?{' '}
-    <Link to={`${rootPath}/welcome`} replace>
-      Log in
+    <Link href={`${rootPath}/sign-in`} replace>
+      Sign In
     </Link>
   </div>
 )
@@ -127,9 +125,6 @@ type ErrorProps = {
   error?: AuthErrorDto | null
 }
 
-export const ErrorMessage: React.FC<ErrorProps> = ({ error }) => {
-  if (!error) return null
-
-  const msg = error.plainMessage
-  return <div className="error">{msg}</div>
-}
+export const ErrorMessage: Component<ErrorProps> = (props) => (
+  <Show when={props.error}>{(error) => <div class="error">{error().plainMessage}</div>}</Show>
+)

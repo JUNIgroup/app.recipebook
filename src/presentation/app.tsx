@@ -1,30 +1,18 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import { useEffect } from 'react'
-import { useSelector } from 'react-redux'
+import { Router } from '@solidjs/router'
+import { Component, Show, lazy } from 'solid-js'
+import { useAuthContext } from '../business/auth'
+import { logMount } from './utils/log-mount'
 
-import { RootState } from '../business/app.store'
-import * as fromAuth from '../business/auth'
+const LoginRoutes = lazy(() => import('./auth/login-routes'))
+const AppRoutes = lazy(() => import('./app-routes'))
 
-import { UNLOADED } from '../business/helper/redux/redux-helper'
-import { AppRoutes } from './app-routes'
-import { useAppDispatch } from './store.hooks'
+export const App: Component = () => {
+  logMount('App')
+  const { isAuthorized } = useAuthContext()
 
-const isLoaded = (data: unknown) => data !== UNLOADED
-
-const dataLoadedFlag = (state: RootState) =>
-  isLoaded(state.auth.rememberedEmail) && //
-  isLoaded(state.auth.user)
-
-export const App = () => {
-  const dispatch = useAppDispatch()
-  const dataLoaded = useSelector(dataLoadedFlag)
-
-  useEffect(() => dispatch(fromAuth.fetchRememberedEmail()), [])
-  useEffect(() => {
-    setTimeout(() => {
-      dispatch(fromAuth.observeUser())
-    }, 1000)
-  }, [])
-
-  return dataLoaded ? <AppRoutes /> : null
+  return (
+    <Router>
+      <Show when={isAuthorized()} fallback={<LoginRoutes />} children={<AppRoutes />} />
+    </Router>
+  )
 }

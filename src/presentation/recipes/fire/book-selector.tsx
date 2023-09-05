@@ -1,14 +1,10 @@
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
 
-import React, { MouseEventHandler, ReactEventHandler, useRef } from 'react'
+import { Component, For, JSX, createMemo } from 'solid-js'
 import { ulid } from 'ulid'
-import * as fromAuth from '../../../business/auth'
+import { useRecipeBooksContext } from '../../../business/recipe-books/context/recipe-books-context'
 import { RecipeBook } from '../../../business/recipe-books/model'
-import * as fromRecipeBooks from '../../../business/recipe-books/store'
-import { useAppDispatch, useAppSelector } from '../../store.hooks'
+import { logMount } from '../../utils/log-mount'
 
 export type BookSelectorProps = {
   setError: (error: string | null) => void
@@ -16,29 +12,31 @@ export type BookSelectorProps = {
   onSelectBookId: (bookId: string | null) => void
 }
 
-export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBookId, onSelectBookId }) => {
-  const user = useAppSelector(fromAuth.selectAuthorizedUser)
-  if (!user) return null
+export const BookSelector: Component<BookSelectorProps> = (props) => {
+  logMount('BookSelector')
 
-  const dispatch = useAppDispatch()
-  const selectedBook = useAppSelector((state) => fromRecipeBooks.selectRecipeBookById(state, selectedBookId ?? ''))
-  const allBooks = useAppSelector(fromRecipeBooks.selectRecipeBooksSortedByTitle)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const dialogRef = useRef<HTMLDialogElement>(null)
+  const { selectRecipeBookById, selectRecipeBooksSortedByTitle, deleteRecipeBook, addRecipeBook, refreshRecipeBooks } =
+    useRecipeBooksContext()
+
+  const selectedBook = () => selectRecipeBookById(props.selectedBookId)
+  const allBooks = createMemo(() => selectRecipeBooksSortedByTitle())
+
+  let inputRef: HTMLInputElement | undefined
+  let dialogRef: HTMLDialogElement | undefined
 
   const refreshBooks = async () => {
-    setError(null)
+    props.setError(null)
     try {
-      await dispatch(fromRecipeBooks.refreshRecipeBooks())
+      await refreshRecipeBooks()
       // eslint-disable-next-line no-console
       console.log('Books fetched')
     } catch (err) {
-      setError((err as Error).message)
+      props.setError((err as Error).message)
     }
   }
 
   const createBook = async (title: string) => {
-    setError(null)
+    props.setError(null)
     try {
       const recipeBook: RecipeBook = {
         id: ulid(),
@@ -47,55 +45,52 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
         title,
         subtitle: `created at ${new Date().toLocaleString()}`,
       }
-      await dispatch(fromRecipeBooks.addRecipeBook({ recipeBook }))
+      await addRecipeBook(recipeBook)
       // eslint-disable-next-line no-console
       console.log(`Book created: ${title}`)
       return recipeBook
     } catch (err) {
-      setError((err as Error).message)
+      props.setError((err as Error).message)
       return null
     }
   }
 
   const deleteBook = async (book: RecipeBook) => {
-    setError(null)
+    props.setError(null)
     try {
-      await dispatch(fromRecipeBooks.deleteRecipeBook({ recipeBook: book }))
+      const deleted = await deleteRecipeBook(book.id)
       // eslint-disable-next-line no-console
-      console.log(`Book deleted: ${book.title}`)
+      console.log(`Book deleted: ${book.title} (${deleted ? '✔️' : '-'})`)
     } catch (err) {
-      setError((err as Error).message)
+      props.setError((err as Error).message)
     }
   }
 
   const selectBook = (book: RecipeBook | null) => {
     if (book == null) {
-      onSelectBookId(null)
+      props.onSelectBookId(null)
       return
     }
 
-    // dispatch(fromRecipes.fetchRecipes()).catch((err) => setError(err.message))
-    onSelectBookId(book.id)
+    props.onSelectBookId(book.id)
 
     // eslint-disable-next-line no-console
     console.log(`Book selected: ${book.title}`)
   }
 
   const handleOpenDialog = () => {
-    const dialog = dialogRef.current
-    if (dialog == null) return
+    if (dialogRef == null) return
 
     refreshBooks()
-    dialog.showModal()
+    dialogRef.showModal()
   }
 
-  const handleCloseDialog: MouseEventHandler<HTMLDialogElement> = (event) => {
+  const handleCloseDialog: JSX.EventHandler<HTMLDialogElement, MouseEvent> = (event) => {
     event.preventDefault()
 
-    const dialog = dialogRef.current
-    if (dialog == null) return
+    if (dialogRef == null) return
 
-    const rect = dialog.getBoundingClientRect()
+    const rect = dialogRef.getBoundingClientRect()
     const { clientX, clientY } = event
     const clickedInDialog =
       rect.top <= clientY &&
@@ -103,57 +98,60 @@ export const BookSelector: React.FC<BookSelectorProps> = ({ setError, selectedBo
       rect.left <= clientX &&
       clientX <= rect.left + rect.width
 
-    if (!clickedInDialog) dialog.close()
+    if (!clickedInDialog) dialogRef.close()
   }
 
-  const handleSelectBook = (book: RecipeBook) => () => {
-    dialogRef.current?.close()
+  const handleSelectBook = (book: RecipeBook) => {
+    dialogRef?.close()
     selectBook(book)
   }
 
-  const handleDeleteBook = (book: RecipeBook) => () => {
-    dialogRef.current?.close()
-    if (selectedBookId === book.id) onSelectBookId(null)
+  const handleDeleteBook = (book: RecipeBook) => {
+    dialogRef?.close()
+    if (props.selectedBookId === book.id) props.onSelectBookId(null)
     deleteBook(book)
   }
 
-  const handleAddBook: ReactEventHandler = (event) => {
+  const handleAddBook = async (event: Event) => {
     event.preventDefault()
 
-    const input = inputRef.current
-    if (input == null) return
-    const title = input.value
-    input.value = ''
+    if (inputRef == null) return
+    const title = inputRef.value
+    inputRef.value = ''
 
-    dialogRef.current?.close()
-    createBook(title).then((book) => selectBook(book))
+    dialogRef?.close()
+    const book = await createBook(title)
+    selectBook(book)
   }
 
   return (
-    <div className="dropdown stretch">
+    <div class="dropdown stretch">
       <button
-        className={`dropdown-button ${selectedBookId ? 'selected' : 'empty'}`}
+        class="dropdown-button"
+        classList={{ selected: !!props.selectedBookId, empty: !props.selectedBookId }}
         type="button"
         onClick={handleOpenDialog}
       >
-        {selectedBook?.title ?? 'Select a book'}
+        {selectedBook()?.title ?? 'Select a book'}
       </button>
-      <dialog ref={dialogRef} className="dropdown-dialog" onClick={handleCloseDialog}>
-        <div className="dropdown-content">
+      <dialog ref={dialogRef} class="dropdown-dialog" onClick={handleCloseDialog}>
+        <div class="dropdown-content">
           <h3>Please select a book</h3>
-          {allBooks.sort().map((book) => (
-            <div className="dropdown-choice" key={book.id}>
-              <span className="dropdown-text clickable" onClick={handleSelectBook(book)}>
-                {book.title}
-              </span>
-              <button className="dropdown-action icon" type="button" onClick={handleDeleteBook(book)}>
-                -
-              </button>
-            </div>
-          ))}
-          <form className="dropdown-choice" onSubmit={handleAddBook}>
-            <input className="dropdown-input" type="text" ref={inputRef} required />
-            <button className="dropdown-action icon" type="button" onClick={handleAddBook}>
+          <For each={allBooks()}>
+            {(book) => (
+              <div class="dropdown-choice">
+                <span class="dropdown-text clickable" onClick={() => handleSelectBook(book)}>
+                  {book.title}
+                </span>
+                <button class="dropdown-action icon" type="button" onClick={() => handleDeleteBook(book)}>
+                  -
+                </button>
+              </div>
+            )}
+          </For>
+          <form class="dropdown-choice" onSubmit={handleAddBook}>
+            <input class="dropdown-input" type="text" ref={inputRef} required />
+            <button class="dropdown-action icon" type="button" onClick={handleAddBook}>
               +
             </button>
           </form>

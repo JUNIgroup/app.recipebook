@@ -1,12 +1,19 @@
+/// <reference types="vitest" />
+/// <reference types="vite/client" />
+
 import { resolve } from 'path'
 import { defineConfig, splitVendorChunkPlugin } from 'vite'
-import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
+import solidPlugin from 'vite-plugin-solid'
+import solidDevTools from 'solid-devtools/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    solidDevTools({
+      autoname: true,
+    }),
+    solidPlugin(),
     splitVendorChunkPlugin(),
     visualizer({
       title: 'Vite Bundle Tree',
@@ -26,7 +33,27 @@ export default defineConfig({
   },
   server: {
     watch: {
-      ignored: ['node_modules/', 'analyze/', 'coverage/', 'dist/', 'fire*-debug.log'],
+      ignored: ['**/node_modules/**', '**/analyze/**', '**/coverage/**', '**/dist/**', '**/fire*-debug.log'],
+    },
+  },
+  test: {
+    globals: true,
+    environment: 'node',
+    transformMode: { web: [/\.\tsx?$/] },
+    deps: { registerNodeLoader: true }, // otherwise, solid would be loaded twice
+    setupFiles: ['jest-extended/all'],
+    reporters: ['dot'],
+    // reporters: ['verbose'],
+    coverage: {
+      provider: 'c8',
+      all: true,
+      reporter: ['text', 'html', 'lcov'],
+      statements: 0,
+      branches: 0,
+      functions: 0,
+      lines: 0,
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+      exclude: ['src/main.tsx', 'src/**/*.d.ts', 'src/**/*.spec.ts', 'src/**/*.spec.tsx'],
     },
   },
 })

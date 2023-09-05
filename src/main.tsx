@@ -1,9 +1,8 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { Provider as StoreProvider } from 'react-redux'
-import { BrowserRouter } from 'react-router-dom'
-import { IDB_ID } from './app.constants'
-import { createStore } from './business/app.store'
+import 'solid-devtools'
+
+import { render } from 'solid-js/web'
+import { STORAGE_KEY_USER, STORAGE_KEY_EMAIL } from './app.constants'
+import { AuthContextProvider } from './business/auth'
 import { FirebaseRestAuthService } from './business/auth/service/firebase-rest-auth-service'
 import { FirestoreDatabase } from './business/database/firestore/firestore-database'
 import { FirestoreService } from './business/database/firestore/firestore-service.api'
@@ -18,6 +17,7 @@ import { App } from './presentation/app'
 import { createConsoleLogger, createDebugObserver } from './utilities/logger'
 
 import './main.scss'
+import { RecipeBooksContextProvider } from './business/recipe-books/context/recipe-books-context'
 
 type LogScope = 'app' | 'utils' | 'infra' | 'business' | 'ui'
 
@@ -34,9 +34,11 @@ const restAuthService = import.meta.env.VITE_FIREBASE__USE_EMULATOR
   ? RestAuthService.forEmulator(logger)
   : RestAuthService.forRemote(logger, import.meta.env.VITE_FIREBASE__API_KEY)
 const authService = new FirebaseRestAuthService(restAuthService, logger, {
-  permanent: storagePersistence(IDB_ID, storage),
+  permanent: storagePersistence(STORAGE_KEY_USER, storage),
   temporary: memoryPersistence(),
 })
+
+const emailPersistence = storagePersistence(STORAGE_KEY_EMAIL, storage)
 
 const firestoreOptions = {
   apiKey: import.meta.env.VITE_FIREBASE__API_KEY,
@@ -52,21 +54,25 @@ const cacheDatabase = new IdbCacheDatabase(logger, firestoreDatabase, {
   cacheName: 'de.junigroup.app.recipebook',
   clearOnStart: true,
 })
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const database = cacheDatabase
 
-const store = createStore({
-  storage,
-  authService,
-  database,
-  logger,
-})
+const root = document.getElementById('root')
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <StoreProvider store={store}>
+if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
+  throw new Error(
+    'Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got misspelled?',
+  )
+}
+
+render(
+  () => (
+    <AuthContextProvider authService={authService} emailPersistence={emailPersistence}>
+      <RecipeBooksContextProvider logger={logger}>
         <App />
-      </StoreProvider>
-    </BrowserRouter>
-  </React.StrictMode>,
+      </RecipeBooksContextProvider>
+    </AuthContextProvider>
+  ),
+  root as HTMLElement,
 )

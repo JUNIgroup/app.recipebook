@@ -54,6 +54,7 @@ h1 + .error {
       margin-top: 0;
       height: 24px;
       text-align: left;
+      line-height: 1em;
 
       & > .stretch {
         flex: 1 1 auto;

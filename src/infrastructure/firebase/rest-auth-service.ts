@@ -93,20 +93,20 @@ export class RestAuthService {
     return () => this.subscriptions.splice(this.subscriptions.lastIndexOf(subscription), 1)
   }
 
-  private async setAuthData<T extends AuthData | null>(newAuthData: T): Promise<void> {
+  private setAuthData<T extends AuthData | null>(newAuthData: T): void {
     const oldAuthData = this.authData
 
     this.authData = newAuthData
-    await this.persistence.save(newAuthData)
+    this.persistence.save(stringify(newAuthData))
     this.informSubscribers(oldAuthData, newAuthData)
   }
 
-  private async updateAuthData(newAuthData: AuthData): Promise<void> {
+  private updateAuthData(newAuthData: AuthData): void {
     const oldAuthData = this.authData
     if (oldAuthData == null || oldAuthData.user.id !== newAuthData.user.id) throw new FirebaseError('NOT_AUTHORIZED')
 
     this.authData = newAuthData
-    await this.persistence.save(newAuthData)
+    this.persistence.save(stringify(newAuthData))
     this.informSubscribers(oldAuthData, newAuthData)
   }
 
@@ -127,10 +127,10 @@ export class RestAuthService {
    */
   async setPersistence(persistence: AuthPersistence): Promise<void> {
     this.log.info('setPersistence', persistence.name)
-    await this.persistence.save(null) // clear the old persistence
+    this.persistence.save(null) // clear the old persistence
     this.persistence = persistence
     if (this.authData !== undefined) {
-      await this.persistence.save(this.authData)
+      this.persistence.save(stringify(this.authData))
     }
   }
 
@@ -142,20 +142,21 @@ export class RestAuthService {
   async autoSignIn(): Promise<AuthUser | null> {
     this.log.info('autoSignIn')
     try {
-      const authData = await this.persistence.load()
-      if (!authData) {
+      const persistedAuthData = this.persistence.load()
+      if (!persistedAuthData) {
         this.log.details('No persisted user found.')
-        await this.setAuthData(null)
+        this.setAuthData(null)
         return null
       }
 
+      const authData = JSON.parse(persistedAuthData)
       assertAuthData(authData)
       this.log.details('Persisted user found:', authData.user)
-      await this.setAuthData(authData)
+      this.setAuthData(authData)
       return authData.user
     } catch (error) {
       this.log.error('Persisted user is invalid.')
-      await this.setAuthData(null)
+      this.setAuthData(null)
       return null
     }
   }
@@ -174,7 +175,7 @@ export class RestAuthService {
    */
   async signOut(): Promise<null> {
     this.log.info('signOut', this.authData ? this.authData.user.email : '-')
-    await this.setAuthData(null)
+    this.setAuthData(null)
     return null
   }
 
@@ -206,7 +207,7 @@ export class RestAuthService {
       .catch(() => null)
 
     const authData = RestAuthService.convertSignupNewUserResponse(signUpResponse, profileResponse)
-    await this.setAuthData(authData)
+    this.setAuthData(authData)
     return authData.user
   }
 
@@ -328,6 +329,10 @@ export class RestAuthService {
       validate: assertDeleteAccountResponse,
     }).catch(fetchErrorHandler(this.log))
 
-    await this.setAuthData(null)
+    this.setAuthData(null)
   }
+}
+
+function stringify(obj: object | null) {
+  return obj == null ? null : JSON.stringify(obj)
 }

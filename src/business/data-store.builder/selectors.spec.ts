@@ -1,3 +1,4 @@
+import { byString, reverseOrder } from '../helper/sorting/orders'
 import { rootSelector, initialBreakfastState, Breakfast, Drink, Food } from './builder.samples'
 import {
   createSelectAllBucketDocuments,
@@ -7,7 +8,6 @@ import {
   createSelectBucketDocumentById,
   createSelectCollectionDocumentById,
 } from './selectors'
-import { reverseOrder, byString } from './orders'
 
 describe('createSelectAllBucketDocuments', () => {
   it('should select each bucket document of all buckets', () => {

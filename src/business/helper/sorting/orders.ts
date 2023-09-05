@@ -35,3 +35,14 @@ function compareNumber(a: number, b: number): number {
 export function reverseOrder<T>(order: Order<T>): Order<T> {
   return (a, b) => order(b, a)
 }
+
+/**
+ * Reorders an array based on a given order.
+ *
+ * @param order - The order function that defines the sorting order.
+ * @param array - The array to be copied and reordered.
+ * @return The reordered array.
+ */
+export function reorder<T>(order: Order<T>, array: T[]): T[] {
+  return [...array].sort(order)
+}

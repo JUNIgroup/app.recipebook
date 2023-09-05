@@ -1,12 +1,18 @@
 import { createSelector } from '@reduxjs/toolkit'
-import { shallowEqual } from 'react-redux'
 import { BucketStructure, ID } from '../database/database-types'
-import { Order } from './orders'
+import { Order } from '../helper/sorting/orders'
 import { BucketsState } from './types'
 
 const memoizeShallowArray = {
   equalityCheck: (a: unknown, b: unknown) => a === b,
-  resultEqualityCheck: shallowEqual,
+  resultEqualityCheck: (a: unknown, b: unknown) => {
+    if (!Array.isArray(a) || !Array.isArray(b)) return false
+    if (a.length !== b.length) return false
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i] !== b[i]) return false
+    }
+    return true
+  },
 }
 
 export type RootSelector<T extends BucketStructure, S = unknown> = (state: S) => BucketsState<T>

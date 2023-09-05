@@ -8,13 +8,13 @@ describe('nonePersistence', () => {
 
   it('should initial load null', async () => {
     const persistence = nonePersistence()
-    expect(await persistence.load()).toBe(null)
+    expect(persistence.load()).toBe(null)
   })
 
   it('should load null after save', async () => {
     const persistence = nonePersistence()
-    persistence.save({ a: 1 })
-    expect(await persistence.load()).toBe(null)
+    persistence.save('foo-bar')
+    expect(persistence.load()).toBe(null)
   })
 })
 
@@ -24,34 +24,40 @@ describe('memoryPersistence', () => {
     expect(persistence).toBeDefined()
   })
 
-  it('should save object', async () => {
+  it('should save string', async () => {
     const persistence = memoryPersistence()
-    await persistence.save({ a: 1 })
-    expect(persistence.memory).toEqual({ a: 1 })
+    persistence.save('foo-bar')
+    expect(persistence.memory).toEqual('foo-bar')
+  })
+
+  it('should save empty string', async () => {
+    const persistence = memoryPersistence()
+    persistence.save('')
+    expect(persistence.memory).toEqual('')
   })
 
   it('should save null', async () => {
     const persistence = memoryPersistence()
-    persistence.memory = { foo: 'bar' }
-    await persistence.save(null)
+    persistence.memory = 'foo-bar'
+    persistence.save(null)
     expect(persistence.memory).toEqual(null)
   })
 
   it('should initial load null', async () => {
     const persistence = memoryPersistence()
-    expect(await persistence.load()).toBe(null)
+    expect(persistence.load()).toBe(null)
   })
 
   it('should load null if memory is null', async () => {
     const persistence = memoryPersistence()
     persistence.memory = null
-    expect(await persistence.load()).toBe(null)
+    expect(persistence.load()).toBe(null)
   })
 
-  it('should load the stored JSON object', async () => {
+  it('should load the stored string', async () => {
     const persistence = memoryPersistence()
-    persistence.memory = { a: 1 }
-    expect(await persistence.load()).toEqual({ a: 1 })
+    persistence.memory = 'foo-bar'
+    expect(persistence.load()).toEqual('foo-bar')
   })
 })
 
@@ -79,27 +85,33 @@ describe('storagePersistence', () => {
     expect(persistence).toBeDefined()
   })
 
-  it('should save object', async () => {
+  it('should save string', async () => {
     const persistence = storagePersistence('foo', storage)
-    await persistence.save({ a: 1 })
-    expect(data).toEqual({ foo: '{"a":1}' })
+    persistence.save('foo-bar')
+    expect(data).toEqual({ foo: 'foo-bar' })
+  })
+
+  it('should save empty string', async () => {
+    const persistence = storagePersistence('foo', storage)
+    persistence.save('')
+    expect(data).toEqual({ foo: '' })
   })
 
   it('should delete key if save null', async () => {
     const persistence = storagePersistence('foo', storage)
-    await persistence.save(null)
+    persistence.save(null)
     expect(data).toEqual({})
   })
 
   it('should load null if key is not stored', async () => {
     const persistence = storagePersistence('foo', storage)
     delete data.foo
-    expect(await persistence.load()).toBe(null)
+    expect(persistence.load()).toBe(null)
   })
 
-  it('should load the stored JSON object', async () => {
+  it('should load the stored string', async () => {
     const persistence = storagePersistence('foo', storage)
-    data.foo = '{"a":1}'
-    expect(await persistence.load()).toEqual({ a: 1 })
+    data.foo = 'foo-bar'
+    expect(persistence.load()).toEqual('foo-bar')
   })
 })
