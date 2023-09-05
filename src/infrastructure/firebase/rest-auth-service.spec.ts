@@ -1,5 +1,5 @@
 import { fetch, Request, Response } from 'cross-fetch'
-import ShortUniqueId from 'short-unique-id'
+import { ulid } from 'ulid'
 import { isEmulatorAvailable } from '../../utilities/firebase/emulator-utils'
 import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 import { FirebaseError } from './firebase-error'
@@ -11,7 +11,7 @@ globalThis.fetch = fetch
 globalThis.Request = Request
 globalThis.Response = Response
 
-const uid = new ShortUniqueId()
+const uid = () => ulid()
 const emulatorIsAvailable = await isEmulatorAvailable()
 const timeTolerance = 16 // ms
 

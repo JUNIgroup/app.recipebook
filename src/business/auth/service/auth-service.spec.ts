@@ -1,4 +1,4 @@
-import ShortUniqueId from 'short-unique-id'
+import { ulid } from 'ulid'
 import { memoryPersistence, nonePersistence } from '../../../infrastructure/firebase/persistence'
 import { RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
 import { isEmulatorAvailable } from '../../../utilities/firebase/emulator-utils'
@@ -10,7 +10,7 @@ import { MockAuthService } from './mock-auth-service'
 
 defineGlobalFetchForTesting()
 
-const uid = new ShortUniqueId()
+const uid = () => ulid()
 
 interface TestContext {
   testArePossible: boolean
