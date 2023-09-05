@@ -11,8 +11,7 @@ import solidDevTools from 'solid-devtools/vite'
 export default defineConfig({
   plugins: [
     solidDevTools({
-      /* features options - all disabled by default */
-      autoname: true, // e.g. enable autoname
+      autoname: true,
     }),
     solidPlugin(),
     splitVendorChunkPlugin(),
@@ -34,7 +33,7 @@ export default defineConfig({
   },
   server: {
     watch: {
-      ignored: ['node_modules/', 'analyze/', 'coverage/', 'dist/', 'fire*-debug.log'],
+      ignored: ['**/node_modules/**', '**/analyze/**', '**/coverage/**', '**/dist/**', '**/fire*-debug.log'],
     },
   },
   test: {
@@ -43,7 +42,8 @@ export default defineConfig({
     transformMode: { web: [/\.\tsx?$/] },
     deps: { registerNodeLoader: true }, // otherwise, solid would be loaded twice
     setupFiles: ['jest-extended/all'],
-    reporters: ['verbose'],
+    reporters: ['dot'],
+    // reporters: ['verbose'],
     coverage: {
       provider: 'c8',
       all: true,

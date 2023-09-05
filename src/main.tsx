@@ -1,4 +1,5 @@
-import 'solid-devtools/setup'
+import 'solid-devtools'
+
 import { render } from 'solid-js/web'
 import { STORAGE_KEY_USER, STORAGE_KEY_EMAIL } from './app.constants'
 import { AuthContextProvider } from './business/auth'
