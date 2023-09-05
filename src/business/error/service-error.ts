@@ -7,7 +7,11 @@ export class ServiceError extends Error {
    * @param plainMessage the error message
    * @param options additional error options
    */
-  constructor(public readonly service: string, public readonly plainMessage: string, options?: ErrorOptions) {
+  constructor(
+    public readonly service: string,
+    public readonly plainMessage: string,
+    options?: ErrorOptions,
+  ) {
     super(`[${service}] ${plainMessage}`, options)
   }
 }

@@ -14,6 +14,7 @@ let splashOffset: number
  */
 export function registerScrollEvent() {
   scrollContainer = document.querySelector('#root') as HTMLElement
+  if (!scrollContainer) return () => {}
   tippingPoints = getTippingPoints()
   window.addEventListener('scroll', setScrollVariable)
   window.addEventListener('resize', setSize)

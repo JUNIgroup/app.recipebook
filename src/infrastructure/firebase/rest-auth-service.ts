@@ -74,7 +74,10 @@ export class RestAuthService {
     return new RestAuthService(logger, endpoints)
   }
 
-  constructor(logger: Logger<'infra'>, private endpoints: Promise<AccountEndpoints>) {
+  constructor(
+    logger: Logger<'infra'>,
+    private endpoints: Promise<AccountEndpoints>,
+  ) {
     this.log = logger('infra:RestAuthService')
   }
 

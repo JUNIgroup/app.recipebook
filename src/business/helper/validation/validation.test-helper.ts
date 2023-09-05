@@ -18,7 +18,10 @@ export class ChangeDesc {
     return values.map((value) => new ChangeDesc(path, value))
   }
 
-  constructor(public path: string, public value: unknown) {}
+  constructor(
+    public path: string,
+    public value: unknown,
+  ) {}
 
   get isDeleting() {
     return this.value === DELETE

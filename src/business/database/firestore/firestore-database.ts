@@ -10,7 +10,10 @@ import { EpochTimestamp, FirestoreService } from './firestore-service.api'
 export class FirestoreDatabase implements Database {
   private log: Log
 
-  constructor(logger: Logger<'business'>, private readonly firestoreService: FirestoreService) {
+  constructor(
+    logger: Logger<'business'>,
+    private readonly firestoreService: FirestoreService,
+  ) {
     this.log = logger('business:FirestoreDatabase')
   }
 

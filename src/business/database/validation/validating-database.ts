@@ -67,7 +67,11 @@ export class ValidatingDatabase implements Database {
   private readonly getValidators: Validator[]
   private readonly putValidators: Validator[]
 
-  constructor(logger: Logger<'business'>, private readonly database: Database, validators: Partial<Validators> = {}) {
+  constructor(
+    logger: Logger<'business'>,
+    private readonly database: Database,
+    validators: Partial<Validators> = {},
+  ) {
     this.log = logger('business:ValidatingDatabase')
     this.getValidators = validators.get ?? []
     this.putValidators = validators.put ?? []
