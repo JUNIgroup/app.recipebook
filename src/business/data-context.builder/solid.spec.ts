@@ -1,7 +1,8 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable solid/reactivity */
 
 import { createEffect, createRoot } from 'solid-js'
-import { SetStoreFunction, Store, createStore } from 'solid-js/store'
+import { ReconcileOptions, SetStoreFunction, Store, createStore, reconcile } from 'solid-js/store'
 
 describe('store with document', () => {
   describe('update array of primitives', () => {
@@ -442,7 +443,7 @@ describe('store with document', () => {
 
     it('should update foo..., if remove by undefined at path', () => {
       // execute
-      update('foos', 'c', undefined as any)
+      update('foos', 'c', undefined as unknown as Foo)
 
       // observed
       expect(record()).toEqual({
@@ -594,6 +595,220 @@ describe('store with document', () => {
         fooByCAttributeString: 'C|C',
         fooSubStoreJson: 'foo:C|foo:C,baz:Baz',
         fooSubStoreString: 'C',
+      })
+
+      expect(record()).toMatchObject({
+        fooByCKeyJson: 'foo:C|foo:C,baz:Baz|foo:C',
+      })
+    })
+  })
+
+  describe('reconcile', () => {
+    type Doc = {
+      _id: string
+      foo: string
+      hints: {
+        _id: string
+        bar: string
+      }[]
+      tags: string[]
+    }
+    type DocStore = { docs: { [id: string]: Doc } }
+
+    let dispose: () => void
+
+    let store: Store<DocStore>
+    let update: SetStoreFunction<DocStore>
+
+    let cDocAllJson: string[]
+    let cDocFooString: string[]
+    let cDocHintH1Json: string[]
+    let cDocTagsJson: string[]
+    let cDocTag1stString: string[]
+
+    beforeEach(() => {
+      cDocAllJson = []
+      cDocFooString = []
+      cDocHintH1Json = []
+      cDocTagsJson = []
+      cDocTag1stString = []
+
+      const asJson = <T>(obj: T | undefined): string => {
+        if (!obj) return ''
+        if (Array.isArray(obj)) return obj.map(asJson).join(',')
+        if (typeof obj !== 'object') return `${obj}`
+        return Object.entries(obj)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => `${k}:${asJson(v)}`)
+          .join(',')
+      }
+
+      createRoot((d) => {
+        dispose = d
+        ;[store, update] = createStore({ docs: {} })
+        createEffect(() => cDocAllJson.push(asJson(store.docs.c)))
+        createEffect(() => cDocFooString.push(store.docs.c?.foo))
+        createEffect(() => cDocHintH1Json.push(asJson(store.docs.c?.hints.find((h) => h._id === 'H1'))))
+        createEffect(() => cDocTagsJson.push(asJson(store.docs.c?.tags)))
+        createEffect(() => cDocTag1stString.push(store.docs.c?.tags[0]))
+      })
+    })
+
+    afterEach(() => {
+      dispose?.()
+    })
+
+    function record() {
+      return {
+        cDocAllJson: cDocAllJson.join('|'),
+        cDocFooString: cDocFooString.join('|'),
+        cDocHintH1Json: cDocHintH1Json.join('|'),
+        cDocTag1stString: cDocTag1stString.join('|'),
+        cDocTagsJson: cDocTagsJson.join('|'),
+      }
+    }
+
+    it('should initial have an empty record', () => {
+      // observed
+      expect(record()).toEqual({
+        cDocAllJson: '',
+        cDocFooString: '',
+        cDocHintH1Json: '',
+        cDocTag1stString: '',
+        cDocTagsJson: '',
+      })
+    })
+
+    it('should initial fill doc c', () => {
+      // execute
+      const options: ReconcileOptions = { key: '_id', merge: true }
+      const doc0 = { _id: 'c', foo: 'X', hints: [{ _id: 'H1', bar: 'Bla' }], tags: ['1st', '2nd'] }
+      update('docs', 'c', reconcile(doc0, options))
+
+      // observed
+      expect(record()).toEqual({
+        cDocAllJson: '|_id:c,foo:X,hints:_id:H1,bar:Bla,tags:1st,2nd',
+        cDocFooString: '|X',
+        cDocHintH1Json: '|_id:H1,bar:Bla',
+        cDocTag1stString: '|1st',
+        cDocTagsJson: '|1st,2nd',
+      })
+    })
+
+    it('should update doc c (foo change)', () => {
+      // execute
+      const options: ReconcileOptions = { key: '_id', merge: true }
+      const doc0 = {
+        _id: 'c', //
+        foo: 'X',
+        hints: [{ _id: 'H1', bar: 'Bla' }],
+        tags: ['1st', '2nd'],
+      }
+      const doc1 = {
+        _id: 'c',
+        foo: 'Y',
+        hints: [{ _id: 'H1', bar: 'Bla' }],
+        tags: ['1st', '2nd'],
+      }
+      update('docs', 'c', reconcile(doc0, options))
+      update('docs', 'c', reconcile(doc1, options))
+
+      // observed
+      expect(record()).toEqual({
+        cDocAllJson: '|_id:c,foo:X,hints:_id:H1,bar:Bla,tags:1st,2nd|_id:c,foo:Y,hints:_id:H1,bar:Bla,tags:1st,2nd',
+        cDocFooString: '|X|Y',
+        cDocHintH1Json: '|_id:H1,bar:Bla',
+        cDocTag1stString: '|1st',
+        cDocTagsJson: '|1st,2nd',
+      })
+    })
+
+    it('should update doc c (tags change)', () => {
+      // execute
+      const options: ReconcileOptions = { key: '_id', merge: true }
+      const doc0 = {
+        _id: 'c', //
+        foo: 'X',
+        hints: [{ _id: 'H1', bar: 'Bla' }],
+        tags: ['1st', '2nd'],
+      }
+      const doc1 = {
+        _id: 'c',
+        foo: 'X',
+        hints: [{ _id: 'H1', bar: 'Bla' }],
+        tags: ['first', 'second'],
+      }
+      update('docs', 'c', reconcile(doc0, options))
+      update('docs', 'c', reconcile(doc1, options))
+
+      // observed
+      expect(record()).toEqual({
+        cDocAllJson:
+          '|_id:c,foo:X,hints:_id:H1,bar:Bla,tags:1st,2nd|_id:c,foo:X,hints:_id:H1,bar:Bla,tags:first,second',
+        cDocFooString: '|X',
+        cDocHintH1Json: '|_id:H1,bar:Bla',
+        cDocTag1stString: '|1st|first',
+        cDocTagsJson: '|1st,2nd|first,second',
+      })
+    })
+
+    it('should update doc c (hint change)', () => {
+      // execute
+      const options: ReconcileOptions = { key: '_id', merge: true }
+      const doc0 = {
+        _id: 'c', //
+        foo: 'X',
+        hints: [{ _id: 'H1', bar: 'Bla' }],
+        tags: ['1st', '2nd'],
+      }
+      const doc1 = {
+        _id: 'c',
+        foo: 'X',
+        hints: [{ _id: 'H1', bar: 'One' }],
+        tags: ['1st', '2nd'],
+      }
+      update('docs', 'c', reconcile(doc0, options))
+      update('docs', 'c', reconcile(doc1, options))
+
+      // observed
+      expect(record()).toEqual({
+        cDocAllJson: '|_id:c,foo:X,hints:_id:H1,bar:Bla,tags:1st,2nd|_id:c,foo:X,hints:_id:H1,bar:One,tags:1st,2nd',
+        cDocFooString: '|X',
+        cDocHintH1Json: '|_id:H1,bar:Bla|_id:H1,bar:One',
+        cDocTag1stString: '|1st',
+        cDocTagsJson: '|1st,2nd',
+      })
+    })
+
+    it('should update doc c (hint prepend)', () => {
+      // execute
+      const options: ReconcileOptions = { key: '_id', merge: true }
+      const doc0 = {
+        _id: 'c', //
+        foo: 'X',
+        hints: [{ _id: 'H1', bar: 'Bla' }],
+        tags: ['1st', '2nd'],
+      }
+      const doc1 = {
+        _id: 'c',
+        foo: 'X',
+        hints: [
+          { _id: 'H0', bar: 'zero' },
+          { _id: 'H1', bar: 'Bla' },
+        ],
+        tags: ['1st', '2nd'],
+      }
+      update('docs', 'c', reconcile(doc0, options))
+      update('docs', 'c', reconcile(doc1, options))
+
+      // observed
+      expect(record()).toEqual({
+        cDocAllJson:
+          '|_id:c,foo:X,hints:_id:H1,bar:Bla,tags:1st,2nd|_id:c,foo:X,hints:_id:H0,bar:zero,_id:H1,bar:Bla,tags:1st,2nd',
+        cDocFooString: '|X',
+        cDocHintH1Json: '|_id:H1,bar:Bla|_id:H1,bar:Bla',
+        cDocTag1stString: '|1st',
+        cDocTagsJson: '|1st,2nd',
       })
     })
   })
