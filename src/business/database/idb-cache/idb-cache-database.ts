@@ -55,7 +55,11 @@ export class IdbCacheDatabase implements Database {
    * @param database the inner database, that should be cached
    * @param cacheName the name of the IDB store to use for the cache
    */
-  constructor(logger: Logger<'business'>, private readonly database: Database, private options: IdbCacheOptions) {
+  constructor(
+    logger: Logger<'business'>,
+    private readonly database: Database,
+    private options: IdbCacheOptions,
+  ) {
     this.log = logger('business:IdbCacheDatabase')
     this.storage = this.openStorage()
   }

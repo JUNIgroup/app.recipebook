@@ -28,7 +28,12 @@ export class FirestoreTestHelper {
 
   readonly endpoint: string
 
-  constructor(readonly host: string, readonly port: number, readonly projectId: string, readonly databaseId: string) {
+  constructor(
+    readonly host: string,
+    readonly port: number,
+    readonly projectId: string,
+    readonly databaseId: string,
+  ) {
     this.log = createFakeLogger({ console: false })(`infra:firestore-api`)
     this.projectId = import.meta.env.VITE_FIREBASE__PROJECT_ID
     this.endpoint = `http://${host}:${port}/v1/projects/${projectId}/databases/${databaseId}/documents`

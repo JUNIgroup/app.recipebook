@@ -6,7 +6,7 @@ describe('detectColorMode', () => {
   const results = { dark: 'dark', light: 'light', other: 'other' }
   it('should return dark when prefers-color-scheme: dark', () => {
     // arrange
-    const matchMedia = (query: string) => ({ matches: query === '(prefers-color-scheme: dark)' } as MediaQueryList)
+    const matchMedia = (query: string) => ({ matches: query === '(prefers-color-scheme: dark)' }) as MediaQueryList
     vi.spyOn(window, 'matchMedia').mockImplementation(matchMedia)
 
     // act
@@ -18,7 +18,7 @@ describe('detectColorMode', () => {
 
   it('should return light when prefers-color-scheme: light', () => {
     // arrange
-    const matchMedia = (query: string) => ({ matches: query === '(prefers-color-scheme: light)' } as MediaQueryList)
+    const matchMedia = (query: string) => ({ matches: query === '(prefers-color-scheme: light)' }) as MediaQueryList
     vi.spyOn(window, 'matchMedia').mockImplementation(matchMedia)
 
     // act
@@ -30,7 +30,7 @@ describe('detectColorMode', () => {
 
   it('should return other when prefers-color-scheme is not defined', () => {
     // arrange
-    const matchMedia = () => ({ matches: false } as MediaQueryList)
+    const matchMedia = () => ({ matches: false }) as MediaQueryList
     vi.spyOn(window, 'matchMedia').mockImplementation(matchMedia)
 
     // act

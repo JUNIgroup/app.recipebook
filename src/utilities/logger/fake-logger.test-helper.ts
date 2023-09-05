@@ -17,7 +17,10 @@ export class FakeLog implements Log {
 
   private readonly pipe: false | Console['log']
 
-  constructor(public readonly namespace: string, options: FakeLogOptions = {}) {
+  constructor(
+    public readonly namespace: string,
+    options: FakeLogOptions = {},
+  ) {
     // eslint-disable-next-line no-console
     this.pipe = options.console === true ? console.log : options.console ?? false
   }

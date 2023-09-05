@@ -22,7 +22,11 @@ export class ConsoleLog implements Log {
 
   private readonly delay: Delay
 
-  constructor(public readonly namespace: string, private readonly console: ConsolePipe, enabled: boolean) {
+  constructor(
+    public readonly namespace: string,
+    private readonly console: ConsolePipe,
+    enabled: boolean,
+  ) {
     this.logEnabled = enabled
     this.color = getHashColor(namespace)
     this.delay = createDelay()

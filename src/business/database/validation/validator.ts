@@ -1,5 +1,3 @@
-/* eslint-disable react/destructuring-assignment */
-
 import { Struct, validate as validateSchema } from 'superstruct'
 import { CollectionPath } from '../database'
 import { DatabaseStructure, Doc } from '../database-types'

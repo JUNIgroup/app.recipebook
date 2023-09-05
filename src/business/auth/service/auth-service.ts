@@ -39,7 +39,12 @@ export class AuthError extends ServiceError {
    * @param plainMessage the error message
    * @param options additional error options
    */
-  constructor(service: string, public readonly code: AuthErrorCode, plainMessage: string, options?: ErrorOptions) {
+  constructor(
+    service: string,
+    public readonly code: AuthErrorCode,
+    plainMessage: string,
+    options?: ErrorOptions,
+  ) {
     super(service, plainMessage, options)
   }
 }
