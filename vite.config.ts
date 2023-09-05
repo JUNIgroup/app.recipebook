@@ -39,15 +39,15 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    transformMode: { web: [/\.\tsx?$/] },
+    testTransformMode: { web: ['.tsx?$'] },
     deps: { registerNodeLoader: true }, // otherwise, solid would be loaded twice
     setupFiles: ['jest-extended/all'],
     reporters: ['dot'],
     // reporters: ['verbose'],
     coverage: {
-      provider: 'c8',
+      provider: 'v8',
       all: true,
-      reporter: ['text', 'html', 'lcov'],
+      reporter: ['html'],
       statements: 0,
       branches: 0,
       functions: 0,
