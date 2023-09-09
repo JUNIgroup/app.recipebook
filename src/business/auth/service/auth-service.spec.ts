@@ -1,7 +1,7 @@
 import { ulid } from 'ulid'
 import { memoryPersistence, nonePersistence } from '../../../infrastructure/firebase/persistence'
 import { RestAuthService } from '../../../infrastructure/firebase/rest-auth-service'
-import { isEmulatorAvailable } from '../../../utilities/firebase/emulator-utils'
+import { EMULATOR_TIME_TOLERANCE, isEmulatorAvailable } from '../../../utilities/firebase/emulator-utils'
 import { createFakeLogger } from '../../../utilities/logger/fake-logger.test-helper'
 import { defineGlobalFetchForTesting } from '../../../utilities/query/fetch.test-helper'
 import { AuthError, AuthService, UserData } from './auth-service'
@@ -82,9 +82,9 @@ describe.each`
 
       it('should create a new account', async () => {
         // act
-        const before = Date.now()
+        const before = Date.now() - EMULATOR_TIME_TOLERANCE
         await authService.signUpWithEmailAndPassword(name, email, password)
-        const after = Date.now()
+        const after = Date.now() + EMULATOR_TIME_TOLERANCE
 
         // assert
         expect(authService.isLogin()).toBe(true)
@@ -92,7 +92,7 @@ describe.each`
           id: expect.any(String),
           name,
           email,
-          createdAt: expect.toBeWithin(before, after + 1),
+          createdAt: expect.toBeWithin(before, after),
           lastLoginAt: expect.any(Number),
         })
       })
@@ -157,9 +157,9 @@ describe.each`
 
       it('should sign in the user', async () => {
         // act
-        const before = Date.now()
+        const before = Date.now() - EMULATOR_TIME_TOLERANCE
         await authService.signInWithEmailAndPassword(existingUser.email, password)
-        const after = Date.now()
+        const after = Date.now() + EMULATOR_TIME_TOLERANCE
 
         // assert
         expect(authService.isLogin()).toBe(true)
@@ -168,7 +168,7 @@ describe.each`
           name: existingUser.name,
           email: existingUser.email,
           createdAt: existingUser.createdAt,
-          lastLoginAt: expect.toBeWithin(before, after + 1),
+          lastLoginAt: expect.toBeWithin(before, after),
         })
       })
 

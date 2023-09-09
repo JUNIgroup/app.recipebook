@@ -24,3 +24,5 @@ export async function isEmulatorAvailable(): Promise<null | EmulatorStatus> {
     return null
   }
 }
+
+export const EMULATOR_TIME_TOLERANCE = 16 // ms
