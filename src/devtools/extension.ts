@@ -36,7 +36,7 @@ export function getReduxExtension(): ReduxDevtoolsExtension | null {
   } catch {
     // ignore
   }
-  if (globalThis.window && process.env.MODE !== 'production' && process.env.MODE !== 'test') {
+  if (globalThis.window && import.meta.env.MODE !== 'production' && import.meta.env.MODE !== 'test') {
     ;(globalThis.window as ANY).__REDUX_DEVTOOLS_EXTENSION__ = null
     trace('redux devtools', `Please install Redux devtools extension\nhttps://github.com/reduxjs/redux-devtools`)
   }

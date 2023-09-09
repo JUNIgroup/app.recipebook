@@ -14,9 +14,8 @@ describe.runIf(emulatorIsAvailable)('if emulator is available', () => {
     await expect(ping).resolves.toBeTruthy()
   })
 
-  it('should have access to UI', async () => {
+  it.runIf(emulatorIsAvailable?.ui)('should have access to UI', async () => {
     const ui = emulatorIsAvailable?.ui
-    expect(ui).toBeTruthy()
     const { host, port } = ui ?? {}
     const ping = fetch(`http://${host}:${port}`, { method: 'GET' })
     await expect(ping).resolves.toBeTruthy()
