@@ -1,6 +1,6 @@
 import { fetch, Request, Response } from 'cross-fetch'
 import { ulid } from 'ulid'
-import { isEmulatorAvailable } from '../../utilities/firebase/emulator-utils'
+import { EMULATOR_TIME_TOLERANCE, isEmulatorAvailable } from '../../utilities/firebase/emulator-utils'
 import { createFakeLogger } from '../../utilities/logger/fake-logger.test-helper'
 import { FirebaseError } from './firebase-error'
 import { ProfileUpdateParams } from './helpers/rest-types'
@@ -13,7 +13,6 @@ globalThis.Response = Response
 
 const uid = () => ulid()
 const emulatorIsAvailable = await isEmulatorAvailable()
-const timeTolerance = 16 // ms
 
 describe('RestAuthService.forRemote', () => {
   it('should return a service', () => {
@@ -70,9 +69,9 @@ describe('RestAuthService', () => {
         const password = `secret-${id}`
 
         // act
-        const before = Date.now()
+        const before = Date.now() - EMULATOR_TIME_TOLERANCE
         const user = await service.signUpWithEmailAndPassword({ email, password })
-        const after = Date.now()
+        const after = Date.now() + EMULATOR_TIME_TOLERANCE
 
         // assert
         expect(user).toMatchObject({
@@ -80,7 +79,7 @@ describe('RestAuthService', () => {
           email: email.toLowerCase(),
           displayName: undefined,
           verified: false,
-          createdAt: expect.toBeWithin(before, after + 1),
+          createdAt: expect.toBeWithin(before, after),
           lastLoginAt: user.createdAt,
         })
       })
@@ -166,15 +165,15 @@ describe('RestAuthService', () => {
         const password = usedPassword
 
         // act
-        const before = Date.now() - timeTolerance
+        const before = Date.now() - EMULATOR_TIME_TOLERANCE
         const user = await service.signInWithEmailAndPassword({ email, password })
-        const after = Date.now() + timeTolerance
+        const after = Date.now() + EMULATOR_TIME_TOLERANCE
 
         // assert
         expect(user).toMatchObject({
           ...existingUser,
           createdAt: existingUser.createdAt,
-          lastLoginAt: expect.toBeWithin(before, after + 1),
+          lastLoginAt: expect.toBeWithin(before, after),
         })
       })
 
@@ -369,9 +368,9 @@ describe('RestAuthService', () => {
       it('should sign in with new password after update password', async () => {
         // act
         await service.updateProfile({ password: newPassword })
-        const before = Date.now() - timeTolerance
+        const before = Date.now() - EMULATOR_TIME_TOLERANCE
         const updated = await service.signInWithEmailAndPassword({ email: user.email, password: newPassword })
-        const after = Date.now() + timeTolerance
+        const after = Date.now() + EMULATOR_TIME_TOLERANCE
 
         // assert
         expect(updated).toMatchObject({
@@ -379,7 +378,7 @@ describe('RestAuthService', () => {
           email: user.email,
           verified: false,
           createdAt: user.createdAt,
-          lastLoginAt: expect.toBeWithin(before, after + 1),
+          lastLoginAt: expect.toBeWithin(before, after),
         })
       })
 

@@ -7,12 +7,14 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import solidPlugin from 'vite-plugin-solid'
 import solidDevTools from 'solid-devtools/vite'
 
+const useSolidDevTools = false
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    solidDevTools({
-      autoname: true,
-    }),
+    useSolidDevTools &&
+      solidDevTools({
+        autoname: true,
+      }),
     solidPlugin(),
     splitVendorChunkPlugin(),
     visualizer({
